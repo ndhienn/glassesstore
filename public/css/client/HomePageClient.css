@@ -1,0 +1,211 @@
+/* @import url('https://fonts.googleapis.com/css2?family=Lalezar&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sigmar&family=Space+Grotesk:wght@300..700&display=swap'); */
+
+.main {
+    background-color: #e6f4f3;
+}
+
+.item-product {
+    position: relative;
+    cursor: pointer;
+}
+
+.item-product:hover .img-product>img {
+    transform: scale(1.2);
+
+}
+
+.img-product>img {
+    transition: transform 0.5s ease;
+
+}
+
+.best-seller {
+    margin: 0;
+    width: 90%;
+
+}
+
+.info-product {
+    background-color: #ffff;
+    border-radius: 25px;
+    bottom: 0px;
+    width: fit-content;
+    padding: 15px;
+    position: absolute;
+    bottom: 0;
+    margin-right: 12px;
+
+}
+
+.img-product {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+}
+
+.name-product {
+    font-weight: 600;
+}
+
+.price-product {
+    margin-top: 25px;
+    background-color: #55d5d2;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 700;
+    padding: 5px;
+    font-family: Space Grotesk;
+}
+
+.icon-arrow {
+    position: absolute;
+    right: 7px;
+    display: block;
+    text-align: center;
+    align-content: center;
+    background-color: white;
+    color: #55d5d2;
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+}
+
+.banner-small {
+    height: 285px;
+    padding: 0 5%;
+    display: flex;
+    justify-content: space-between;
+    background-color: #e6f4f3;
+    padding-bottom: 20px;
+}
+
+.bnsm {
+    width: 49%;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.type-product-items {
+    display: flex;
+    padding: 20px 5% 20px;
+    width: 100%;
+}
+
+.type-product-items li {
+    font-size: 20px;
+    font-family: Lalezar;
+    color: #535252;
+    cursor: pointer;
+}
+
+.xemthemsp-btn {
+    height: 50px;
+    width: 100%;
+    border: 2px solid #52acaa;
+    border-radius: 20px;
+    display: block;
+    text-align: center;
+    
+    align-content: center;
+    cursor: pointer;
+}
+.xemthemsp-btn a{
+    text-decoration: none;
+    color: #55d5d2;
+    font-family: Lalezar;
+    font-size: 23px;
+}
+.xemthemsp-btn:hover{
+    background-color: #fb923c;
+    a{
+        color: #fff;
+    }
+}
+.filter{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0 5% 0 5%;
+
+}
+.container-filter{
+    font-family: Roboto;
+}
+.container-filter .list-checkBox{
+    padding: 0;
+    margin: 0;
+}
+.list-checkBox li{
+    font-weight: 300;
+    font-size: larger;
+    color: #000;
+    input{
+        margin-right: 3px;
+        cursor: pointer;
+    }
+}
+.ft-mau-sac>.list-checkBox{
+    max-height: 300px;
+    overflow: hidden;
+}
+#pagination{
+    display: flex;
+    justify-content: right;
+    width: 100%;
+    gap: 5px;
+}
+#pagination button{
+    border: none;
+    outline: none;
+    border-radius: 50%;
+    padding: 5px;
+    background-color: #d7f2f1;
+    color: #55d5d2;
+    width: 35px;
+    height: 35px;
+    font-weight: 400;
+    font-size: 16px;
+    font-family: Outfit;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.page-btn.active{
+    background-color: #55d5d2 !important;
+    color: #fff !important;
+}
+.choiceglasses {
+    cursor: pointer;
+    height: 150px;
+    padding: 33px 0;
+    border-bottom: 2px solid #55d5d2;
+    display: flex;
+    justify-content: space-between;
+    font-family: Roboto;
+    position: relative;
+    a {
+        text-decoration: none;
+        color: #000;
+    }
+    &::before {
+        content: "";
+        width: 0%;
+        height: 4px;
+        background-color: #fb923c;
+        position: absolute;
+        top: -2px;
+        transition: width 0.5s ease;
+    }
+    &:hover::before {
+        width: 100%;
+    }
+    &:hover a {
+        color: #fb923c;
+    }
+    &:hover i {
+        color: #fb923c;
+        transform: translateX(70px);
+    }
+}

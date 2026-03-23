@@ -1,0 +1,20 @@
+[33mb0212cd[m[33m ([m[1;36mHEAD -> [m[1;32mmain[m[33m, [m[1;31morigin/vinh[m[33m)[m v
+[33m3f728e4[m fix getInstance
+[33ma29e85b[m Resolve conflict: Giữ lại database_connection.php
+[33m71d81e1[m add TokenLogin
+[33m0d65c93[m[33m ([m[1;31morigin/tri[m[33m)[m fix FE
+[33m8e536a4[m add MODEL AND BUS, DAO OF NGUOIDUNG, TAIKHOAN, QUYEN, CTQ, TINH
+[33mfd48c5e[m change
+[33mb1b672b[m change
+[33mf999cb1[m change
+[33maf0f6b6[m[33m ([m[1;31morigin/han[m[33m)[m Merge pull request #4 from luthicamtri10/minh
+[33m9400bb9[m fix view for laravel
+[33mc9583c6[m FIXED MODEL CHUCNANG
+[33me06b275[m DAO, BUS, MODEL CHUCNANG
+[33mc4c3414[m Merge pull request #3 from luthicamtri10/minh
+[33m3b5b467[m admin view 2
+[33m7fb009b[m Merge pull request #2 from luthicamtri10/vinh
+[33m51161d6[m client view 1
+[33m7d043dc[m Merge pull request #1 from luthicamtri10/minh
+[33m0ab642e[m admin view 1
+[33m3fdd699[m first commit

@@ -1,17 +1,27 @@
-# Sử dụng image PHP có sẵn Apache
 FROM php:8.2-apache
 
-# Cài đặt các phần mở rộng cần thiết cho MySQL (nếu bạn dùng database)
-RUN docker-php-ext-install mysqli pdo pdo_mysql
+# 1. Cài đặt các thư viện hệ thống và PHP extension cho Laravel
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip
 
-# Copy toàn bộ code từ máy bạn vào thư mục web của Docker
+RUN docker-php-ext-install mysqli pdo pdo_mysql mbstring
+
+# 2. Bật mod_rewrite của Apache (Quan trọng để Laravel chạy route)
+RUN a2enmod rewrite
+
+# 3. Thay đổi DocumentRoot của Apache trỏ vào thư mục /public
+ENV APACHE_DOCUMENT_ROOT /var/www/html/public
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+RUN sed -ri -e 's!/var/www/htdocs!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+
+# 4. Copy code vào container
 COPY . /var/www/html/
 
-# Cấp quyền cho thư mục để Apache có thể đọc ghi
-RUN chown -R www-data:www-data /var/www/html
+# 5. Cấp quyền cho thư mục storage và bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# Mở cổng 80 (cổng mặc định của web)
 EXPOSE 80
-
-# Chạy Apache ở chế độ foreground
-CMD ["apache2-foreground"]

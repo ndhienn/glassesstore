@@ -26,16 +26,35 @@ class database_connection {
         return self::$instance;
     }
 
-    public function getConnection(){
+    public function getConnection() {
         try {
-            if($this->connection == null || $this->connection->connect_error) {
-                $this->connection = new mysqli(self::$host, self::$user, self::$pass, self::$dbname, self::$port);
+            if ($this->connection == null) {
+                // Khởi tạo mysqli
+                $this->connection = mysqli_init();
+                
+                // THIẾT LẬP SSL (Bắt buộc cho TiDB Cloud)
+                $this->connection->ssl_set(NULL, NULL, '/etc/ssl/certs/ca-certificates.crt', NULL, NULL);
+                
+                // Kết nối dùng hàm env() để đọc từ Render Environment
+                $success = $this->connection->real_connect(
+                    env('DB_HOST'),
+                    env('DB_USERNAME'),
+                    env('DB_PASSWORD'),
+                    env('DB_DATABASE'),
+                    env('DB_PORT', 4000), // Mặc định 4000 cho TiDB
+                    NULL,
+                    MYSQLI_CLIENT_SSL
+                );
+
+                if (!$success) {
+                    throw new Exception("Connect Error: " . $this->connection->connect_error);
+                }
             }
             return $this->connection;
         } catch (Exception $e) {
             error_log("Error connecting to database: " . $e->getMessage());
+            return null;
         }
-        return null;
     }
 
     public static function getPreparedStatement($sql,...$args) {

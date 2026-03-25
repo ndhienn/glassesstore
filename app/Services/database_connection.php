@@ -11,7 +11,13 @@ class database_connection {
     private static $user = "root";
     private static $pass = "276951438";
 
-    private function __construct(){}
+    public function __construct() {
+        self::$host = env('DB_HOST');
+        self::$user = env('DB_USERNAME');
+        self::$pass = env('DB_PASSWORD');
+        self::$dbname = env('DB_DATABASE');
+        self::$port = env('DB_PORT', 3306); // Mặc định 3306 nếu không có
+    }
 
     public static function getInstance() {
         if(self::$instance == null) {

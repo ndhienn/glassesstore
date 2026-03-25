@@ -28,20 +28,20 @@ class database_connection {
 
     public function getConnection() {
         try {
-            if ($this->connection == null) {
-                // Khởi tạo mysqli
+            if ($this->connection == null || !$this->connection->ping()) {
                 $this->connection = mysqli_init();
                 
-                // THIẾT LẬP SSL (Bắt buộc cho TiDB Cloud)
+                // THIẾT LẬP SSL - Bắt buộc cho TiDB Cloud
+                // Lưu ý: Đường dẫn này là mặc định trên môi trường Linux của Render
                 $this->connection->ssl_set(NULL, NULL, '/etc/ssl/certs/ca-certificates.crt', NULL, NULL);
                 
-                // Kết nối dùng hàm env() để đọc từ Render Environment
-                $success = $this->connection->real_connect(
+                // Sử dụng hàm env() để lấy dữ liệu từ Render Environment
+                $success = @$this->connection->real_connect(
                     env('DB_HOST'),
                     env('DB_USERNAME'),
                     env('DB_PASSWORD'),
                     env('DB_DATABASE'),
-                    env('DB_PORT', 4000), // Mặc định 4000 cho TiDB
+                    env('DB_PORT', 4000), // TiDB mặc định là 4000
                     NULL,
                     MYSQLI_CLIENT_SSL
                 );
@@ -52,8 +52,9 @@ class database_connection {
             }
             return $this->connection;
         } catch (Exception $e) {
-            error_log("Error connecting to database: " . $e->getMessage());
-            return null;
+            // Ghi log lỗi để bạn có thể xem trong mục Logs của Render
+            error_log("Database Connection Failed: " . $e->getMessage());
+            return null; 
         }
     }
 

@@ -20,6 +20,7 @@ class LoaiSanPham_DAO implements DAOInterface {
         }
 
         return $list;
+
     }
 
 
@@ -33,6 +34,7 @@ class LoaiSanPham_DAO implements DAOInterface {
         }
         
         return $list;
+
     }
 
     public function getAllIsActive(): array {
@@ -44,7 +46,7 @@ class LoaiSanPham_DAO implements DAOInterface {
             $list[] = $this->createLoaiSanPhamModel($row);
         }
         
-        return $list;
+        return [];
     }
 
  

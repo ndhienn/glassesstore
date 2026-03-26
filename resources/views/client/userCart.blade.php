@@ -30,6 +30,22 @@ use App\Models\CTGH;
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
+        const savedIds = JSON.parse(localStorage.getItem('selectedProductIds')) || [];
+
+        const allCheckboxes = document.querySelectorAll('input[name="product_selection[]"]');
+        allCheckboxes.forEach(cb => {
+            if (savedIds.includes(cb.getAttribute('data-id'))) {
+                cb.checked = true;
+            }
+        });
+        setTimeout(() => {
+            if (typeof window.updateSelectedProducts === "function") {
+                window.updateSelectedProducts();
+           }
+        }, 10);
+        if (typeof updateSelectedProducts === "function") {
+            updateSelectedProducts();
+        }
         const successAlert = document.getElementById('successAlert');
         if (successAlert) {
             setTimeout(() => {
@@ -43,33 +59,34 @@ use App\Models\CTGH;
         }
 
         window.updateSelectedProducts = function(checkbox) {
-            const selectedCount = document.querySelectorAll('input[name="product_selection[]"]:checked').length;
+            const checkboxes = document.querySelectorAll('input[name="product_selection[]"]:checked');
+            const selectedCount = checkboxes.length;
             document.getElementById('selected-count').innerText = selectedCount;
 
             let totalAmount = 0;
-            const selectedProducts = [];
-            const checkboxes = document.querySelectorAll('input[name="product_selection[]"]:checked');
-            let shouldDisable = false;
+            let selectedIds = []; 
+
             checkboxes.forEach(function(checkedCheckbox) {
                 const productId = checkedCheckbox.getAttribute('data-id');
                 const price = parseInt(checkedCheckbox.getAttribute('data-price'));
                 const quantity = parseInt(checkedCheckbox.getAttribute('data-quantity'));
-                console.log('Sản phẩm ID:', productId);
+                
                 totalAmount += price * quantity;
+                selectedIds.push(productId); 
+            });
 
-                selectedProducts.push({
-                    product_id: productId,
-                    price: price,
-                    quantity: quantity
-                });
+            
+            localStorage.setItem('selectedProductIds', JSON.stringify(selectedIds));
+
+            document.getElementById('total-amount').innerText = formatCurrency(totalAmount);
+            
+            let shouldDisable = false;
+            checkboxes.forEach(function(checkedCheckbox) {
+                const productId = checkedCheckbox.getAttribute('data-id');
                 if (document.querySelector(`.alert-warning[data-idsp="${productId}"]`)) {
-                    alert("Số lượng sản phẩm hiện có không đủ để tiếp tục mua sắm");
-                    console.log("sp co alert: ", productId);
                     shouldDisable = true;
                 }
             });
-
-            document.getElementById('total-amount').innerText = formatCurrency(totalAmount);
             document.getElementById('btnDatNgay').disabled = shouldDisable;
         }
 
@@ -98,8 +115,11 @@ use App\Models\CTGH;
                 if (selectedIds.length === 0) {
                     event.preventDefault();
                     alert("Vui lòng chọn ít nhất một sản phẩm để thanh toán!");
+                }else{
+                localStorage.removeItem('selectedProductIds');
                 }
             });
+
         });
 
     });
@@ -219,16 +239,23 @@ use App\Models\CTGH;
         @endforeach
     @endif
 </div>
-<div id="footer-cart" class=" gap-5 p-3" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 100px; background-color: white; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 1000;">
-    <div class="" style="display: flex; justify-content: end;">
-        <!-- <div>Chọn <span id="selected-count">0</span> sản phẩm</div> Hiển thị số lượng sản phẩm đã chọn -->
-        <!-- <div>Tổng tiền: <span id="total-amount">0</span></div></div> -->
-     
-        <form action="{{ route('payment.create') }}" method="get">
-            @csrf
-            <input type="hidden" name="listSP" id="listSP">
-            <button id="btnDatNgay" type="submit" class="btn btn-info text-white" style="background-color: #55d5d2;">Đặt ngay</button>
-        </form>
-        
-    <!-- <a href="{{ route('pay') }}" class="btn btn-info text-white" style="background-color: #55d5d2;">Đặt ngay</a> -->
+<div id="footer-cart" style="position: fixed; bottom: 0; left: 0; width: 100%; height: 100px; background-color: white; box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 1000; display: flex; align-items: center; justify-content: flex-end; padding: 0 50px; gap: 30px;">
+    
+    <div style="text-align: right;">
+        <div style="font-size: 1.1rem; color: #555;">
+            Đã chọn <span id="selected-count" style="font-weight: bold; color: #55d5d2;">0</span> sản phẩm
+        </div>
+        <div style="font-size: 1.4rem; font-weight: bold;">
+            Tổng thanh toán: <span id="total-amount" style="color: #e74c3c; font-size: 1.8rem;">0đ</span>
+        </div>
+    </div>
+
+    <form action="{{ route('payment.create') }}" method="get" class="m-0">
+        @csrf
+        <input type="hidden" name="listSP" id="listSP">
+        <button id="btnDatNgay" type="submit" class="btn btn-lg text-white fw-bold" 
+                style="background-color: #55d5d2; padding: 10px 40px; border-radius: 5px;">
+            ĐẶT NGAY
+        </button>
+    </form>
 </div>

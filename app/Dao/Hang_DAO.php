@@ -24,6 +24,7 @@ class Hang_DAO
             $list[] = $this->createHangModel($row);
         }
         return $list;
+
     }
 
     public function getById($id)

@@ -14,13 +14,14 @@ class SanPham_DAO implements DAOInterface{
 
     public function readDatabase(): array
     {
-        $list = [];
-        $rs = database_connection::executeQuery("SELECT * FROM SanPham");
-        while ($row = $rs->fetch_assoc()) {
-            $model = $this->createSanPhamModel($row);
-            array_push($list, $model);
-        }
-        return $list;
+        // $list = [];
+        // $rs = database_connection::executeQuery("SELECT * FROM SanPham");
+        // while ($row = $rs->fetch_assoc()) {
+        //     $model = $this->createSanPhamModel($row);
+        //     array_push($list, $model);
+        // }
+        // return $list;
+        return [];
     }
 
     public function getById($id) {
@@ -342,6 +343,7 @@ class SanPham_DAO implements DAOInterface{
             array_push($list, $model);
         }
         return $list;
+
     }
 
     public function searchByLoaiSanPham($idLSP) {
@@ -397,6 +399,7 @@ class SanPham_DAO implements DAOInterface{
             array_push($list, $model);
         }
         return $list;
+
     }
 
     public function getStock($idPd) {

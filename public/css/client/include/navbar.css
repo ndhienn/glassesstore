@@ -35,6 +35,14 @@ li{
     max-height: 60px;
 }
 
+.nav-hidden {
+    transform: translateY(-150%) !important;
+    transition: transform 0.4s ease-in-out;
+}
+
+#navbar-ctn {
+    transition: transform 0.4s ease-in-out;
+}
 .navbar-nav li{
     display: flex;
     justify-content: center;

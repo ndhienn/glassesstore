@@ -1,261 +1,108 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
+    // 1. Xử lý Search Form mượt hơn
     const searchForm = document.querySelector('form[method="GET"]');
-
     if (searchForm) {
         searchForm.addEventListener('submit', function (e) {
             e.preventDefault();
-
             const formData = new FormData(searchForm);
             const url = new URL(window.location.href);
-
-            // Lấy các tham số cũ và thêm vào URL
-            const currentParams = new URLSearchParams(window.location.search);
-
-            // Giữ lại tham số 'modun=hoadon' nếu có
-            if (!currentParams.has('modun')) {
-                currentParams.set('modun', 'hoadon');
-            }
-
-            // Thêm hoặc thay đổi các tham số từ form
+            url.searchParams.set('modun', 'hoadon');
             for (const [key, value] of formData.entries()) {
-                if (value.trim() !== '') {
-                    currentParams.set(key, value);
-                } else {
-                    currentParams.delete(key); // Nếu trường nào trống thì xóa khỏi URL
+                if (value && value !== 'Chọn trạng thái' && value !== 'Chọn tỉnh/thành phố') {
+                    url.searchParams.set(key, value);
                 }
             }
-
-            // Gắn lại các tham số vào URL
-            url.search = currentParams.toString();
-
-            // Chuyển hướng đến URL mới
             window.location.href = url.toString();
         });
     }
 
     const refreshBtn = document.getElementById('refreshBtn');
-    refreshBtn.addEventListener('click', function () {
-        const url = new URL(window.location.href);
-
-        // Xóa keyword khỏi URL
-        url.searchParams.delete('keywordTinh');
-        url.searchParams.delete('trangthai');
-        url.searchParams.delete('ngaybatdau');
-        url.searchParams.delete('ngayketthuc');
-        url.searchParams.delete('keywordSoSeri');
-        
-
-        // Reset về trang đầu nếu có tham số phân trang
-        url.searchParams.delete('page');
-
-        // Giữ lại 'modun=hoadon'
-        url.searchParams.set('modun', 'hoadon');
-
-        // Chuyển hướng
-        window.location.href = url.toString();
-    });
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function () {
+            window.location.href = window.location.pathname + '?modun=hoadon';
+        });
+    }
 
     const modal = document.getElementById("staticBackdropOrderModal");
     modal.addEventListener("show.bs.modal", function (event) {
-    const button = event.relatedTarget;
-
-    const id = button.getAttribute("data-id");
-    const email = button.getAttribute("data-email");
-    const nhanvien = button.getAttribute("data-nhanvien");
-    const tenKhachHang = button.getAttribute("data-tenkhachhang");
-    const ngayTao = button.getAttribute("data-ngaytao");
-    const pttt = button.getAttribute("data-pttt");
-    const trangThai = button.getAttribute("data-trangthai");
-    const tongTien = button.getAttribute("data-tongtien");
-    const diaChi = button.getAttribute("data-diachi"); // Thêm data-diachi
-
+        const button = event.relatedTarget;
+        
+        // Lấy dữ liệu từ data attributes
+        const data = {
+            id: button.getAttribute("data-id"),
+            email: button.getAttribute("data-email"),
+            nhanvien: button.getAttribute("data-nhanvien"),
+            tenKh: button.getAttribute("data-tenkhachhang"),
+            ngayTao: button.getAttribute("data-ngaytao"),
+            pttt: button.getAttribute("data-pttt"),
+            trangThai: button.getAttribute("data-trangthai"),
+            tongTien: button.getAttribute("data-tongtien"),
+            diaChi: button.getAttribute("data-diachi"),
+            cthd: JSON.parse(button.getAttribute("data-cthd") || "[]")
+        };
     // Gán dữ liệu vào modal
-    modal.querySelector(".modal-body .ma-don-hang").textContent = id;
-    modal.querySelector(".modal-body .tai-khoan").textContent = email;
-    modal.querySelector(".modal-body .ten-khach-hang").textContent = tenKhachHang;
-    modal.querySelector(".modal-body .nhan-vien").textContent = nhanvien;
-    modal.querySelector(".modal-body .ngay-tao").textContent = ngayTao;
-    modal.querySelector(".modal-body .pttt").textContent = pttt;
-    modal.querySelector(".modal-body .trang-thai").value = trangThai || "";
-    modal.querySelector(".modal-body .tong-tien").textContent = tongTien;
-    modal.querySelector(".modal-body .dia-chi").textContent = diaChi || "Không có thông tin địa chỉ";
+        modal.querySelector(".ma-don-hang").textContent = data.id;
+        modal.querySelector(".tai-khoan").textContent = data.email;
+        modal.querySelector(".ten-khach-hang").textContent = data.tenKh;
+        modal.querySelector(".nhan-vien").textContent = data.nhanvien;
+        modal.querySelector(".ngay-tao").textContent = data.ngayTao;
+        modal.querySelector(".pttt").textContent = data.pttt;
+        modal.querySelector(".tong-tien").textContent = data.tongTien;
+        modal.querySelector(".dia-chi").textContent = data.diaChi || "Không có thông tin";
     // modal.querySelector(".modal-body .hoa-don-id").value = id;
-    const hoaDonIdInput = modal.querySelector("input.hoa-don-id")
-
-    if (hoaDonIdInput) {
-        hoaDonIdInput.value = id;
-        console.log("Đã gán ID:", id);
-    } else {
-        console.error("Không tìm thấy input .hoa-don-id trong modal");
-    }
+        const idInput = modal.querySelector("input.hoa-don-id");
+        if (idInput) idInput.value = data.id;
 
 
 
-    // Xử lý combobox trạng thái
-    const trangThaiSelect = modal.querySelector(".modal-body .trang-thai");
-    trangThaiSelect.innerHTML = ""; // Xóa các tùy chọn hiện tại
+        const selectTrangThai = modal.querySelector("select.trang-thai");
+        selectTrangThai.innerHTML = "";
 
-    // Danh sách trạng thái (lấy từ HoaDonEnum)
-    const statuses = [
-        { value: "PENDING", label: "Đang xử lý" },
-        { value: "PAID", label: "Đã thanh toán" },
-        { value: "EXPIRED", label: "Hết hạn" },
-        { value: "CANCELLED", label: "Đã hủy" },
-        { value: "REFUNDED", label: "Đã hoàn tiền" },
-        { value: "DANGGIAO", label: "Đang giao" },
-        { value: "DAGIAO", label: "Đã giao" },
-        { value: "DADAT", label: "Đã đặt" }
-    ];
+        const allStatuses = [
+            { v: "PENDING", l: "Đang xử lý" },
+            { v: "DADAT", l: "Đã đặt" },
+            { v: "PAID", l: "Đã thanh toán" },
+            { v: "DANGGIAO", l: "Đang giao" },
+            { v: "DAGIAO", l: "Đã giao" },
+            { v: "CANCELLED", l: "Đã hủy" },
+            { v: "EXPIRED", l: "Hết hạn" },
+            { v: "REFUNDED", l: "Đã hoàn tiền" }
+        ];
 
-    if (trangThai === "PENDING") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "PENDING" || status.value === "DADAT"
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "DADAT" && pttt ==="Tiền mặt") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "DADAT" || status.value === "DANGGIAO" 
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "DADAT" && pttt ==="Chuyển khoản") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "DADAT" || status.value === "PAID" 
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "DANGGIAO") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "DANGGIAO" || status.value === "DAGIAO"
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "DAGIAO" && pttt === "Tiền mặt") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "DAGIAO" || status.value === "PAID"
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "EXPIRED") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "EXPIRED" || status.value === "CANCELLED"
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "CANCELLED") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "CANCELLED"
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "PAID" && pttt === "Tiền mặt") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "PAID"
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else if (trangThai === "PAID" && pttt === "Chuyển khoản") {
-        const allowedStatuses = statuses.filter(status => 
-            status.value === "PAID" ||status.value === "DANGGIAO"
-        );
-        allowedStatuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    } else {
-        // Hiển thị tất cả trạng thái
-        statuses.forEach(status => {
-            const option = document.createElement("option");
-            option.value = status.value;
-            option.textContent = status.label;
-            if (status.value === trangThai) {
-                option.selected = true;
-            }
-            trangThaiSelect.appendChild(option);
-        });
-    }
+        let allowed = [];
+        if (data.trangThai === "PENDING") {
+            allowed = ["PENDING", "DADAT", "CANCELLED"];
+        } else if (data.trangThai === "DADAT") {
+            allowed = (data.pttt === "Tiền mặt") ? ["DADAT", "DANGGIAO", "CANCELLED"] : ["DADAT", "PAID", "CANCELLED"];
+        } else if (data.trangThai === "PAID") {
+            allowed = ["PAID", "DANGGIAO"];
+        } else if (data.trangThai === "DANGGIAO") {
+            allowed = ["DANGGIAO", "DAGIAO"];
+        } else if (data.trangThai === "DAGIAO") {
+            allowed = (data.pttt === "Tiền mặt") ? ["DAGIAO", "PAID"] : ["DAGIAO"];
+        } else {
+            allowed = [data.trangThai]; 
+        }
 
-    // Hiển thị chi tiết sản phẩm
-    const cthd = JSON.parse(button.getAttribute("data-cthd"));
-    const tbody = modal.querySelector(".cthd-body");
-    tbody.innerHTML = "";
+        allStatuses.forEach(s => {
+            if (allowed.includes(s.v)) {
+                const opt = new Option(s.l, s.v);
+                if (s.v === data.trangThai) opt.selected = true;
+                selectTrangThai.add(opt);
+            }
+        });
 
-    cthd.forEach(item => {
-        const row = `
-            <tr>
-                <td>${item.SOSERI}</td>
-                <td>${item.GIALUCDAT}đ</td>
-                <td>${item.TRANGTHAIBH}</td>
-            </tr>
-        `;
-        tbody.innerHTML += row;
-    });
-});
-
+        const tbody = modal.querySelector(".cthd-body");
+            tbody.innerHTML = data.cthd.length > 0 ? data.cthd.map(item => `
+                <tr>
+                    <td class="fw-bold text-primary">${item.SOSERI || 'N/A'}</td>
+                    <td>${formatter.format(item.GIALUCDAT || 0).replace('₫', 'đ')}</td>
+                    <td><span class="badge ${item.TRANGTHAIBH === 'Còn hạn' ? 'bg-success' : 'bg-danger'}">${item.TRANGTHAIBH || 'Không rõ'}</span></td>
+                </tr>
+            `).join('') : '<tr><td colspan="3">Không có chi tiết sản phẩm</td></tr>';
+        });
 });
 </script>
 
@@ -265,7 +112,13 @@ document.addEventListener("DOMContentLoaded", function () {
 <div class="p-4 bg-light">
     <div class="col-md-12 d-flex flex-wrap align-items-center gap-3">
         <form class="d-flex flex-wrap w-100 gap-2" method="GET" role="search">
-            <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm" aria-label="Search" name="keywordSoSeri" value="{{ request('keywordSoSeri') }}" style="min-width: 150px;">
+            <input class="form-control me-2" type="search" 
+                placeholder="Tìm tài khoản (email), tên nhân viên" 
+                aria-label="Search" 
+                name="keyword" 
+                value="{{ request('keyword') }}" 
+                style="min-width: 380px; max-width: 500px;">
+
             <select name="trangthai" class="selectpicker" title="Chọn trạng thái" style="max-width: 200px;" data-live-search="true" data-size="5">
                 <option disabled {{ request('trangthai') ? '' : 'selected' }}>Chọn trạng thái</option>
                 @foreach ($hoaDonStatuses as $status)
@@ -313,9 +166,9 @@ document.addEventListener("DOMContentLoaded", function () {
             </select>
             <div class="d-flex align-items-center gap-2">
                 <label for="calendarStart" class="fw-bold">Ngày:</label>
-                <input name="ngaybatdau" type="date" id="calendarStart" class="form-control" style="max-width: 140px;">
+                <input name="ngaybatdau" type="date" id="calendarStart" class="form-control" style="max-width: 140px;" value="{{ request('ngaybatdau') }}">
                 <span class="fw-bold">-</span>
-                <input name="ngayketthuc" type="date" id="calendarEnd" class="form-control" style="max-width: 140px;">
+                <input name="ngayketthuc" type="date" id="calendarEnd" class="form-control" style="max-width: 140px;" value="{{ request('ngayketthuc') }}">
             </div>
             <!-- <div class="d-flex align-items-center gap-2">
                 <span class="fw-bold">Tiền:</span>
@@ -574,23 +427,14 @@ document.addEventListener("DOMContentLoaded", function () {
         </div>
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-<!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
-<!-- jQuery (cần thiết cho Select2) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<!-- Bootstrap-select CSS -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/css/bootstrap-select.min.css">
-
-<!-- jQuery (nếu chưa có) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Bootstrap-select JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap-select@1.14.0-beta3/dist/js/bootstrap-select.min.js"></script>
-
 
 

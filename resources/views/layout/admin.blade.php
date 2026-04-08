@@ -472,6 +472,10 @@ use Illuminate\Support\Facades\View as FacadesView;
                             $soSeri = $_GET['keywordSoSeri'];
                             $listHoaDon = $hoaDonBUS->getHoaDonsBySoseri($soSeri);
                         }
+                        if (isset($_GET['keyword']) && !empty(trim($_GET['keyword']))) {
+                            $keyword = trim($_GET['keyword']);
+                            $listHoaDon = $hoaDonBUS->searchByEmailOrNhanVien($keyword);
+                        }
 
                         
 

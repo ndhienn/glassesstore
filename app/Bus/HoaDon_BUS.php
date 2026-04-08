@@ -96,12 +96,6 @@ class HoaDon_BUS{
 
         return $hoaDons;
     }
-
-    public function getHoaDonsBySoseri($soSeri) {
-        $hoaDons = $this->hoaDonDAO->getHoaDonsBySoseri($soSeri);
-
-        return $hoaDons;
-    }
     
 
     public function getHoaDonsOrderByTongTien(string $order = 'ASC')
@@ -109,4 +103,8 @@ class HoaDon_BUS{
         return $this->hoaDonDAO->getHoaDonsOrderByTongTien($order);
     }
 
+    public function searchByEmailOrNhanVien(string $keyword): array
+    {
+        return $this->hoaDonDAO->searchByEmailOrNhanVien($keyword);
+    }
 }

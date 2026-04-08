@@ -243,6 +243,44 @@ class HoaDon_DAO{
 
 
 
+    public function searchByEmail(string $email): array
+    {
+        $list = [];
+        $query = "SELECT * FROM hoadon WHERE EMAIL LIKE ?";
+        $rs = database_connection::executeQuery($query, "%" . $email . "%");
+
+        while ($row = $rs->fetch_assoc()) {
+            $model = $this->createHoaDonModel($row);
+            if ($model) {
+                $list[] = $model;
+            }
+        }
+        return $list;
+    }
+
+
+    public function searchByEmailOrNhanVien(string $keyword): array
+    {
+        $list = [];
+        $query = "
+            SELECT DISTINCT hd.* 
+            FROM hoadon hd
+            LEFT JOIN nguoidung nd ON hd.IDNHANVIEN = nd.ID
+            WHERE hd.EMAIL LIKE ? 
+               OR nd.HOTEN LIKE ?
+        ";
+        $param = "%" . $keyword . "%";
+        $rs = database_connection::executeQuery($query, $param, $param);
+
+        while ($row = $rs->fetch_assoc()) {
+            $model = $this->createHoaDonModel($row);
+            if ($model) {
+                $list[] = $model;
+            }
+        }
+        return $list;
+    }
+
 
 
 }

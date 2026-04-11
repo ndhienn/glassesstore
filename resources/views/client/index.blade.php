@@ -19,10 +19,76 @@ use App\Bus\SanPham_BUS;
         <div class="alert alert-success successAlert fixed-top left-alert" style="width: 500px;">{{ session('success') }}</div>        
     @endif
     <style>
+    .custom-range::-webkit-slider-thumb {
+        background: #55d5d2 !important;
+        border: 2px solid #fff;
+        box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        cursor: pointer;
+    }
+    .txtgia {
+        background-color: #55d5d2; 
+        transition: all 0.3s ease-in-out !important; 
+        cursor: pointer;
+        display: inline-flex; 
+        align-items: center;
+        justify-content: center;
+    }
+
+    .txtgia:hover {
+      
+        filter: brightness(1.1); 
+        
+      
+        box-shadow: 0 0 15px rgba(85, 213, 210, 0.7); 
+        
+   
+        transform: translateY(-3px);
+    }
+
+
+   
+    .btn-cart {
+        background-color: #f8f9fa;
+        color: #333;
+        border: 2px solid #ced4da; 
+        transition: all 0.2s ease-in-out;
+    }
+
+   
+    .btn-cart:hover:not(:disabled) {
+        background-color: #ffffff !important; 
+        color: #000;
+        
+    
+        border: 3px solid #6c757d !important; 
+        
+       
+        box-shadow: 0 0 10px rgba(108, 117, 125, 0.4); 
+    }
+
+   
+    .btn-buy {
+        background-color: #55d5d2; 
+        color: white;
+        border: none; 
+        transition: all 0.3s ease-in-out;
+    }
+
+   
+    .btn-buy:hover:not(:disabled) {
+      
+        background-color: #22a5a3 !important; 
+        
+       
+        box-shadow: 0 0 15px rgba(46, 204, 113, 0.6); 
+        
+       
+        filter: brightness(1.1);
+    }
       .left-alert {
-        left: 20px; /* Căn trái */
-        top: 20px;  /* Căn trên */
-        z-index: 1050; /* Đảm bảo alert nổi bật hơn các phần khác */
+        left: 20px; 
+        top: 20px;  
+        z-index: 1050; 
     }
 header {
     position: sticky;
@@ -267,20 +333,18 @@ form[role="search"] i {
     position: relative;
     z-index: 1001;
 }
+.filter-item {
+        position: relative;
+        z-index: 1;
+    }
 
+    .form-select {
+        cursor: pointer;
+        border: 1px solid #ced4da;
+    }
 .filter-dropdown .dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 15px;
-    z-index: 1000;
-    min-width: 250px;
-    box-shadow: 0 2px 5px rgba(31, 202, 193, 0.73);
-}
+        display: none !important; /* Vô hiệu hóa menu cũ nếu còn sót */
+    }
 
 .filter-dropdown .dropdown-menu.show {
     display: block;
@@ -350,13 +414,53 @@ form[role="search"] i {
     color: black;
     transition: all 0.2s ease;
 }
+.alert:not(.alert-container-top-right .alert) {
+    display: none !important;
+}
+.alert-container-top-right {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    width: 320px;
+}
     </style>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script>
+
+
+  <script>
+  function updatePriceLabel(value) {
+    const formatted = new Intl.NumberFormat('vi-VN').format(value) + 'đ';
+    document.getElementById('priceLabel').textContent = formatted;
+}
 document.addEventListener('DOMContentLoaded', () => {
     let isLoading = false;
     let debounceTimeout = null;
+// 1. XỬ LÝ DROPDOWN USER 
+    try {
+        const userBtn = document.getElementById('userDropdownBtn');
+        const userDropdown = document.getElementById('userDropdownMenu');
 
+        if (userBtn && userDropdown) {
+            userBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Đã nhấn vào User Dropdown");
+                
+                const isHidden = userDropdown.style.display === 'none' || userDropdown.style.display === '';
+                userDropdown.style.display = isHidden ? 'block' : 'none';
+            });
+
+            // Ngăn đóng menu khi click vào bên trong (chỗ nút Đăng xuất)
+            userDropdown.addEventListener('click', (e) => e.stopPropagation());
+
+            // Đóng khi click ra ngoài
+            document.addEventListener('click', () => {
+                userDropdown.style.display = 'none';
+            });
+        }
+    } catch (e) {
+        console.error("Lỗi dropdown user:", e);
+    }
     // Hàm debounce
     const debounce = (func, delay) => {
         return (...args) => {
@@ -461,30 +565,74 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Hàm xử lý click sản phẩm
-    const handleProductClick = function () {
-        const modal = document.getElementById('productDetailModal');
-        if (!modal) return;
+const handleProductClick = function () {
+    const modal = document.getElementById('productDetailModal');
+    if (!modal) return;
 
-        const idspInput = modal.querySelector('input[name="idsp"]');
-        const idspInput2 = modal.querySelector('input[name="idsp2"]');
-        if (idspInput) {
-            idspInput.value = this.dataset.idsp || '';
-            idspInput2.value = this.dataset.idsp || '';
+    // 1. Gán các giá trị ID sản phẩm vào form
+    const idspInput = modal.querySelector('input[name="idsp"]');
+    const idspInput2 = modal.querySelector('input[name="idsp2"]');
+    if (idspInput) {
+        idspInput.value = this.dataset.idsp || '';
+        idspInput2.value = this.dataset.idsp || '';
+    }
+
+    // 2. Đổ dữ liệu text và hình ảnh vào Modal
+    modal.querySelector('div[name="tensp"]').textContent = this.dataset.tensp || 'Không xác định';
+    modal.querySelector('div[name="hang"]').textContent = this.dataset.hang || 'Không xác định';
+    modal.querySelector('div[name="lsp"]').textContent = this.dataset.lsp || 'Không xác định';
+    modal.querySelector('div[name="kieudang"]').textContent = this.dataset.kieudang || 'Không xác định';
+    modal.querySelector('div[name="mota"]').textContent = this.dataset.mota || 'Không có mô tả';
+    modal.querySelector('div[name="dongia"]').textContent = this.dataset.dongia || '0₫';
+    modal.querySelector('div[name="tgbh"]').textContent = this.dataset.tgbh || '0';
+    modal.querySelector('img[name="img"]').src = this.dataset.img || '/placeholder.jpg';
+    
+    // Hiển thị số lượng tồn kho
+    const stockValue = parseInt(this.dataset.stock) || 0;
+    modal.querySelector('div[name="stock"]').textContent = stockValue;
+
+    // 3. Xử lý KHÓA NÚT khi hết hàng (Stock = 0)
+    const btnCart = modal.querySelector('.btn-cart');
+    const btnBuy = modal.querySelector('.btn-buy');
+
+    if (stockValue <= 0) {
+        // Trạng thái HẾT HÀNG
+        if (btnCart) {
+            btnCart.disabled = true;
+            btnCart.innerText = "Hết hàng";
+            // Khi disable thì set màu cố định để không hover được
+            btnCart.style.backgroundColor = "#e9ecef";
+            btnCart.style.color = "#6c757d";
+            btnCart.style.border = "2px solid #dee2e6";
+            btnCart.style.cursor = "not-allowed";
         }
+        if (btnBuy) {
+            btnBuy.disabled = true;
+            btnBuy.style.display = "none";
+        }
+    } else {
+        // Trạng thái CÒN HÀNG
+        if (btnCart) {
+            btnCart.disabled = false;
+            btnCart.innerText = "Thêm vào giỏ";
+            
+           
+            btnCart.style.backgroundColor = ""; 
+            btnCart.style.color = "";
+            btnCart.style.border = "";
+            btnCart.style.cursor = "pointer";
+        }
+        if (btnBuy) {
+            btnBuy.disabled = false;
+            btnBuy.style.display = "block";
+            btnBuy.style.backgroundColor = ""; // Để CSS điều khiển màu
+            btnBuy.style.cursor = "pointer";
+        }
+    }
 
-        modal.querySelector('div[name="tensp"]').textContent = this.dataset.tensp || 'Không xác định';
-        modal.querySelector('div[name="hang"]').textContent = this.dataset.hang || 'Không xác định';
-        modal.querySelector('div[name="lsp"]').textContent = this.dataset.lsp || 'Không xác định';
-        modal.querySelector('div[name="kieudang"]').textContent = this.dataset.kieudang || 'Không xác định';
-        modal.querySelector('div[name="mota"]').textContent = this.dataset.mota || 'Không có mô tả';
-        modal.querySelector('div[name="dongia"]').textContent = this.dataset.dongia || '0₫';
-        modal.querySelector('div[name="tgbh"]').textContent = this.dataset.tgbh || '0';
-        modal.querySelector('img[name="img"]').src = this.dataset.img || '/placeholder.jpg';
-        modal.querySelector('div[name="stock"]').textContent = this.dataset.stock || '0';
-
-        new bootstrap.Modal(modal).show();
-    };
-
+    // 4. Hiển thị Modal
+    new bootstrap.Modal(modal).show();
+};
     // Hàm gắn sự kiện cho các nút phân trang
     const attachPaginationEvents = () => {
         document.querySelectorAll('.pagination .page-link').forEach(link => {
@@ -677,28 +825,6 @@ if (filterKeywordInput) {
         debounce(loadProducts, 300)('?' + params.toString(), true);
     });
 
-    // Xử lý dropdown người dùng
-    const userBtn = document.getElementById('userDropdownBtn');
-    const userDropdown = document.getElementById('userDropdownMenu');
-    if (userBtn && userDropdown) {
-        userBtn.removeEventListener('click', handleUserBtnClick);
-        userBtn.addEventListener('click', handleUserBtnClick);
-
-        document.removeEventListener('click', handleUserDropdownClick);
-        document.addEventListener('click', handleUserDropdownClick);
-
-        function handleUserBtnClick(e) {
-            e.stopPropagation();
-            userDropdown.style.display = userDropdown.style.display === 'block' ? 'none' : 'block';
-        }
-
-        function handleUserDropdownClick(e) {
-            if (!userBtn.contains(e.target)) {
-                userDropdown.style.display = 'none';
-            }
-        }
-    }
-
     // Xử lý nút đóng modal
     const closeModalBtn = document.querySelector('.btn-close');
     if (closeModalBtn) {
@@ -729,22 +855,7 @@ if (filterKeywordInput) {
         setTimeout(() => successAlert.remove(), 4000);
     }
 
-    // Hiệu ứng hover cho giá
-    const txtgiaElements = document.querySelectorAll('.txtgia');
-    txtgiaElements.forEach(item => {
-        item.removeEventListener('mouseenter', handleMouseEnter);
-        item.removeEventListener('mouseleave', handleMouseLeave);
-        item.addEventListener('mouseenter', handleMouseEnter);
-        item.addEventListener('mouseleave', handleMouseLeave);
-
-        function handleMouseEnter() {
-            item.style.backgroundColor = '#fb923c';
-        }
-
-        function handleMouseLeave() {
-            item.style.backgroundColor = '#55d5d2';
-        }
-    });
+   
 
     // Xử lý dropdown "Sản phẩm" bằng AJAX
     const setupSanPhamDropdown = () => {
@@ -791,6 +902,21 @@ if (filterKeywordInput) {
 
     <!-- Nội dung trang chính ở đây -->
      <header >
+        <div class="alert-container-top-right">
+    @if(session('success'))
+        <div class="alert alert-success custom-alert-flat alert-dismissible fade show" role="alert">
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter: brightness(0);"></button>
+        </div>
+    @endif
+
+    @if(session('error') || $errors->any())
+        <div class="alert alert-danger custom-alert-flat alert-dismissible fade show" role="alert">
+            {{ session('error') ?? $errors->first() }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" style="filter: brightness(0);"></button>
+        </div>
+    @endif
+</div>
     <div class="text-white" id="navbar-ctn" style="background-color: white; padding: 10px 10%;border-radius: 0 0 20px 20px;">
       <div class="top-nav">
         <ul class="list-top-nav d-flex ms-auto gap-2">
@@ -804,14 +930,15 @@ if (filterKeywordInput) {
             <li class="nav-item px-3 py-1 bg-secondary text-white fw-medium rounded-pill" id="tracuudonhang"><a href="/admin">Trang quản trị</a></li>
           @endif
           <li class="nav-item px-3 py-1 bg-secondary text-white fw-medium rounded-pill" id="userDropdownBtn" style="position: relative; cursor: pointer;">
-            {{$user->getTenTK()}}
-            <div id="userDropdownMenu" class="" style="display: none ; width: 150px; height: auto; position: absolute; right: 0; background: white; border: 1px solid #ccc; padding: 10px; z-index: 999;align-items: center; border-radius: 5px; padding: 15px;">
-                <form action="{{ route('logout') }}" method="POST">
-                    @csrf
-                    <button type="submit" class="btn btn-danger btn-sm" style="height: 40px; width: 120px; margin: auto;">Đăng xuất</button>
-                </form>
-            </div>
-          </li>
+    {{$user->getTenTK()}}
+    
+    <div id="userDropdownMenu" style="display: none; width: 150px; position: absolute; top: 45px; right: 0; background: white; border: 1px solid #ccc; z-index: 1000; border-radius: 5px; padding: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+        <form action="{{ route('logout') }}" method="POST" style="margin: 0; width: 100%;">
+            @csrf
+            <button type="submit" class="btn btn-danger btn-sm" style="width: 100%; height: 40px;">Đăng xuất</button>
+        </form>
+    </div>
+</li>
           @else 
           <li class="nav-item px-3 py-1 bg-secondary text-white fw-medium rounded-pill" id="taikhoan"><a href="/login">Đăng nhập</a></li>
           @endif
@@ -882,7 +1009,7 @@ if (filterKeywordInput) {
 
     <div class="main justify-content-center d-flex">
       <div class="best-seller text-center">
-        <h1 class="text-start" style="width: fit-content; ;color: #55d5d2; border-bottom: solid 5px #55d5d2;margin-right: auto; font-family: Roboto;">BÁN CHẠY NHẤT</h1>
+        
         <div class="row my-5" style="max-height: 380px;display: flex;">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4 my-5 w-100">
               @foreach($top4Product as $sp)
@@ -934,85 +1061,58 @@ if (filterKeywordInput) {
   <div class="d-flex justify-content-between p-5">
     <h1 style="font-family: Sigmar; font-weight: 800; color: #555; width: 40%;">BỘ SƯU TẬP MỚI NHẤT</h1>
     <form method="get" role="search" class="d-flex justify-content-between gap-3 align-items-center" style="width: 70%;">
-      <!-- Lọc nâng cao -->
-      <!-- Lọc nâng cao -->
-<div class="filter-dropdown filter-item" style="position: relative;">
-  <button type="button" class="btn btn-outline-secondary w-100 text-center filter-button" id="filter-toggle">Tìm Kiếm</button>
-  <div class="dropdown-menu p-3" id="filter-dropdown">
-    <div class="filter-options">
-      <!-- Thêm ô tìm kiếm theo tên sản phẩm -->
-      <label for="filter-keyword" class="form-label">Tên sản phẩm:</label>
-<input type="text" class="form-control" id="filter-keyword" value="" placeholder="Nhập tên sản phẩm">
       
-      <label for="filter-hang" class="form-label">Hãng:</label>
-      <select class="form-select mb-2" id="filter-hang" name="filter_hang">
-        <option value="0">Xem tất cả</option>
-        @foreach($listHang as $h)
-        <option value="{{ $h->getId() }}" {{ request('filter_hang') == $h->getId() ? 'selected' : '' }}>{{ $h->getTenHang() }}</option>
-        @endforeach
-      </select>
-      <label for="filter-lsp" class="form-label">Loại mắt kính:</label>
-      <select class="form-select mb-2" id="filter-lsp" name="filter_lsp">
-        <option value="0">Xem tất cả</option>
-        @foreach($listLSP as $lsp)
-        <option value="{{ $lsp->getId() }}" {{ request('filter_lsp') == $lsp->getId() ? 'selected' : '' }}>{{ $lsp->getTenLSP() }}</option>
-        @endforeach
-      </select>
-      <label for="filter-kieudang" class="form-label">Kiểu dáng:</label>
-      <select class="form-select mb-2" id="filter-kieudang" name="filter_kieudang">
-        <option value="0">Xem tất cả</option>
-        @if(!empty($listKieuDang))
-          @foreach($listKieuDang as $kd)
-            @if($kd->getTenKieuDang() != 'Không xác định')
-            <option value="{{ $kd->getId() }}" {{ request('filter_kieudang') == $kd->getId() ? 'selected' : '' }}>{{ $kd->getTenKieuDang() }}</option>
-            @endif
-          @endforeach
-        @else
-          <option value="0" disabled>Không có kiểu dáng</option>
-        @endif
-      </select>
-      <label for="filter-price-from" class="form-label">Giá từ (VNĐ):</label>
-      <input type="number" class="form-control mb-2" id="filter-price-from" name="filter_price_from" placeholder="Từ" min="0" value="{{ request('filter_price_from') ?? '' }}">
-      <label for="filter-price-to" class="form-label">Đến (VNĐ):</label>
-      <input type="number" class="form-control mb-2" id="filter-price-to" name="filter_price_to" placeholder="Đến" min="0" value="{{ request('filter_price_to') ?? '' }}">
-      <button type="button" class="btn btn-primary w-100 mt-2 apply-filter-btn" id="apply-filter">Lọc</button>
-    </div>
-  </div>
-</div>
+    <!-- Lọc nâng cao -->
+  <div class="filter-item" style="flex: 2; min-width: 200px; padding: 0 10px;">
+            <div class="d-flex justify-content-between">
+                <label class="fw-bold mb-1 small">Giá tối đa:</label>
+                <span id="priceLabel" style="color: #55d5d2 !important;" class="text-primary fw-bold small">{{ number_format(request('filter_price_to') ?? 1000000, 0, ',', '.') }}đ</span>
+            </div>
+            <input type="range" class="form-range custom-range" name="filter_price_to" id="priceRange"
+                   min="0" max="5000000" step="50000" 
+                   value="{{ request('filter_price_to') ?? 1000000 }}" 
+                   oninput="updatePriceLabel(this.value)">
+            <input type="hidden" name="filter_price_from" value="0">
+        </div>
 
       <!-- Lọc theo loại (lsp) -->
-      <div class="filter-dropdown filter-item" style="position: relative;">
-        <button type="button" class="btn btn-outline-secondary w-100 text-center filter-button" id="lsp-toggle">Loại Mắt Kính</button>
-        <div class="dropdown-menu p-3" id="lsp-dropdown">
-          <div class="filter-options">
-            <select class="form-select mb-2" name="lsp" id="lsp">
-              <option disabled value="" {{ request('lsp') ? '' : 'selected' }}>Lọc theo loại</option>
-              <option value="0">Xem tất cả</option>
-              @foreach($listLSP as $lsp)
-              <option value="{{ $lsp->getId() }}" {{ request('lsp') == $lsp->getId() ? 'selected' : '' }}>{{ $lsp->getTenLSP() }}</option>
-              @endforeach
+      <div class="filter-item" style="flex: 1; min-width: 140px;">
+        <label class="fw-bold mb-1 small">Loại mắt kính:</label>
+        <select class="form-select" name="lsp">
+            <option value="0">Tất cả loại</option>
+            @foreach($listLSP as $lsp)
+                <option value="{{ $lsp->getId() }}" {{ request('lsp') == $lsp->getId() ? 'selected' : '' }}>{{ $lsp->getTenLSP() }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="filter-item" style="flex: 1; min-width: 130px;">
+            <label class="fw-bold mb-1 small">Kiểu dáng:</label>
+            <select class="form-select" name="kieudang">
+                <option value="0">Tất cả kiểu</option>
+                @if(!empty($listKieuDang))
+                    @foreach($listKieuDang as $kd)
+                        @if($kd->getTenKieuDang() != 'Không xác định')
+                            <option value="{{ $kd->getId() }}" {{ request('kieudang') == $kd->getId() ? 'selected' : '' }}>{{ $kd->getTenKieuDang() }}</option>
+                        @endif
+                    @endforeach
+                @endif
             </select>
-            <button type="button" class="btn btn-primary w-100 mt-2" id="apply-lsp-filter">Áp dụng</button>
-          </div>
         </div>
-      </div>
-
-      <!-- Lọc theo hãng (hang) -->
-      <div class="filter-dropdown filter-item" style="position: relative;">
-        <button type="button" class="btn btn-outline-secondary w-100 text-center filter-button" id="hang-toggle">Hãng</button>
-        <div class="dropdown-menu p-3" id="hang-dropdown">
-          <div class="filter-options">
-            <select class="form-select mb-2" name="hang" id="hang">
-              <option disabled value="" {{ request('hang') ? '' : 'selected' }}>Lọc theo hãng</option>
-              <option value="0">Xem tất cả</option>
-              @foreach($listHang as $h)
-              <option value="{{ $h->getId() }}" {{ request('hang') == $h->getId() ? 'selected' : '' }}>{{ $h->getTenHang() }}</option>
-              @endforeach
-            </select>
-            <button type="button" class="btn btn-primary w-100 mt-2" id="apply-hang-filter">Áp dụng</button>
-          </div>
+    <div class="filter-item" style="flex: 1; min-width: 140px;">
+        <label class="fw-bold mb-1 small">Hãng:</label>
+        <select class="form-select" name="hang">
+            <option value="0">Tất cả hãng</option>
+            @foreach($listHang as $h)
+                <option value="{{ $h->getId() }}" {{ request('hang') == $h->getId() ? 'selected' : '' }}>{{ $h->getTenHang() }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="filter-item" style="flex: 0.5; min-width: 80px;">
+            <button type="submit" class="btn fw-bold text-white w-100" 
+                    style="background-color: #55d5d2; border: none; height: 38px;">
+                Lọc
+            </button>
         </div>
-      </div>
     </form>
   </div>
 
@@ -1210,13 +1310,12 @@ if (filterKeywordInput) {
         <div class="logo">
           <img src="/client/img/logo.svg" alt="Anna Logo">
         </div>
-        <div class="newsletter">
-          <p>Đăng kí để nhận tin mới nhất</p>
-          <div class="email-input">
-            <input type="email" placeholder="Để lại email của bạn" style="font-size:20px;padding: 5px; border-radius:20px;width:50%;">
-            <button>></button>
-          </div>
-        </div>
+       <div class="company-info mt-4"  style="color: white; line-height: 1.4;">
+    <h2>Giới thiệu</h2>
+    <strong>CÔNG TY CỔ PHẦN ALC PHÚ QUÝ</strong><br>
+    <strong>Địa chỉ trụ sở chính:</strong> Số 10 Xuân Thủy, Phường Cầu Giấy, Thành phố Hà Nội, Việt Nam<br>
+    <strong>Mã số doanh nghiệp:</strong> 0110489312 do Sở Tài Chính TP Hà Nội cấp lần đầu ngày 27/09/2023
+</div>
         <div class="social-icons">
           <a href="#"><i class="fa-brands fa-facebook-f"></i></a>
           <a href="#"><i class="fa-brands fa-instagram"></i></a>
@@ -1257,7 +1356,7 @@ if (filterKeywordInput) {
       </div>
     </div>
     <div class="copyright">
-      <p style="margin: 0;">Anna 2018-2023. Design by OKHUB Viet Nam</p>
+      <p style="margin: 0;">Anna 2018-2026. Design by OKHUB Viet Nam</p>
     </div>
   </footer>
 
@@ -1277,73 +1376,45 @@ if (filterKeywordInput) {
           </div>
           </div>
           <div class="p-2 d-flex flex-column gap-2" style="width: 70%;">
-            <div class="rounded-5 p-1 fw-semibold bg-primary-subtle" style="width: 120px;font-size: small;text-align: center;" name="lsp"></div>
-            <div class="rounded-5 p-1 fw-semibold bg-primary-subtle" style="width: 120px;font-size: small;text-align: center;" name="kieudang"></div>
-            <div class="fs-3 fw-semibold" name="tensp" id=""></div>
-            <div class="fs-2 fw-bold" style="color: #55d5d2;" name="dongia"></div>
-            <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Thương hiệu: <div class=" fw-bold" style="color: red;" name="hang"></div></div>
-            <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Mô tả: <div name="mota"></div></div>
-            <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Thời gian bảo hành: <div name="tgbh"></div> tháng</div>
-            <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Số lượng tồn kho: <div name="stock"> </div></div>
-            
-          </div>
-        </div>
-        <div class="p-5 d-flex flex-row-reverse gap-5" style="height: 20%;">
-          @if($isLogin)
-            @if($user->getIdQuyen()->getId() != 1 || $user->getIdQuyen()->getId() != 2)
-              <button type="button" class="btn btn-danger" style="width: 150px;" class="btn-close" data-bs-dismiss="modal" aria-label="Close">Hủy</button>
-              <form action="{{ route('index.addctgh') }}" method="post">
-                  @csrf
-                  <input type="hidden" name="idgh" value="{{$gh->getIdGH()}}">
-                  <input type="hidden" name="idsp" value="">
-                  <button type="submit" class="btn btn-light" style="width: 200px;">Thêm vào giỏ hàng</button>
-              </form>
-              <form action="{{route('payment.muangay')}}" method="get">
-                  <input type="hidden" name="idsp2" value="">
-                  <input type="hidden" name="quantity" value="1">
-                  <input type="hidden" name="price" value="">
-                  <button type="submit" class="btn btn-light" style="width: 150px;">Mua ngay</button>
-              </form>
-            @else
-              <button type="button" class="btn btn-danger" style="width: 150px;" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-bs-dismiss="modal" aria-label="Close">Hủy</button>
+    <div class="rounded-5 p-1 fw-semibold bg-primary-subtle" style="width: 120px;font-size: small;text-align: center;" name="lsp"></div>
+    <div class="rounded-5 p-1 fw-semibold bg-primary-subtle" style="width: 120px;font-size: small;text-align: center;" name="kieudang"></div>
+    <div class="fs-3 fw-semibold" name="tensp"></div>
+    <div class="fs-2 fw-bold price-highlight" style="color: #55d5d2;" name="dongia"></div>
+    <div class="fs-6 fw-semibold d-flex flex-row gap-3" style="color: #413f3f;">Thương hiệu: <div class="fw-bold" style="color: red;" name="hang"></div></div>
+    <div class="fs-6 fw-semibold d-flex flex-row gap-3" style="color: #413f3f;">Mô tả: <div name="mota"></div></div>
+    <div class="fs-6 fw-semibold d-flex flex-row gap-3" style="color: #413f3f;">Thời gian bảo hành: <div name="tgbh"></div> tháng</div>
+    <div class="fs-6 fw-semibold d-flex flex-row gap-3 mb-3" style="color: #413f3f;">Số lượng: <div name="stock"></div></div>
+
+    <div class="d-flex gap-3">
+        @if($isLogin)
+            @if($user->getIdQuyen()->getId() != 1 && $user->getIdQuyen()->getId() != 2)
+                <form action="{{ route('index.addctgh') }}" method="post" id="form-add-cart">
+                    @csrf
+                    <input type="hidden" name="idgh" value="{{$gh->getIdGH()}}">
+                    <input type="hidden" name="idsp" value="">
+                    <button type="submit" class="btn btn-light btn-cart" style="width: 200px; border: 2px solid #ced4da">Thêm vào giỏ</button>
+                </form>
+
+                <form action="{{route('payment.muangay')}}" method="get" id="form-buy-now">
+                    <input type="hidden" name="idsp2" value="">
+                    <input type="hidden" name="quantity" value="1">
+                    <input type="hidden" name="price" value="">
+                    <button type="submit" class="btn btn-primary btn-buy" style="width: 150px; background-color: #55d5d2; border: none;">Mua ngay</button>
+                </form>
             @endif
-          @else
-                
-                <button type="button" class="btn btn-danger" style="width: 150px;" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-bs-dismiss="modal" aria-label="Close">Hủy</button>
-                <a class="d-flex flex-row-reverse gap-5" href="/login">
-                  <button type="submit" class="btn btn-light" style="width: 200px;">Thêm vào giỏ hàng</button>
-                  <button type="submit" class="btn btn-light" style="width: 150px;">Mua ngay</button>
-                </a>
-          @endif
-        </div>
-      </div>
-      
+        @else
+            <a href="/login" class="btn btn-light btn-cart" style="width: 200px; border: 2px solid #ced4da;">Thêm vào giỏ</a>
+            <a href="/login" class="btn btn-primary btn-buy" style="width: 150px; background-color: #55d5d2; border: none;">Mua ngay</a>
+        @endif
     </div>
-  </div>
 </div>
 @if(session('error'))
     <div class="alert alert-danger successAlert">{{ session('error') }}</div>
 @elseif(session('success'))
     <div class="alert alert-success successAlert">{{ session('success') }}</div>        
 @endif
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  const txtgia = document.querySelectorAll(".txtgia");
-  txtgia.forEach(item => {
-    item.addEventListener('mouseenter', () => {
-       
-      item.style.backgroundColor = "#fb923c"
-
-    })
-    item.addEventListener('mouseleave', () => {
-        
-      item.style.backgroundColor = "#55d5d2"
-
-    })
-});
-  </script>
-  <script>
-  let lastScrollTop = 0;
+    let lastScrollTop = 0;
   const navbar = document.getElementById("navbar-ctn");
 
   window.addEventListener("scroll", function() {
@@ -1358,3 +1429,20 @@ if (filterKeywordInput) {
     lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
   }, false);
 </script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const alerts = document.querySelectorAll('.alert-container-top-right .alert');
+        alerts.forEach(function(alert) {
+            setTimeout(function() {
+                // Tắt sau 3 giây
+                if (typeof bootstrap !== 'undefined') {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+                    if (bsAlert) bsAlert.close();
+                } else {
+                    alert.remove(); 
+                }
+            }, 3000);
+        });
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

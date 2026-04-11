@@ -103,8 +103,8 @@ class HoaDon_BUS{
         return $this->hoaDonDAO->getHoaDonsOrderByTongTien($order);
     }
 
-    public function searchByEmailOrNhanVien(string $keyword): array
+    public function searchByEmailOrSDT(string $keyword): array
     {
-        return $this->hoaDonDAO->searchByEmailOrNhanVien($keyword);
+        return $this->hoaDonDAO->searchByEmailOrSDT($keyword);
     }
 }

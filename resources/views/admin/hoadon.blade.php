@@ -1,4 +1,31 @@
+<style>
+/* Tùy chỉnh màu sắc cho các nút bootstrap-select */
+.bootstrap-select > .dropdown-toggle.bs-placeholder, 
+.bootstrap-select > .dropdown-toggle.btn-light,
+.bootstrap-select > .dropdown-toggle {
+    background-color: #ffffff !important; /* Nền trắng */
+    border: 1px solid #dee2e6 !important; /* Viền xám nhẹ giống input */
+    color: #212529 !important;            /* Chữ đen */
+    box-shadow: none !important;          /* Bỏ bóng đổ */
+}
 
+/* Khi di chuột qua hoặc đang mở menu */
+.bootstrap-select > .dropdown-toggle:hover,
+.bootstrap-select > .dropdown-toggle:focus {
+    background-color: #f8f9fa !important;
+    border-color: #ced4da !important;
+}
+
+/* Màu chữ của phần text hiển thị bên trong */
+.bootstrap-select .filter-option-inner-inner {
+    color: #212529 !important;
+}
+
+/* Màu của mũi tên trỏ xuống */
+.bootstrap-select .dropdown-toggle .caret {
+    border-top-color: #212529 !important;
+}
+</style>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     // 1. Xử lý Search Form mượt hơn
@@ -10,10 +37,12 @@ document.addEventListener("DOMContentLoaded", function () {
             const url = new URL(window.location.href);
             url.searchParams.set('modun', 'hoadon');
             for (const [key, value] of formData.entries()) {
-                if (value && value !== 'Chọn trạng thái' && value !== 'Chọn tỉnh/thành phố') {
-                    url.searchParams.set(key, value);
-                }
-            }
+        if (value && value.trim() !== '') { 
+            url.searchParams.set(key, value);
+        } else {
+            url.searchParams.delete(key);
+        }
+    }
             window.location.href = url.toString();
         });
     }
@@ -33,6 +62,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const data = {
             id: button.getAttribute("data-id"),
             email: button.getAttribute("data-email"),
+            sdt: button.getAttribute("data-sdt"),
             nhanvien: button.getAttribute("data-nhanvien"),
             tenKh: button.getAttribute("data-tenkhachhang"),
             ngayTao: button.getAttribute("data-ngaytao"),
@@ -45,6 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
     // Gán dữ liệu vào modal
         modal.querySelector(".ma-don-hang").textContent = data.id;
         modal.querySelector(".tai-khoan").textContent = data.email;
+        modal.querySelector(".so-dien-thoai").textContent = data.sdt;
         modal.querySelector(".ten-khach-hang").textContent = data.tenKh;
         modal.querySelector(".nhan-vien").textContent = data.nhanvien;
         modal.querySelector(".ngay-tao").textContent = data.ngayTao;
@@ -67,7 +98,6 @@ document.addEventListener("DOMContentLoaded", function () {
             { v: "DANGGIAO", l: "Đang giao" },
             { v: "DAGIAO", l: "Đã giao" },
             { v: "CANCELLED", l: "Đã hủy" },
-            { v: "EXPIRED", l: "Hết hạn" },
             { v: "REFUNDED", l: "Đã hoàn tiền" }
         ];
 
@@ -94,14 +124,25 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        const tbody = modal.querySelector(".cthd-body");
-            tbody.innerHTML = data.cthd.length > 0 ? data.cthd.map(item => `
-                <tr>
-                    <td class="fw-bold text-primary">${item.SOSERI || 'N/A'}</td>
-                    <td>${formatter.format(item.GIALUCDAT || 0).replace('₫', 'đ')}</td>
-                    <td><span class="badge ${item.TRANGTHAIBH === 'Còn hạn' ? 'bg-success' : 'bg-danger'}">${item.TRANGTHAIBH || 'Không rõ'}</span></td>
-                </tr>
-            `).join('') : '<tr><td colspan="3">Không có chi tiết sản phẩm</td></tr>';
+       const tbody = modal.querySelector(".cthd-body");
+
+// Bộ định dạng tiền tệ tiêu chuẩn
+const formatVND = new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+});
+
+tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
+    // Lấy dữ liệu Seri và Đơn giá (hỗ trợ cả key HOA và thường)
+    const seri = item.SOSERI || item.seri || 'N/A';
+    const donGia = item.GIALUCDAT || item.dongia || item.DONGIA || 0;
+
+    return `
+        <tr>
+            <td class="text-dark">${seri}</td> <td class="text-dark">${formatVND.format(donGia).replace('₫', 'đ')}</td>
+        </tr>
+    `;
+}).join('') : '<tr><td colspan="2" class="text-center">Không có chi tiết sản phẩm</td></tr>';
         });
 });
 </script>
@@ -113,7 +154,7 @@ document.addEventListener("DOMContentLoaded", function () {
     <div class="col-md-12 d-flex flex-wrap align-items-center gap-3">
         <form class="d-flex flex-wrap w-100 gap-2" method="GET" role="search">
             <input class="form-control me-2" type="search" 
-                placeholder="Tìm tài khoản (email), tên nhân viên" 
+                placeholder="Tìm tài khoản (email, sdt)" 
                 aria-label="Search" 
                 name="keyword" 
                 value="{{ request('keyword') }}" 
@@ -155,21 +196,6 @@ document.addEventListener("DOMContentLoaded", function () {
                 @endforeach
             </select>
 
-
-            <select class="selectpicker" name="keywordTinh" data-live-search="true" data-size="5" title="Chọn tỉnh/thành phố" style="max-width: 200px;">
-                <option selected disabled>Chọn tỉnh/thành phố</option>
-                @foreach($listTinh as $tinh)
-                <option value="{{ $tinh->getId() }}" {{ request('keywordTinh') == $tinh->getId() ? 'selected' : '' }}>
-                    {{ $tinh->getTenTinh() }}
-                </option>
-                @endforeach
-            </select>
-            <div class="d-flex align-items-center gap-2">
-                <label for="calendarStart" class="fw-bold">Ngày:</label>
-                <input name="ngaybatdau" type="date" id="calendarStart" class="form-control" style="max-width: 140px;" value="{{ request('ngaybatdau') }}">
-                <span class="fw-bold">-</span>
-                <input name="ngayketthuc" type="date" id="calendarEnd" class="form-control" style="max-width: 140px;" value="{{ request('ngayketthuc') }}">
-            </div>
             <!-- <div class="d-flex align-items-center gap-2">
                 <span class="fw-bold">Tiền:</span>
                 <a href="?order=asc" class="btn btn-outline-primary">
@@ -179,7 +205,10 @@ document.addEventListener("DOMContentLoaded", function () {
                     <i class="fa-solid fa-arrow-down-wide-short"></i>
                 </a>
             </div> -->
-
+            <select name="sortDate" class="selectpicker" title="Sắp xếp ngày" style="max-width: 200px;">
+    <option value="desc" {{ request('sortDate') == 'desc' ? 'selected' : '' }}>Mới nhất</option>
+    <option value="asc" {{ request('sortDate') == 'asc' ? 'selected' : '' }}>Cũ nhất</option>
+</select>
             <button class="btn btn-success" type="submit">Tìm kiếm</button>
             <button class="btn btn-info" id="refreshBtn" type="button">Làm mới</button>
         </form>
@@ -189,8 +218,9 @@ document.addEventListener("DOMContentLoaded", function () {
         <table class="table table-striped table-bordered text-center table-hover">
             <thead class="">
                 <tr>
-                    <th scope="col">ID</th>
+                    <th scope="col">Mã hóa đơn</th>
                     <th scope="col">Tài khoản</th>
+                    <th scope="col">Số điện thoại</th>
                     <th scope="col">Nhân viên</th>
                     <th scope="col">Tổng tiền</th>
                     <th scope="col">PTTT</th>
@@ -206,6 +236,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 <tr>
                     <td>{{ $hoaDon->getId() }}</td>
                     <td>{{ $hoaDon->getEmail()->getEmail() }}</td>
+                    <td>{{ $hoaDon->getEmail()->getIdNguoiDung()->getSoDienThoai() }}</td>
                     <td>{{ $mapNguoiDung[$hoaDon->getIdNhanVien()->getId()] }}</td>
                     <td>{{ $hoaDon->getTongTien() }}</td>
                     <td>{{ $mapPTTT[$hoaDon->getIdPTTT()->getId()] }}</td>
@@ -235,6 +266,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         data-bs-target="#staticBackdropOrderModal"
                         data-id="{{ $hoaDon->getId() }}"
                         data-email="{{ $hoaDon->getEmail()->getEmail() }}"
+                        data-sdt="{{ $hoaDon->getEmail()->getIdNguoiDung()->getSoDienThoai() }}"
                         data-nhanvien="{{ $mapNguoiDung[$hoaDon->getIdNhanVien()->getId()] }}"
                         data-tenkhachhang="{{ $mapHoTenByEmail[$hoaDon->getEmail()->getEmail()] }}"
                         data-ngaytao="{{ $hoaDon->getNgayTao() }}"
@@ -319,9 +351,9 @@ document.addEventListener("DOMContentLoaded", function () {
                                     <table class="table">
                                         <thead>
                                             <tr>
-                                                <th scope="col" class="text-dark">Seri</th>
-                                                <th scope="col" class="text-dark">Đơn giá</th>
-                                                <th scope="col" class="text-dark">Trạng thái bảo hành</th>
+                                                <th scope="col" class="text-dark">Số seri sản phẩm</th>
+                                                <th scope="col" class="text-dark">Giá tiền</th>
+                                                
                                             </tr>
                                         </thead>
                                         <tbody class="cthd-body"></tbody>
@@ -347,6 +379,9 @@ document.addEventListener("DOMContentLoaded", function () {
                                             <div class="mt-2 mb-2 d-flex justify-content-between align-items-center small">
                                                 <strong>Tên khách hàng</strong>
                                                 <span class="ten-khach-hang opacity-50 fw-medium"></span>
+                                            </div>
+                                            <div class="mt-2 mb-2 d-flex justify-content-between align-items-center small">
+                                                <strong>Số điện thoại</strong> <span class="so-dien-thoai opacity-50 fw-medium"></span>
                                             </div>
                                             <div class="mt-2 mb-2 d-flex justify-content-between align-items-center small">
                                                 <strong>Nhân viên</strong>

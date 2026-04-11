@@ -77,7 +77,7 @@
                 <div class="" style="width: 80%;">
                     <div class="d-flex justify-content-between align-items-center gap-3">
                         <label for="" class="fw-semibold fs-5">Số điện thoại</label>
-                        <input type="text" name="sodienthoai"  value="{{ old('sodienthoai') }}"  id="sodienthoai" class="rounded border border-light-subtle p-1" style="width: 70%;">
+                        <input type="text" name="sodienthoai"  value="{{ old('sodienthoai') }}" placeholder="Nhập sdt (10 số)..." id="sodienthoai" class="rounded border border-light-subtle p-1" style="width: 70%;">
                     </div>
                     <div class="d-flex justify-content-end">
                         @error('sodienthoai') <div class="text-danger">{{ $message }}</div> @enderror
@@ -86,7 +86,7 @@
                 <div class="" style="width: 80%;">
                     <div class="d-flex justify-content-between align-items-center gap-3">
                         <label for="" class="fw-semibold fs-5">Căn cước công dân</label>
-                        <input type="text" name="cccd" id="cccd"  value="{{ old('cccd') }}" class="rounded border border-light-subtle p-1" style="width: 70%;">
+                        <input type="text" name="cccd" id="cccd"  value="{{ old('cccd') }}" placeholder="Nhập cccd (12 số)..." class="rounded border border-light-subtle p-1" style="width: 70%;">
                     </div>
                     <div class="d-flex justify-content-end">
                         @error('cccd') <div class="text-danger">{{ $message }}</div> @enderror

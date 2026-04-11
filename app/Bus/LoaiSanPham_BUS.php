@@ -46,13 +46,16 @@ class LoaiSanPham_BUS implements BUSInterface {
         return $this->loaiSanPhamDAO->update($model);
     }
 
-    public function deleteModel($id) {
-        if ($id == null || $id == "") {
-            error("Error when deleting a LoaiSanPham");
-            return;
-        }
-        return $this->loaiSanPhamDAO->delete($id);
+   public function deleteModel($id) {
+    if ($id == null || $id == "") {
+        return 0;
     }
+    $result = $this->loaiSanPhamDAO->delete($id);
+    if ($result > 0) {
+        $this->refreshData();
+    }
+    return $result;
+}
 
     public function searchModel(string $value, array $columns) {
         $list = $this->loaiSanPhamDAO->search($value, $columns);

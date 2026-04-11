@@ -6,7 +6,7 @@ use App\Bus\LoaiSanPham_BUS;
 use App\Models\LoaiSanPham;
 use Illuminate\Http\Request;
 use PHPUnit\Event\Telemetry\System;
-
+use Illuminate\Support\Facades\Validator;
 class LoaiSanPhamController extends Controller
 {
     private $loaiSanPhamBUS;
@@ -16,64 +16,64 @@ class LoaiSanPhamController extends Controller
         $this->loaiSanPhamBUS = $loaiSanPhamBUS;
     }
 
-    public function store(Request $request){
-         $validated = $request->validate([
-        'tenLSP' => 'required|string|max:100',
+   public function store(Request $request)
+{
+    
+    $validator = Validator::make($request->all(), [
+        'tenLSP' => 'required|string|max:100|unique:loaisanpham,TENLSP',
         'moTa'   => 'nullable|string|max:255',
     ], [
         'tenLSP.required' => 'Tên loại sản phẩm là bắt buộc.',
-        'tenLSP.string'   => 'Tên loại sản phẩm phải là chuỗi.',
-        'tenLSP.max'      => 'Tên loại sản phẩm không được vượt quá 100 ký tự.',
-        'moTa.string'     => 'Mô tả phải là chuỗi.',
-        'moTa.max'        => 'Mô tả không được vượt quá 255 ký tự.',
+        'tenLSP.unique'   => 'Tên loại sản phẩm này đã tồn tại.', 
+        'tenLSP.max'      => 'Tên loại sản phẩm không quá 100 ký tự.',
     ]);
-        $tenLSP = $request->input('tenLSP');
-        $moTa = $request->input('moTa');
-        if($moTa == "" || $moTa == null){
-            $moTa = "Không có mô tả";
-        }
-        $loaiSanPham = new LoaiSanPham(null, $tenLSP, $moTa, 1);
-        $this->loaiSanPhamBUS->addModel($loaiSanPham);
 
-        return redirect()->back()->with('success', 'Thêm thành công!');
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'addLSP')
+            ->withInput();
     }
 
-    public function update(Request $request, $id)
-    {
-        $request->validate([
-            'tenLSP' => [
-                'required',
-                'string',
-                'max:255',
-                'not_regex:/^\s*$/',
-            ],
-            'moTa' => [
-                'nullable',
-                'string',
-                'not_regex:/^\s*$/',
-            ],
-            'trangThaiHD' => 'required|boolean',
-        ], [
-            'tenLSP.required' => 'Vui lòng nhập tên loại sản phẩm.',
-            'tenLSP.not_regex' => 'Tên loại sản phẩm không được chỉ chứa khoảng trắng.',
-        ]);
-        
-        
+    $tenLSP = $request->input('tenLSP');
+    $moTa = $request->input('moTa') ?? "Không có mô tả";
 
-        $tenLSP = $request->input('tenLSP');
-        $moTa = $request->input('moTa');
-        $trangThaiHD = $request->input('trangThaiHD');
-        if($moTa == "" || $moTa == null){
-            $moTa = "Không có mô tả";
-        }
-        // Create a LoaiSanPham object
-        $loaiSanPham = new LoaiSanPham($id, $tenLSP, $moTa, $trangThaiHD);
+    $loaiSanPham = new LoaiSanPham(null, $tenLSP, $moTa, 1);
+    $this->loaiSanPhamBUS->addModel($loaiSanPham);
+    $this->loaiSanPhamBUS->refreshData();
 
-        // Update the record
-        $this->loaiSanPhamBUS->updateModel($loaiSanPham);
+    return redirect()->back()->with('success', 'Thêm thành công!');
+}
 
-        return redirect()->back()->with('success', 'Cập nhật thành công!');
+public function update(Request $request, $id)
+{
+   
+   
+    $validator = Validator::make($request->all(), [
+        'moTa' => 'nullable|string|not_regex:/^\s*$/',
+        'trangThaiHD' => 'required',
+    ], [
+        'moTa.not_regex' => 'Mô tả không được chỉ chứa khoảng trắng.',
+    ]);
+
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'updateLSP')
+            ->withInput();
     }
+    $existingLSP = $this->loaiSanPhamBUS->getModelById($id);
+    if (!$existingLSP) {
+        return redirect()->back()->with('error', 'Loại sản phẩm không tồn tại!');
+    }
+
+    $tenLSP = $existingLSP->getTenLSP(); 
+    $moTa = $request->input('moTa') ?: "Không có mô tả";
+    $trangThaiHD = $request->input('trangThaiHD');
+
+    $loaiSanPham = new LoaiSanPham($id, $tenLSP, $moTa, $trangThaiHD);
+    $this->loaiSanPhamBUS->updateModel($loaiSanPham);
+
+    return redirect()->back()->with('success', 'Cập nhật thành công!');
+}
 
     public function detroy(Request $request)
     {

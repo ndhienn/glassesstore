@@ -18,7 +18,7 @@
 
             <input class="form-control me-2 w-25 form-control-lg" type="search" placeholder="Tìm kiếm" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
             <button class="btn btn-outline-success me-2 btn-lg" type="button" id="btnSearch">Tìm</button>    
-            <button class="btn btn-info ms-2 btn-lg" id="refreshBtn" type="button">Refresh</button>
+            <button class="btn btn-info ms-2 btn-lg" id="refreshBtn" type="button">Làm mới</button>
     </div>
 
     <!-- Bảng hiển thị dữ liệu -->

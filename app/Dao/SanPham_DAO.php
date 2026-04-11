@@ -473,5 +473,10 @@ class SanPham_DAO implements DAOInterface{
 
     return $list;
 }
-    
+    public function updateStockAndPrice($idSP, $soLuongThem, $giaBanMoi) {
+    // CHỈ cập nhật Đơn giá và Trạng thái, KHÔNG cộng dồn SOLUONG nữa
+    // Vì việc cộng dồn đã do hàm taoCTSPTuDong xử lý rồi
+    $query = "UPDATE sanpham SET DONGIA = ?, TRANGTHAIHD = 1 WHERE id = ?";
+    return database_connection::executeQuery($query, $giaBanMoi, $idSP);
+}
 }

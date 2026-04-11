@@ -80,46 +80,56 @@ use Illuminate\Support\Facades\View as FacadesView;
                         ])->render();
                         break;
                     case 'nguoidung':
-                        $ndBUS = app(NguoiDung_BUS::class);
-                        $tinhBUS = app(Tinh_BUS::class);
-                        $listND = $ndBUS->getAllModels();
-                        $listTinh = $tinhBUS->getAllModels();
-                        $keyword = isset($_GET['keyword']) && !empty(trim($_GET['keyword'])) ? trim($_GET['keyword']) : null;
-                        $keywordTinh = isset($_GET['keywordTinh']) && !empty(trim($_GET['keywordTinh'])) ? trim($_GET['keywordTinh']) : null;
-                        if ($keywordTinh) {
-                            $listND = $ndBUS->searchByTinh($keywordTinh);
-                        }
-                        if ($keyword) {
-                            // Lọc keyword trên tập đã lọc tỉnh (nếu có)
-                            $columns = ['HOTEN', 'DIACHI', 'SODIENTHOAI', 'CCCD'];
-                            $listND = array_filter($listND, function($nd) use ($keyword, $columns) {
-                                foreach ($columns as $col) {
-                                    $getter = 'get' . ucfirst(strtolower($col));
-                                    if (method_exists($nd, $getter) && stripos($nd->$getter(), $keyword) !== false) {
-                                        return true;
-                                    }
-                                }
-                                return false;
-                            });
-                        }
-                        $current_page = request()->query('page', 1);
-                        $limit = 8;
-                        $total_record = count($listND ?? []);
-                        $total_page = ceil($total_record / $limit);
-                        $current_page = max(1, min($current_page, $total_page));
-                        $start = ($current_page - 1) * $limit;
-                        if(empty($listND)) {
-                            $tmp = [];
-                        } else {
-                            $tmp = array_slice($listND, $start, $limit);
-                        }
-                        echo FacadesView::make('admin.nguoidung', [
-                            'tmp' => $tmp,
-                            'listTinh' => $listTinh,
-                            'current_page' => $current_page,
-                            'total_page' => $total_page
-                        ])->render();
-                        break;
+    $ndBUS = app(NguoiDung_BUS::class);
+    $tinhBUS = app(Tinh_BUS::class);
+    
+    // Lấy toàn bộ danh sách ban đầu
+    $listND = $ndBUS->getAllModels();
+    $listTinh = $tinhBUS->getAllModels();
+
+    // 1. Nhận tham số từ URL
+    $keyword = isset($_GET['keyword']) && !empty(trim($_GET['keyword'])) ? trim($_GET['keyword']) : null;
+    $keywordActive = isset($_GET['keywordActive']) && $_GET['keywordActive'] !== "" ? $_GET['keywordActive'] : null;
+
+    // 2. Lọc theo Trạng thái (Thay thế lọc theo Tỉnh)
+    if ($keywordActive !== null) {
+        $listND = array_filter($listND, function($nd) use ($keywordActive) {
+            // Giả sử model có hàm getTrangThaiHD() trả về 1 hoặc 0
+            return (string)$nd->getTrangThaiHD() === (string)$keywordActive;
+        });
+    }
+
+    // 3. Lọc theo từ khóa (Ưu tiên tìm theo Số điện thoại)
+    if ($keyword) {
+        $listND = array_filter($listND, function($nd) use ($keyword) {
+            // Chỉ tập trung tìm kiếm trong cột Số điện thoại theo yêu cầu
+            $sdt = $nd->getSodienthoai(); 
+            return stripos($sdt, $keyword) !== false;
+        });
+    }
+
+    // --- Phần Phân trang giữ nguyên ---
+    $current_page = request()->query('page', 1);
+    $limit = 8;
+    $total_record = count($listND ?? []);
+    $total_page = ceil($total_record / $limit);
+    $current_page = max(1, min($current_page, $total_page));
+    $start = ($current_page - 1) * $limit;
+
+    if(empty($listND)) {
+        $tmp = [];
+    } else {
+        // Reset lại key của array sau khi filter để array_slice hoạt động đúng
+        $tmp = array_slice(array_values($listND), $start, $limit);
+    }
+
+    echo FacadesView::make('admin.nguoidung', [
+        'tmp' => $tmp,
+        'listTinh' => $listTinh,
+        'current_page' => $current_page,
+        'total_page' => $total_page
+    ])->render();
+    break;
                         case 'hang':
                             $hangBUS = app(Hang_BUS::class);
                         
@@ -327,71 +337,82 @@ use Illuminate\Support\Facades\View as FacadesView;
                 
                         break;  
                     case 'sanpham':
-                        $loaiSanPhamBUS = app(LoaiSanPham_BUS::class);
-                        $hangBUS = app(Hang_BUS::class);
-                        $sanPhamBUS = app(SanPham_BUS::class);
-                        $kieuDangBUS = app(KieuDang_BUS::class);
-                        $listLSP = $loaiSanPhamBUS->getAllModels();
-                        $listLSPIsActive = $loaiSanPhamBUS->getAllModelsActive();
-                        $listHang = $hangBUS->getAllModels();
-                        $listHangIsActive = $hangBUS->getActiveHangs();
+                    $loaiSanPhamBUS = app(LoaiSanPham_BUS::class);
+                    $hangBUS = app(Hang_BUS::class);
+                    $sanPhamBUS = app(SanPham_BUS::class);
+                    $kieuDangBUS = app(KieuDang_BUS::class);
+                    $ctpnBUS = app(CTPN_BUS::class);
+
+                    $listLSP = $loaiSanPhamBUS->getAllModels();
+                    $listLSPIsActive = $loaiSanPhamBUS->getAllModelsActive();
+                    $listHang = $hangBUS->getAllModels();
+                    $listHangIsActive = $hangBUS->getActiveHangs();
+                    $listKieuDang = $kieuDangBUS->getAllModels();
+
+                    // 1. Xử lý tìm kiếm theo Keyword
+                    $keyword = trim(request('keyword'));
+                    if ($keyword === '') {
                         $listSP = $sanPhamBUS->getAllModels();
-                        $listKieuDang = $kieuDangBUS->getAllModels();
-                        $ctpnBUS = app(CTPN_BUS::class);
-                        
-                        $mapTenHang = [];
-                        foreach ($listHang as $hang){
-                            $mapTenHang[$hang->getId()] = $hang->gettenHang();
-                        }
+                    } else {
+                        $listSP = $sanPhamBUS->searchModel($keyword, []);
+                    }
 
-                        $mapTenLoaiSP = [];
-                        foreach ($listLSP as $loaiSP) {
-                            $mapTenLoaiSP[$loaiSP->getId()] = $loaiSP->getTenLSP();
-                        }
+                    // 2. BỔ SUNG: Lọc theo trạng thái kinh doanh (1: Đang bán, 0: Ngừng bán)
+                    $trangThai = request('trangthai'); // Lấy từ URL (?trangthai=1 hoặc ?trangthai=0)
+                    if ($trangThai !== null && $trangThai !== '') {
+                        $listSP = array_filter($listSP, function($sp) use ($trangThai) {
+                            // Đảm bảo hàm getTrangThai() trả về đúng giá trị 0 hoặc 1 trong Model
+                            return (string)$sp->getTrangThaiHD() === (string)$trangThai;
+                        });
+                        // Reset lại index của mảng sau khi filter để array_slice không bị lỗi
+                        $listSP = array_values($listSP);
+                    }
 
-                        $mapTenKieuDang = [];
-                        foreach ($listKieuDang as $kieuDang) {
-                            $mapTenKieuDang[$kieuDang->getId()] = $kieuDang->getTenKieuDang();
-                        }
+                    // 3. Cập nhật đơn giá (Giữ nguyên logic cũ của bạn)
+                    foreach ($listSP as $sanPham) {
+                        $sanPham->setDonGia($ctpnBUS->getGiaBanCaoNhatByIDSP($sanPham->getId()));
+                        $sanPhamBUS->updateModel($sanPham);
+                    }
 
-                        $keyword = trim(request('keyword'));
-                        if ($keyword === '') {
-                            $listSP = $sanPhamBUS->getAllModels();
-                        } else {
-                            $listSP = $sanPhamBUS->searchModel($keyword, []);
-                        }
+                    // --- Tạo các Map dữ liệu (Giữ nguyên) ---
+                    $mapTenHang = [];
+                    foreach ($listHang as $hang) { $mapTenHang[$hang->getId()] = $hang->gettenHang(); }
 
-                        foreach ($listSP as $sanPham) {
-                            $sanPham->setDonGia($ctpnBUS->getGiaBanCaoNhatByIDSP($sanPham->getId()));
-                            $sanPhamBUS->updateModel($sanPham);
-                        }
+                    $mapTenLoaiSP = [];
+                    foreach ($listLSP as $loaiSP) { $mapTenLoaiSP[$loaiSP->getId()] = $loaiSP->getTenLSP(); }
 
-                        $current_page = request()->query('page', 1);
-                        $limit = 8;
-                        $total_record = count($listSP ?? []);
-                        $total_page = ceil($total_record / $limit);
-                        $current_page = max(1, min($current_page, $total_page));
-                        $start = ($current_page - 1) * $limit;
-                        if(empty($listSP)) {
-                            $tmp = [];
-                        } else {
-                            $tmp = array_slice($listSP, $start, $limit);            
-                        }
+                    $mapTenKieuDang = [];
+                    foreach ($listKieuDang as $kieuDang) { $mapTenKieuDang[$kieuDang->getId()] = $kieuDang->getTenKieuDang(); }
 
-                        echo FacadesView::make('admin.sanpham', [
-                            'listSP' => $tmp,
-                            'listHang' => $listHang,
-                            'listHangIsActive' => $listHangIsActive,
-                            'listLSP' => $listLSP,
-                            'listLSPIsActive' => $listLSPIsActive,
-                            'listKieuDang' => $listKieuDang,
-                            'mapTenLoaiSP' => $mapTenLoaiSP, 
-                            'mapTenHang' => $mapTenHang,
-                            'mapTenKieuDang' => $mapTenKieuDang,
-                            'current_page' => $current_page,
-                            'total_page' => $total_page
-                        ])->render();
-                        break;
+                    // 4. Phân trang (Sử dụng danh sách đã được lọc)
+                    $current_page = request()->query('page', 1);
+                    $limit = 8;
+                    $total_record = count($listSP ?? []);
+                    $total_page = ceil($total_record / $limit);
+                    $current_page = max(1, min($current_page, $total_page));
+                    $start = ($current_page - 1) * $limit;
+
+                    if(empty($listSP)) {
+                        $tmp = [];
+                    } else {
+                        $tmp = array_slice($listSP, $start, $limit);            
+                    }
+
+                    echo FacadesView::make('admin.sanpham', [
+                        'listSP' => $tmp,
+                        'listHang' => $listHang,
+                        'listHangIsActive' => $listHangIsActive,
+                        'listLSP' => $listLSP,
+                        'listLSPIsActive' => $listLSPIsActive,
+                        'listKieuDang' => $listKieuDang,
+                        'mapTenLoaiSP' => $mapTenLoaiSP, 
+                        'mapTenHang' => $mapTenHang,
+                        'mapTenKieuDang' => $mapTenKieuDang,
+                        'current_page' => $current_page,
+                        'total_page' => $total_page
+                    ])->render();
+                    break;
+                    
                     case 'hoadon':
                         $cthdBUS = app(CTHD_BUS::class);
                         $hoaDonBUS = app(HoaDon_BUS::class);
@@ -474,10 +495,18 @@ use Illuminate\Support\Facades\View as FacadesView;
                         }
                         if (isset($_GET['keyword']) && !empty(trim($_GET['keyword']))) {
                             $keyword = trim($_GET['keyword']);
-                            $listHoaDon = $hoaDonBUS->searchByEmailOrNhanVien($keyword);
+                            $listHoaDon = $hoaDonBUS->searchByEmailOrSDT($keyword);
                         }
 
-                        
+                        // Sau khi lọc các điều kiện keyword, trạng thái...
+                        $sortDate = isset($_GET['sortDate']) ? $_GET['sortDate'] : 'desc';
+                        if (!empty($listHoaDon)) {
+                            usort($listHoaDon, function($a, $b) use ($sortDate) {
+                                $t1 = strtotime($a->getNgayTao());
+                                $t2 = strtotime($b->getNgayTao());
+                                return ($sortDate === 'asc') ? ($t1 - $t2) : ($t2 - $t1);
+                         });
+                            }
 
                         $current_page = request()->query('page', 1);
                         $limit = 8;

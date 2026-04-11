@@ -79,21 +79,45 @@ class TaiKhoan_DAO{
             return 0;
         }
     }
-    public function update($model): int {
-        // Lấy tài khoản cũ từ DB để lấy mật khẩu nếu người dùng không đổi
-        $oldModel = $this->getById($model->getEmail());
-
-        // Nếu người dùng không nhập password mới (tức giữ nguyên chuỗi hash cũ)
-        if (password_verify($model->getPassword(), $oldModel->getPassword())) {
-            $hashedPassword = $oldModel->getPassword();
-        } else {
-            $hashedPassword = password_hash($model->getPassword(), PASSWORD_DEFAULT);
-        }
-        $query = "UPDATE TAIKHOAN SET tentk = ?, password = ?, idnguoidung = ?, idquyen = ?, trangThaiHD = ? WHERE email = ?";
-        $args = [$model->getTenTK(), $hashedPassword, $model->getIdNguoiDung()->getId(), $model->getIdQuyen()->getId(), $model->getTrangThaiHD(), $model->getEmail()];
-        $result = database_connection::executeUpdate($query, ...$args);
-        return is_int($result) ? $result : 0;  
+   public function update($model): int {
+    if (!$model || !$model->getIdNguoiDung() || !$model->getIdQuyen()) {
+        return 0; // Tránh lỗi null object
     }
+
+    // 1. Lấy mật khẩu cũ từ DB
+    $queryOld = "SELECT password FROM TAIKHOAN WHERE tentk = ?";
+    $resultOld = database_connection::executeQuery($queryOld, $model->getTenTK());
+
+    if (!$resultOld || $resultOld->num_rows === 0) {
+        return 0;
+    }
+
+    $row = $resultOld->fetch_assoc();
+    $oldPasswordHash = $row['password'];
+
+    // 2. Xử lý mật khẩu
+    // Nếu pass mới trống hoặc giống pass cũ đã mã hóa thì giữ nguyên
+    if (empty($model->getPassword())) {
+        $hashedPassword = $oldPasswordHash;
+    } else {
+        $hashedPassword = password_hash($model->getPassword(), PASSWORD_DEFAULT);
+    }
+
+    // 3. Thực hiện cập nhật
+    $query = "UPDATE TAIKHOAN SET email = ?, password = ?, idnguoidung = ?, idquyen = ?, trangThaiHD = ? WHERE tentk = ?";
+    
+    $args = [
+        $model->getEmail(),
+        $hashedPassword,
+        $model->getIdNguoiDung()->getId(),
+        $model->getIdQuyen()->getId(),
+        $model->getTrangThaiHD(),
+        $model->getTenTK()
+    ];
+
+    $result = database_connection::executeUpdate($query, ...$args);
+    return is_int($result) ? $result : 0;  
+}
     public function controlDelete($email, $active): int
     {
         $query = "UPDATE TAIKHOAN SET trangThaiHD = ? WHERE email = ?";
@@ -109,34 +133,37 @@ class TaiKhoan_DAO{
         return is_int($result) ? $result : 0;
     }
 
-    public function search(string $condition, $columnNames): array
-    {
-        if (empty($condition)) {
-            throw new InvalidArgumentException("Search condition cannot be empty or null");
-        }
-        $query = "";
-        if ($columnNames === null || count($columnNames) === 0) {
-            $query = "SELECT * FROM TAIKHOAN WHERE TENTK LIKE ? OR EMAIL LIKE ? OR PASSWORD LIKE ? OR IDNGUOIDUNG LIKE ? OR IDQUYEN LIKE ? OR trangThaiHD LIKE ? ";
-            $args = array_fill(0,  6, "%" . $condition . "%");
-        } else if (count($columnNames) === 1) {
-            $column = $columnNames[0];
-            $query = "SELECT * FROM TAIKHOAN WHERE $column LIKE ?";
-            $args = ["%" . $condition . "%"];
-        } else {
-            $query = "SELECT * FROM TAIKHOAN WHERE " . implode(" LIKE ? OR ", $columnNames) . " LIKE ?";
-            $args = array_fill(0, count($columnNames), "%" . $condition . "%");
-        }
-        $rs = database_connection::executeQuery($query, ...$args);
-        $list = [];
+    public function search(string $condition, $columnNames = null): array
+{
+    if (empty(trim($condition))) {
+        return [];
+    }
+
+    $list = [];
+    $searchTerm = "%" . $condition . "%";
+
+    // CỐ ĐỊNH CHỈ TÌM TRÊN 3 CỘT VĂN BẢN
+    // Không dùng $columnNames truyền vào để tránh quét trúng IDQUYEN hay IDNGUOIDUNG
+    $query = "SELECT tk.* FROM TAIKHOAN tk 
+              LEFT JOIN NGUOIDUNG nd ON tk.IDNGUOIDUNG = nd.ID 
+              WHERE tk.TENTK LIKE ? 
+              OR tk.EMAIL LIKE ? 
+              OR nd.SODIENTHOAI LIKE ?";
+    
+    // Chỉ truyền đúng 3 tham số
+    $args = [$searchTerm, $searchTerm, $searchTerm];
+
+    $rs = database_connection::executeQuery($query, ...$args);
+
+    if ($rs) {
         while ($row = $rs->fetch_assoc()) {
             $model = $this->createTaiKhoanModel($row);
-            array_push($list, $model);
+            $list[] = $model;
         }
-        if (count($list) === 0) {
-            return [];
-        }
-        return $list;
     }
+
+    return $list;
+}
 
     public function searchByQuyen($idQuyen) {
         $list = [];

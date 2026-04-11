@@ -240,46 +240,32 @@ class HoaDon_DAO{
 
         return $list;
     }
+    public function searchByEmailOrSDT(string $keyword): array
+{
+    $list = [];
+    // Chỉ JOIN các bảng liên quan đến Khách hàng để lấy Số điện thoại
+    $query = "
+        SELECT DISTINCT hd.* FROM hoadon hd
+        LEFT JOIN taikhoan tk ON hd.EMAIL = tk.EMAIL
+        LEFT JOIN nguoidung nd_kh ON tk.IDNGUOIDUNG = nd_kh.ID
+        WHERE hd.EMAIL LIKE ? 
+           OR nd_kh.SODIENTHOAI LIKE ?
+    ";
+    
+    // Tham số tìm kiếm
+    $param = "%" . $keyword . "%";
+    
+    // Chỉ truyền 2 tham số (cho Email và SDT) vào hàm executeQuery
+    $rs = database_connection::executeQuery($query, $param, $param);
 
-
-
-    public function searchByEmail(string $email): array
-    {
-        $list = [];
-        $query = "SELECT * FROM hoadon WHERE EMAIL LIKE ?";
-        $rs = database_connection::executeQuery($query, "%" . $email . "%");
-
-        while ($row = $rs->fetch_assoc()) {
-            $model = $this->createHoaDonModel($row);
-            if ($model) {
-                $list[] = $model;
-            }
+    while ($row = $rs->fetch_assoc()) {
+        $model = $this->createHoaDonModel($row);
+        if ($model) {
+            $list[] = $model;
         }
-        return $list;
     }
-
-
-    public function searchByEmailOrNhanVien(string $keyword): array
-    {
-        $list = [];
-        $query = "
-            SELECT DISTINCT hd.* 
-            FROM hoadon hd
-            LEFT JOIN nguoidung nd ON hd.IDNHANVIEN = nd.ID
-            WHERE hd.EMAIL LIKE ? 
-               OR nd.HOTEN LIKE ?
-        ";
-        $param = "%" . $keyword . "%";
-        $rs = database_connection::executeQuery($query, $param, $param);
-
-        while ($row = $rs->fetch_assoc()) {
-            $model = $this->createHoaDonModel($row);
-            if ($model) {
-                $list[] = $model;
-            }
-        }
-        return $list;
-    }
+    return $list;
+}
 
 
 

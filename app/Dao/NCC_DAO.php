@@ -42,12 +42,24 @@ class NCC_DAO implements DAOInterface
         return null;
     }
 
-    public function insert($model): int
-    {
-        $query = "INSERT INTO NCC (TENNCC, SODIENTHOAI, DIACHI, MOTA, TRANGTHAIHD) VALUES (?, ?, ?, ?, ?)";
-        $args = [$model->getTenNCC(), $model->getSdtNCC(), $model->getDiachi(), $model->getMoTa(), $model->getTrangthaiHD()];
-        return database_connection::executeUpdate($query, ...$args);
-    }
+   public function insert($model): int
+{
+    $query = "INSERT INTO NCC (TENNCC, SODIENTHOAI, DIACHI, MOTA, TRANGTHAIHD) VALUES (?, ?, ?, ?, ?)";
+    $args = [
+        $model->getTenNCC(), 
+        $model->getSdtNCC(), 
+        $model->getDiachi(), 
+        $model->getMoTa(), 
+        $model->getTrangthaiHD()
+    ];
+    
+    $result = database_connection::executeUpdate($query, ...$args);
+    
+    // Nếu vẫn không được, hãy bỏ comment dòng dưới để xem lỗi thực tế là gì
+    // if ($result === 0) dd("Lỗi SQL hoặc không có dòng nào được chèn");
+
+    return $result;
+}
 
     public function update($model): int
     {
@@ -56,12 +68,29 @@ class NCC_DAO implements DAOInterface
         return database_connection::executeUpdate($query, ...$args);
     }
 
-    public function delete($id): int
-    {
-        $query = "DELETE FROM NCC WHERE ID = ?";
-        return database_connection::executeUpdate($query, $id);
+    // Sửa hàm delete thành hàm xử lý trạng thái
+public function delete($id): int
+{
+    // Bước 1: Lấy trạng thái hiện tại để đảo ngược
+    $ncc = $this->getById($id);
+    if (!$ncc) {
+        return 0;
     }
 
+    // Bước 2: Đảo ngược trạng thái (Nếu đang 1 thì thành 0, nếu 0 thành 1)
+    $newStatus = ($ncc->getTrangthaiHD() == 1) ? 0 : 1;
+
+    // Bước 3: Cập nhật vào Database
+    $query = "UPDATE NCC SET TRANGTHAIHD = ? WHERE ID = ?";
+    return database_connection::executeUpdate($query, $newStatus, $id);
+}
+// Thêm hàm này vào trong class NCC_DAO (App\Dao\NCC_DAO)
+public function updateStatus(int $id, int $status): int
+{
+    $query = "UPDATE NCC SET TRANGTHAIHD = ? WHERE ID = ?";
+    // Sử dụng executeUpdate để thực hiện lệnh thay đổi dữ liệu
+    return database_connection::executeUpdate($query, $status, $id);
+}
     public function search($value, $columns): array
     {
         if (empty($value)) {
@@ -102,6 +131,18 @@ class NCC_DAO implements DAOInterface
             $row['TRANGTHAIHD']
         );
     }
-
+public function getAllActive(): array
+{
+    $list = [];
+    // Chỉ lấy các nhà cung cấp có TRANGTHAIHD = 1 ngay từ câu lệnh SQL
+    $query = "SELECT * FROM NCC WHERE TRANGTHAIHD = 1";
+    $rs = database_connection::executeQuery($query);
+    
+    while ($row = $rs->fetch_assoc()) {
+        $model = $this->createNCCModel($row);
+        array_push($list, $model);
+    }
+    return $list;
+}
   
 }

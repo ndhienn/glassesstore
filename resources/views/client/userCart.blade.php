@@ -25,6 +25,20 @@ use App\Models\CTGH;
     {{ session('success') }}
 </div>
 @endif
+<style>
+    #selectAll.form-check-input {
+    border: 2px solid #a4a0a0 !important; 
+    border-radius: 5px;                  
+    box-shadow: none !important;      
+}
+
+.form-check-input {
+    border: 2px solid #a4a0a0 !important; 
+    border-radius: 5px !important;         
+    box-shadow: none !important;          
+    cursor: pointer;
+}
+</style>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
@@ -149,18 +163,18 @@ use App\Models\CTGH;
                 | GIỎ HÀNG
             </h3>
         </div>
-        <form method="get">
+        <!--<form method="get">
             <div class="d-flex justify-content-between gap-3">
                 <input name="keyword" class="shadow rounded border-0 p-2" style="width: 400px;" type="text" placeholder="Tìm kiếm sản phẩm, loại sản phẩm, thương hiệu..." value="{{ request('keyword') }}">
                 <input type="hidden" name="email" value="{{ request('email', $email) }}">
                 <input type="hidden" name="idgh" value="{{ $gh->getIdGH() }}">
                 <button class="rounded p-1 border-0 fw-semibold fs-4 text-white" style="background-color: #55d5d2;width: 100px;" type="submit">Tìm</button>
             </div>
-        </form>
+        </form>!-->
 </div>
 <div class="bg-light d-flex flex-column p-5 gap-3 " style="width: 100%;height: 100%;margin-bottom: 200px;">
     @if (empty($listCTGH))
-        <p class="text-center">Không có sản phẩm nào. "{{ request('keyword') }}"</p>
+        <p class="text-center">Không có sản phẩm nào trong giỏ hàng. {{ request('keyword') }}</p>
     @else
         <div class="bg-white p-4 d-flex align-items-center rounded shadow-sm" style="width: 100%;">
             <div class="form-check d-flex align-items-center">

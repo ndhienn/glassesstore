@@ -99,4 +99,8 @@ class SanPham_BUS implements BUSInterface {
 {
     return $this->sanPhamDAO->searchByCriteria($idHang, $idLSP, $idKieuDang, $startPrice, $endPrice, $keyword);
 }
+    public function updateStockAndPrice($idSP, $soLuongThem, $giaBanMoi) {
+    // Gọi xuống lớp DAO để thực thi câu lệnh SQL
+    return $this->sanPhamDAO->updateStockAndPrice($idSP, $soLuongThem, $giaBanMoi);
+}
 }

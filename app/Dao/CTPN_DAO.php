@@ -106,18 +106,42 @@ class CTPN_DAO implements DAOInterface {
         return $rs;
     }
 
-    public function update($e): int {
-        $sql = "UPDATE CTPN SET soLuong = ?, giaNhap = ?, phanTramLN = ? 
-        WHERE idPN = ? AND idSP = ?";
-        $args = [
-            $e->getSoLuong(), 
-            $e->getGiaNhap(), 
-            $e->getPhanTramLN(),
-            $e->getIdPN(), 
-            $e->getIdSP()
-        ];
-        return database_connection::executeUpdate($sql, ...$args);
+    public function update($e): int
+{
+    // 1. Loại bỏ thoiGianBaoHanh ra khỏi câu lệnh SET
+    // Lưu ý: Đảm bảo tên cột khớp với Database (TENSANPHAM, IDHANG... hoặc tenSanPham, idHang...)
+    $sql = "UPDATE SanPham SET 
+                tenSanPham = ?, 
+                idHang = ?, 
+                idLSP = ?, 
+                idKieuDang = ?, 
+                moTa = ?, 
+                donGia = ?, 
+                soLuong = ?, 
+                trangThaiHD = ?
+            WHERE id = ?";
+
+    // 2. Loại bỏ $e->getThoiGianBaoHanh() ra khỏi mảng $args
+    $args = [
+        $e->getTenSanPham(), 
+        $e->getIdHang()->getId(), 
+        $e->getIdLSP()->getId(), 
+        $e->getIdKieuDang()->getId(), 
+        $e->getMoTa(), 
+        $e->getDonGia(), 
+        $e->getSoLuong(), 
+        $e->getTrangThaiHD(), 
+        $e->getId()
+    ];
+
+    $result = database_connection::executeUpdate($sql, ...$args);
+    
+    if ($result) {
+        return $e->getId();
     }
+
+    return 0;
+}
 
     public function delete(int $id): int {
         // For CTPN, we need both idPN and idSP, so we'll split the id

@@ -22,50 +22,116 @@ class TaiKhoanController extends Controller
     }
 
     public function store(Request $request)
-    {
-        // Validation dữ liệu
-        $request->validate([
-            'username' => 'required|string|max:255',
-            'email' => 'required|email|unique:taikhoan,email',
-            'password' => 'required|min:6',
-            'idquyen' => 'required|exists:quyen,id',
-            'idnguoidung' => 'required|exists:nguoidung,id',
-        ]);
+{
+    // 1. Định nghĩa tên hiển thị tiếng Việt
+    $attributes = [
+        'username' => 'Tên đăng nhập',
+        'email' => 'Email',
+        'password' => 'Mật khẩu',
+        'idquyen' => 'Nhóm quyền',
+        'idnguoidung' => 'Người dùng',
+    ];
 
-        // Lấy dữ liệu từ form
-        $tenTK = $request->input('username');
-        $email = $request->input('email');
-        $password =$request->input('password');  // Mã hóa mật khẩu
-        $idnguoidung = $this->nguoiDungBUS->getModelById($request->input('idnguoidung'));
-        $idquyen = $this->quyenBUS->getModelById($request->input('idquyen'));
+    // 2. Định nghĩa thông báo lỗi tiếng Việt
+    $messages = [
+        'required' => ':attribute không được để trống.',
+        'unique' => ':attribute này đã tồn tại trên hệ thống.',
+        'email' => ':attribute không đúng định dạng.',
+        'min' => ':attribute phải có ít nhất :min ký tự.',
+        'exists' => ':attribute không hợp lệ.',
+    ];
 
-        // Thêm tài khoản mới vào cơ sở dữ liệu
-        $taiKhoan = new TaiKhoan($tenTK, $email, $password, $idnguoidung, $idquyen, 1);
+    // 3. Validation
+    $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        'username' => 'required|string|max:255|unique:taikhoan,tentk',
+        'email' => 'required|email|unique:taikhoan,email',
+        'password' => 'required|min:6',
+        'idquyen' => 'required|exists:quyen,id',
+        'idnguoidung' => 'required|exists:nguoidung,id',
+    ], $messages, $attributes);
 
-        // Lưu tài khoản vào cơ sở dữ liệu
-        // var_dump($taiKhoan);
-        $this->taiKhoanBUS->addModel($taiKhoan);
-
-        // Quay lại trang trước và thông báo thành công
-        return redirect()->back()->with('success', 'Tài khoản đã được thêm thành công!');
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'addAccount')
+            ->withInput();
     }
-    public function update(Request $request) {
-        $request->validate([
-            'username' => 'required|string|max:255',
-            'email' => 'required|email|unique:taikhoan,email',
-            // 'password' => 'required|min:6',
-            'idquyen' => 'required|exists:quyen,id',
-            'idnguoidung' => 'required|exists:nguoidung,id',
-        ]);
-        $tenTK = $request->input('username');
-        $email = $request->input('email');
-        $password = $request->input('password');  // Mã hóa mật khẩu
-        $idnguoidung = $this->nguoiDungBUS->getModelById($request->input('idnguoidung'));
-        $idquyen = $this->quyenBUS->getModelById($request->input('idquyen'));
-        $taiKhoan = new TaiKhoan($tenTK, $email, $password, $idnguoidung, $idquyen, 1);
-        $this->taiKhoanBUS->updateModel($taiKhoan);
+
+    // 4. Xử lý logic thêm model
+    $tenTK = $request->input('username');
+    $email = $request->input('email');
+    $password = $request->input('password'); 
+    $idnguoidung = $this->nguoiDungBUS->getModelById($request->input('idnguoidung'));
+    $idquyen = $this->quyenBUS->getModelById($request->input('idquyen'));
+
+    $taiKhoan = new TaiKhoan($tenTK, $email, $password, $idnguoidung, $idquyen, 1);
+    $this->taiKhoanBUS->addModel($taiKhoan);
+
+    return redirect()->back()->with('success', 'Tài khoản đã được thêm thành công!');
+}
+
+public function update(Request $request) 
+{
+    $attributes = [
+        'username' => 'Tên đăng nhập',
+        'email' => 'Email',
+        'password' => 'Mật khẩu',
+        'idquyen' => 'Nhóm quyền',
+        'idnguoidung' => 'Người dùng',
+    ];
+
+    $messages = [
+        'required' => ':attribute không được để trống.',
+        'unique' => ':attribute này đã bị trùng với tài khoản khác.',
+        'email' => ':attribute không đúng định dạng.',
+        'min' => ':attribute mới phải có ít nhất :min ký tự.',
+        'username.exists' => 'Tài khoản không tồn tại trong hệ thống.',
+    ];
+
+    // Validation cho Update
+    $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+        'username' => 'required|string|max:255|exists:taikhoan,tentk',
+        // Kiểm tra trùng email nhưng loại trừ email của chính tài khoản đang sửa
+        'email' => 'required|email|unique:taikhoan,email,' . $request->input('email') . ',email',
+        'idquyen' => 'required',
+        'idnguoidung' => 'required',
+        'password' => 'nullable|min:6', 
+    ], $messages, $attributes);
+
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'updateAccount')
+            ->withInput();
+    }
+
+    $tenTK = $request->input('username');
+    $existingTK = $this->taiKhoanBUS->getModelById($tenTK); 
+
+    if (!$existingTK) {
+        return redirect()->back()->withErrors(['username' => 'Không tìm thấy tài khoản để cập nhật.'], 'updateAccount');
+    }
+
+    // Cập nhật thông tin
+    $existingTK->setEmail($request->input('email'));
+    
+    if ($request->filled('password')) {
+        $existingTK->setPassword($request->input('password'));
+    }
+
+    $nguoiDungObj = $this->nguoiDungBUS->getModelById($request->input('idnguoidung'));
+    $quyenObj = $this->quyenBUS->getModelById($request->input('idquyen'));
+
+    if ($nguoiDungObj) $existingTK->setIdNguoiDung($nguoiDungObj);
+    if ($quyenObj) $existingTK->setIdQuyen($quyenObj);
+
+    $result = $this->taiKhoanBUS->updateModel($existingTK);
+
+    if ($result) {
         return redirect()->back()->with('success', 'Tài khoản đã được cập nhật thành công!');
+    } else {
+        return redirect()->back()->with('error', 'Cập nhật thất bại, vui lòng kiểm tra lại dữ liệu!');
     }
+}
+
     public function controlDelete(Request $request) {
         $tenTK = $request->input('username');
         $email = $request->input('email');

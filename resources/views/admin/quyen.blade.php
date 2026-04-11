@@ -6,7 +6,7 @@
             <input type="hidden" name="modun" value="quyen">
             <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
             <button class="btn btn-outline-success me-2" type="submit">Tìm</button>
-            <button class="btn btn-info ms-2" id="refreshBtn" type="button">Refresh</button>
+            <button class="btn btn-info ms-2" id="refreshBtn" type="button">Làm mới</button>
             <button type="button" class="btn btn-success p-3 w-10 ms-5" data-bs-toggle="modal" data-bs-target="#quyenModal">
                 <i class='bx bx-plus'></i>
             </button>

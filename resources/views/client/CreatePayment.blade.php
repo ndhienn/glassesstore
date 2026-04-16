@@ -27,7 +27,25 @@ use App\Models\DiaChi;
     $listDVVC = session('listDVVC');
     $listTinh = session('listTinh');
     $user = session('user');
-    $listDiaChi = app(DiaChi_BUS::class)->getByIdND($user->getIdNguoiDung()->getId());
+
+    // ========================================================
+    // LỚP BẢO VỆ 1: CỨU HỘ USER NẾU BỊ RỚT SESSION TỪ VNPAY VỀ
+    // ========================================================
+    if (!$user) {
+        $email = app(\App\Bus\Auth_BUS::class)->getEmailFromToken();
+        if ($email) {
+            $user = app(\App\Bus\TaiKhoan_BUS::class)->getModelById($email);
+            session(['user' => $user]); // Nhặt được thì cất lại vào Session cho lần sau
+        }
+    }
+
+    // ========================================================
+    // LỚP BẢO VỆ 2: KIỂM TRA CHẮC CHẮN CÓ USER MỚI LẤY ĐỊA CHỈ
+    // ========================================================
+    $listDiaChi = [];
+    if ($user && $user->getIdNguoiDung()) {
+        $listDiaChi = app(DiaChi_BUS::class)->getByIdND($user->getIdNguoiDung()->getId());
+    }
     $isLogin = session('isLogin');
     $tongTien = 0;
     $sum = 0;
@@ -40,6 +58,12 @@ use App\Models\DiaChi;
 @if(session('success'))
 <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
     {{ session('success') }}
+</div>
+@endif
+@if(session('error'))
+<div class="alert alert-danger alert-dismissible fade show" role="alert" id="errorAlert">
+    <strong>Lỗi:</strong> {{ session('error') }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
 </div>
 @endif
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -211,7 +235,7 @@ use App\Models\DiaChi;
                 <div class="d-flex flex-column">
                     <label class="text-dark fw-semibold" for="">Phương thức thanh toán *</label>
                     <!-- <input class="rounded hover:border-blue-500" type="text" name="pttt" id="" required> -->
-                    <select class="p-2 rounded hover:border-blue-500 border border-0" name="pttt" id="">
+                    <select class="p-2 rounded hover:border-blue-500 border border-0" name="pttt" id="pttt">
                         <option value="" disabled>Chọn phương thức thanh toán</option>
                         @foreach($listPTTT as $pttt) 
                             <option value="{{$pttt->getId()}}">{{$pttt->getTenPTTT()}}</option>

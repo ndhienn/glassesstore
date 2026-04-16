@@ -28,6 +28,17 @@ class HoaDon
         $this->orderCode = $orderCode;
     }
 
+    public function paymentAttempts()
+    {
+        return $this->hasMany(PaymentAttempt::class, 'order_id', 'id');
+    }
+
+    // 1 Hóa đơn -> N Giao dịch (chốt sổ)
+    public function paymentTransactions()
+    {
+        return $this->hasMany(PaymentTransaction::class, 'order_id', 'id');
+    }
+
     // Getter và Setter cho ID
     public function getId()
     {

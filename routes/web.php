@@ -22,6 +22,7 @@ use App\Http\Controllers\LoaiSanPhamController;
 use App\Http\Controllers\NccController;
 use App\Http\Controllers\NguoiDungController;
 use App\Http\Controllers\PhieuNhapController;
+use App\Http\Controllers\PaymentController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -45,7 +46,7 @@ use App\Http\Controllers\TinhController;
 Route::get('/', function() {
     return redirect('/index' );
 });
-
+Route::view('/vnpay-payment', 'vnpay-payment.vnpay_pay')->name('vnpay_pay');
 Route::get('/index', function (Request $request) {
     $sanPham = app(SanPham_BUS::class);
     $lsp = app(LoaiSanPham_BUS::class);
@@ -488,9 +489,10 @@ Route::get('client/paymentsuccess', [HoaDonController::class, 'paymentSuccess'])
 Route::post('client/paid',[HoaDonController::class, 'paid'])->name('payment.paid');
 Route::get('/createdPayment/search', [HoaDonController::class, 'search'])->name('payment.search');
 Route::post('/createdPayment/changeStatus', [HoaDonController::class, 'changeStatusHD'])->name('payment.changestatus');
-Route::get('/success', function() {
-    $idhd = $_GET['idhd'];
-    $hoaDon = app(HoaDon_BUS::class)->getModelById($idhd);
+Route::get('/success', function(Request $request) {
+    $idhd = $request->query('vnp_TxnRef');
+    $idString = explode('_', str_replace('DH', '', $idhd))[0];
+    $hoaDon = app(HoaDon_BUS::class)->getModelById($idString);
     return view('client.SuccessPayment', [
         'hoaDon' => $hoaDon
     ]);
@@ -567,4 +569,10 @@ Route::get('/admin/thongke/details/{orderId}', [ThongKeController::class, 'getOr
 
 Route::post('admin.baohanh.store', [BaoHanhController::class, 'store'])->name('admin.baohanh.store');
 
+// Route xử lý tạo thanh toán (Gửi sang VNPay)
+Route::get('/vnpay-create/{hd}', [PaymentController::class, 'createPayment'])->name('vnpay.create');
+
+// Route nhận kết quả trả về từ VNPay
+Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
+Route::get('/vnpay-ipn', [\App\Http\Controllers\PaymentController::class, 'vnpayIpn'])->name('vnpay.ipn');
 ?>

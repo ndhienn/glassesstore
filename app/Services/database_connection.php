@@ -11,13 +11,7 @@ class database_connection {
     private static $user = "root";
     private static $pass = "276951438";
 
-    public function __construct() {
-        self::$host = env('DB_HOST');
-        self::$user = env('DB_USERNAME');
-        self::$pass = env('DB_PASSWORD');
-        self::$dbname = env('DB_DATABASE');
-        self::$port = env('DB_PORT', 3306); // Mặc định 3306 nếu không có
-    }
+    private function __construct(){}
 
     public static function getInstance() {
         if(self::$instance == null) {
@@ -26,36 +20,17 @@ class database_connection {
         return self::$instance;
     }
 
-    public function getConnection() {
+    public function getConnection(){
         try {
-            if ($this->connection == null || !$this->connection->ping()) {
-                $this->connection = mysqli_init();
-                
-                // THIẾT LẬP SSL - Bắt buộc cho TiDB Cloud
-                // Lưu ý: Đường dẫn này là mặc định trên môi trường Linux của Render
-                $this->connection->ssl_set(NULL, NULL, '/etc/ssl/certs/ca-certificates.crt', NULL, NULL);
-                
-                // Sử dụng hàm env() để lấy dữ liệu từ Render Environment
-                $success = @$this->connection->real_connect(
-                    env('DB_HOST'),
-                    env('DB_USERNAME'),
-                    env('DB_PASSWORD'),
-                    env('DB_DATABASE'),
-                    env('DB_PORT', 4000), // TiDB mặc định là 4000
-                    NULL,
-                    MYSQLI_CLIENT_SSL
-                );
-
-                if (!$success) {
-                    throw new Exception("Connect Error: " . $this->connection->connect_error);
-                }
+            if($this->connection == null || $this->connection->connect_error) {
+                $this->connection = new mysqli(self::$host, self::$user, self::$pass, self::$dbname, self::$port);
             }
             return $this->connection;
         } catch (Exception $e) {
-            // Ghi log lỗi để bạn có thể xem trong mục Logs của Render
-            error_log("Database Connection Failed: " . $e->getMessage());
-            return null; 
+            // error_log("Error connecting to database: " . $e->getMessage());
+            die("Lỗi kết nối: " . $this->connection->connect_error);
         }
+        return null;
     }
 
     public static function getPreparedStatement($sql,...$args) {

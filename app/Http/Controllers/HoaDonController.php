@@ -42,7 +42,7 @@ class HoaDonController extends Controller {
         $this->tinhBUS = $tinhBUS;
         $this->nguoiDungBUS = $nguoiDungBUS;
     }
-
+    
     public function paymentSuccess(Request $request)
     {
         
@@ -168,111 +168,83 @@ class HoaDonController extends Controller {
         ]);
     }
 
-    public function changeStatusHD(Request $request) {
-        // dd($request->all());
-        // $hd = app(HoaDon_BUS::class)->getModelById($request->input('idHD'));
-        $tinh = app(Tinh_BUS::class)->getModelById($request->input('tinh'));
-        $pttt = app(PTTT_BUS::class)->getModelById($request->input('pttt'));
-        $dvvc = app(DVVC_BUS::class)->getModelById($request->input('dvvc'));
-        $diachi = $request->input('diachi');
-        $listCTHD = json_decode($request->listCTHD);
-        $email = app(Auth_BUS::class)->getEmailFromToken();
-        $user = app(TaiKhoan_BUS::class)->getModelById($email);
-        $gh = app(GioHang_BUS::class)->getByEmail($email);
-        $sum = 0;
-        date_default_timezone_set('Asia/Ho_Chi_Minh');
-        $listSP = session('listSP');
-        // dd($listSP);
-        if (is_string($listSP)) {
-            $listSP = json_decode($listSP); 
-        } elseif (is_array($listSP)) {
-            if (isset($listSP[0]) && is_array($listSP[0])) {
-                $listSP = json_decode(json_encode($listSP)); 
-            }
-        }
-        $hd = new HoaDon(
-            null,
-            // null,
-            $user,
-            app(NguoiDung_BUS::class)->getModelById(1),
-            0.0,
-            $pttt,
-            new \DateTime(),
-            $diachi,
-            $tinh, 
-            HoaDonEnum::DADAT
-        );
+    public function changeStatusHD(Request $request) 
+    {
+        // 1. Lấy ID Phương thức thanh toán (pttt) từ form để kiểm tra trước
+        $pttt_id = (int) $request->input('pttt');
 
-        $newId = $this->hoaDonBUS->addModel($hd);
-        $hd->setId($newId);
-
-        foreach ($listSP as $key) {
-            # code...
-            
-            $sp = app(SanPham_BUS::class)->getModelById($key->idsp);
-            $total = $sp->getSoLuong() - $key->quantity;
-            $sp->setSoLuong($total);
-            app(SanPham_BUS::class)->updateModel($sp);
-            $sum += $sp->getDonGia() * $key->quantity;
-            $listCTSP = app(CTSP_BUS::class)->getCTSPIsNotSoldByIDSP($key->idsp);
-            for($i = 0 ; $i < $key->quantity ; $i++) {
-                $cthd = new CTHD($hd->getId(), app(SanPham_BUS::class)->getModelById($key->idsp)->getDonGia(),$listCTSP[$i]->getSoSeri(),1);
-                // dd($cthd);
-                app(CTHD_BUS::class)->addModel($cthd);
-                $ctsp = app(CTSP_BUS::class)->getCTSPBySoSeri($listCTSP[$i]->getSoSeri());
-                app(CTSP_BUS::class)->updateStatus($ctsp->getSoSeri(), 0);
-                app(CTGH_BUS::class)->deleteCTGH($gh->getIdGH(), $key->idsp);
-            }
-        }
-        // $cpvc = app(CPVC_DAO::class)->getByTinhAndDVVC($tinh->getId(),$dvvc->getIdDVVC());
-        // $sum += $cpvc->getChiPhiVC();
-        $hd->setTrangThai(HoaDonEnum::DADAT);
-        $hd->setTongTien($sum);
-        $hd->setTinh($tinh);
-        $hd->setDiaChi($diachi);
-        $hd->setIdPTTT($pttt);
-        $isLogin = app(Auth_BUS::class)->isAuthenticated();
-        app(HoaDon_BUS::class)->updateModel($hd);
-        if($pttt->getId() == 1) {
-            
-        } else {
-            $orderCode = (int)($hd->getId() . substr(time(), -4));
-            $hd->setOrderCode($orderCode);
-            $hd->setIdPTTT($pttt);
-            $hd->setTongTien(10000);
-            app(HoaDon_BUS::class)->updateModel($hd); // Cập nhật mã đơn hàng
-            $returnUrl = url("client/paymentsuccess?orderCode=" . $orderCode);
-            $cancelUrl = url("/");
-            $description = "Thanh toán #" . $orderCode;
-            $signatureRaw = "amount={$hd->getTongTien()}&cancelUrl={$cancelUrl}&description={$description}&orderCode={$orderCode}&returnUrl={$returnUrl}";
-            $signature = hash_hmac('sha256', $signatureRaw, 'e565caa65f2ddfcc509fb1cf94ab52a4f37c1a8abb403af3cb339941f430261c');
-            $payload = [
-                "orderCode" => $orderCode,
-                "amount" => $hd->getTongTien(),
-                "description" => $description,
-                "returnUrl" => $returnUrl,
-                "cancelUrl" => $cancelUrl,
-                "signature" => $signature,
-            ];
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'x-client-id' => 'd4999768-4dc1-4c9d-a8ca-85553d797c3f',
-                'x-api-key' => '261c7797-ea98-40ef-9da6-a8bd1714a9bf'
-            ])->post('https://api-merchant.payos.vn/v2/payment-requests', $payload);
+        // 2. Xác định trạng thái ban đầu của hóa đơn dựa vào PTTT
+        // Mặc định là DADAT (Dành cho COD)
+        $status = \App\Enum\HoaDonEnum::DADAT; 
         
-            $responseData = $response->json();
-            
-            if ($response->successful() && isset($responseData['data']['checkoutUrl'])) {
-                return redirect($responseData['data']['checkoutUrl']);
-            } else {
-                dd($responseData);
-                return back()->with('error', 'Không thể tạo đơn hàng thanh toán với PayOS.')->withErrors($responseData);
-            }
+        // Nếu là PayOS(2) hoặc VNPay(3) thì trạng thái là PENDING (Chờ thanh toán)
+        if ($pttt_id == 2 || $pttt_id == 3) {
+            $status = \App\Enum\HoaDonEnum::PENDING; 
         }
-        // session()->forget('listSP');
-        return redirect('/success?idhd=' . $hd->getId())->with('success', 'Bạn đặt hàng thành công.');
+
+        // 3. Gọi BUS để khởi tạo Hóa Đơn (Tạo vỏ hóa đơn, tạo chi tiết, CHƯA trừ kho)
+        // Lưu ý: Cần đảm bảo hàm createHoaDon trong BUS của bạn có nhận tham số $status
+        $hd = app(HoaDon_BUS::class)->createHoaDon($request, $status);
+
+        if (!$hd) {
+            return back()->with('error', 'Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.');
+        }
+
+        // 4. Phân luồng theo cổng thanh toán
+        switch($pttt_id) {
+            
+            case 1: // THANH TOÁN TIỀN MẶT (COD)
+                // QUAN TRỌNG: Vì không qua VNPay, đơn hàng coi như chốt luôn. 
+                // Ta phải gọi hàm chốt đơn ngay tại đây để trừ kho và dọn giỏ hàng!
+                app(HoaDon_BUS::class)->chotDonHangSauThanhToan($hd->getId());
+                
+                return redirect('/success?vnp_TxnRef=' . $hd->getId())->with('success', 'Bạn đặt hàng thành công.');
 
 
+            case 2: // THANH TOÁN QUA PAYOS
+                $orderCode = (int)($hd->getId() . substr(time(), -4));
+                $hd->setOrderCode($orderCode);
+                app(HoaDon_BUS::class)->updateModel($hd); // Lưu lại orderCode mới
+                
+                $returnUrl = url("client/paymentsuccess?orderCode=" . $orderCode);
+                $cancelUrl = url("/");
+                $description = "Thanh toan don " . $hd->getId();
+                
+                // Dùng tổng tiền thật ($hd->getTongTien()) thay vì 10000
+                $signatureRaw = "amount={$hd->getTongTien()}&cancelUrl={$cancelUrl}&description={$description}&orderCode={$orderCode}&returnUrl={$returnUrl}";
+                $signature = hash_hmac('sha256', $signatureRaw, 'e565caa65f2ddfcc509fb1cf94ab52a4f37c1a8abb403af3cb339941f430261c'); // Cảnh báo: Nên đưa key này vào file .env
+                
+                $payload = [
+                    "orderCode" => $orderCode,
+                    "amount" => $hd->getTongTien(),
+                    "description" => $description,
+                    "returnUrl" => $returnUrl,
+                    "cancelUrl" => $cancelUrl,
+                    "signature" => $signature,
+                ];
+
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                    'x-client-id' => 'd4999768-4dc1-4c9d-a8ca-85553d797c3f', // Nên đưa vào .env
+                    'x-api-key' => '261c7797-ea98-40ef-9da6-a8bd1714a9bf'   // Nên đưa vào .env
+                ])->post('https://api-merchant.payos.vn/v2/payment-requests', $payload);
+            
+                $responseData = $response->json();
+                
+                if ($response->successful() && isset($responseData['data']['checkoutUrl'])) {
+                    return redirect($responseData['data']['checkoutUrl']);
+                } else {
+                    return back()->with('error', 'Không thể tạo đơn hàng thanh toán với PayOS.')->withErrors($responseData);
+                }
+
+
+            case 3: // THANH TOÁN QUA VNPAY
+                // Đẩy sang Route tạo link VNPay
+                return redirect()->route('vnpay.create', $hd->getID());
+                
+            default:
+                return back()->with('error', 'Phương thức thanh toán không hợp lệ.');
+        }
     }
     public function paid(Request $request) {
         // dd($request->all());

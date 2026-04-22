@@ -1,11 +1,11 @@
 <?php
 
 namespace App\Models;
-
+use Illuminate\Database\Eloquent\Model;
 use App\Bus\TaiKhoan_BUS;
 use App\Enum\HoaDonEnum;
 
-class HoaDon
+class HoaDon extends Model
 {
     private $id, $tongTien, $ngayTao, $diaChi, $orderCode;
     private Tinh $tinh;

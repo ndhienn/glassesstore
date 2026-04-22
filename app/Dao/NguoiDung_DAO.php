@@ -74,9 +74,9 @@ class NguoiDung_DAO {
     }
     public function insert($e)
     {
-        $query = "INSERT INTO NGUOIDUNG (ID, HOTEN, NGAYSINH, GIOITINH, DIACHI, IDTINH, SODIENTHOAI, CCCD, TRANGTHAIHD) VALUES (?,?,?,?,?,?,?,?,?)";
-        $args = [
-            $e->getId(), 
+        $query = "INSERT INTO NGUOIDUNG (HOTEN, NGAYSINH, GIOITINH, DIACHI, IDTINH, SODIENTHOAI, CCCD, TRANGTHAIHD) 
+        VALUES (?,?,?,?,?,?,?,?)";
+        $args = [ 
             $e->getHoTen(), 
             $e->getNgaySinh(), 
             $e->getGioiTinh(), 

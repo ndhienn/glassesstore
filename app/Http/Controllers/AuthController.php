@@ -92,7 +92,7 @@ class AuthController extends Controller {
             return redirect()->back()->with('error', 'Không tìm thấy người dùng vừa thêm!');
         }
     
-        $tentk = $request->input('tenTK'); // sửa tên biến đúng với input
+        $tentk = $request->input('tenTK'); 
         $email = $request->input('email');
         $password = $request->input('password');
         $quyen = app(Quyen_BUS::class)->getModelById(3);

@@ -27,11 +27,12 @@ class NCC_BUS implements BUSInterface {
     }
 
     public function addModel($model) {
-        if ($model == null) {
-            throw new \InvalidArgumentException("Error when adding an NCC");
-        }
-        return $this->nccDAO->insert($model);
+    $res = $this->nccDAO->insert($model);
+    if ($res > 0) {
+        $this->refreshData(); // Bắt buộc phải có dòng này
     }
+    return $res;
+}
 
     public function updateModel($model) {
         if ($model == null) {
@@ -40,14 +41,24 @@ class NCC_BUS implements BUSInterface {
         return $this->nccDAO->update($model);
     }
 
-    public function deleteModel(int $id) {
-        if ($id == null || $id == "") {
-            throw new \InvalidArgumentException("Error when deleting an NCC");
-        }
-        return $this->nccDAO->delete($id);
+    public function deleteModel(int $id, int $newStatus = 0) {
+    if ($id == null || $id == "") {
+        throw new \InvalidArgumentException("Error when updating status of an NCC");
     }
+    
+    $result = $this->nccDAO->updateStatus($id, $newStatus);
+
+    if ($result > 0) {
+        $this->refreshData();
+    }
+    
+    return $result;
+}
 
     public function searchModel(string $value, array $columns) {
         return $this->nccDAO->search($value, $columns);
     }
+   public function getAllActiveModels(): array {
+    return $this->nccDAO->getAllActive();
+}
 }

@@ -14,13 +14,14 @@ class SanPham_DAO implements DAOInterface{
 
     public function readDatabase(): array
     {
-        $list = [];
-        $rs = database_connection::executeQuery("SELECT * FROM SanPham");
-        while ($row = $rs->fetch_assoc()) {
-            $model = $this->createSanPhamModel($row);
-            array_push($list, $model);
-        }
-        return $list;
+        // $list = [];
+        // $rs = database_connection::executeQuery("SELECT * FROM SanPham");
+        // while ($row = $rs->fetch_assoc()) {
+        //     $model = $this->createSanPhamModel($row);
+        //     array_push($list, $model);
+        // }
+        // return $list;
+        return [];
     }
 
     public function getById($id) {
@@ -342,6 +343,7 @@ class SanPham_DAO implements DAOInterface{
             array_push($list, $model);
         }
         return $list;
+
     }
 
     public function searchByLoaiSanPham($idLSP) {
@@ -397,6 +399,7 @@ class SanPham_DAO implements DAOInterface{
             array_push($list, $model);
         }
         return $list;
+
     }
 
     public function getStock($idPd) {
@@ -470,5 +473,10 @@ class SanPham_DAO implements DAOInterface{
 
     return $list;
 }
-    
+    public function updateStockAndPrice($idSP, $soLuongThem, $giaBanMoi) {
+    // CHỈ cập nhật Đơn giá và Trạng thái, KHÔNG cộng dồn SOLUONG nữa
+    // Vì việc cộng dồn đã do hàm taoCTSPTuDong xử lý rồi
+    $query = "UPDATE sanpham SET DONGIA = ?, TRANGTHAIHD = 1 WHERE id = ?";
+    return database_connection::executeQuery($query, $giaBanMoi, $idSP);
+}
 }

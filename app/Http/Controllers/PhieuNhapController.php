@@ -118,48 +118,52 @@ class PhieuNhapController extends Controller
     //     return redirect()->back()->with('success', 'Phiếu nhập thêm thành công!');
     // }
     public function store(Request $request) {
-        // Kiểm tra dữ liệu hợp lệ
-        // $validated = $request->validate([
-        //     'ncc' => 'required',
-        //     'ngayNhap' => 'required|date',
-        //     'products' => 'required|array',
-        //     'products.*.sanPham' => 'required|exists:san_phams,id',
-        //     'products.*.soLuong' => 'required|integer|min:1',
-        //     'products.*.giaNhap' => 'required|numeric|min:0',
-        //     'products.*.phanTramLN' => 'required|numeric|min:0|max:100',
-        // ]);
+    // 1. Lấy thông tin người dùng từ token
+    $email = app(Auth_BUS::class)->getEmailFromToken();
+    $tk = app(TaiKhoan_BUS::class)->getModelById($email);
+    $nv = $tk->getIdNguoiDung();
+
+    // 2. Lấy nhà cung cấp và ngày nhập
+    $ncc_id = app(NCC_BUS::class)->getModelById($request->input("ncc"));
+    $ngayNhap = $request->input("ngayNhap");
+
+    // 3. Tạo phiếu nhập mới
+    $phieuNhap = new PhieuNhap(null, $ncc_id, null, $ngayNhap, $nv, 1);
+    app(PhieuNhap_BUS::class)->addModel($phieuNhap);
     
-        // Lấy thông tin người dùng
-        $email = app(Auth_BUS::class)->getEmailFromToken();
-        $tk = app(TaiKhoan_BUS::class)->getModelById($email);
-        $nv = $tk->getIdNguoiDung();
-    
-        // Lấy nhà cung cấp và ngày nhập
-        $ncc_id = app(NCC_BUS::class)->getModelById($request->input("ncc"));
-        $ngayNhap = $request->input("ngayNhap");
-    
-        // Tạo phiếu nhập mới
-        $phieuNhap = new PhieuNhap(null, $ncc_id, null, $ngayNhap, $nv, 1);
-        $tmp = app(PhieuNhap_BUS::class)->addModel($phieuNhap);
-        $phieuNhap = app(PhieuNhap_BUS::class)->getLastPN();
-        $total = 0;
-        // Lưu các chi tiết sản phẩm
-        foreach ($request->input("products") as $product) {
-            // Lấy thông tin sản phẩm
-            $sp = app(SanPham_BUS::class)->getModelById($product['sanPham']);
-            $sl = $product['soLuong'];
-            $giaNhap = $product['giaNhap'];
-            $phanTramLN = $product['phanTramLN'];
-            $total += $giaNhap * $sl;
-            // Tạo chi tiết phiếu nhập và lưu
-            $ctpn = new CTPN($phieuNhap, $sp, $sl, $giaNhap, $phanTramLN, 1); // Sử dụng ID của phiếu nhập
-            app(CTPN_BUS::class)->addModel($ctpn);
+    $phieuNhap = app(PhieuNhap_BUS::class)->getLastPN();
+    $total = 0;
+
+    // 4. Lưu chi tiết và CẬP NHẬT SẢN PHẨM (Số lượng + Giá)
+    foreach ($request->input("products") as $product) {
+        $spId = $product['sanPham'];
+        $sl = $product['soLuong'];
+        $giaNhap = $product['giaNhap'];
+        $phanTramLN = $product['phanTramLN'];
+        $giaBanMoi = $product['giaBan']; 
+
+        $total += $giaNhap * $sl;
+
+        // Lấy đối tượng sản phẩm để truyền vào CTPN (giữ nguyên logic cũ của bạn)
+        $spModel = app(SanPham_BUS::class)->getModelById($spId);
+
+        // Lưu chi tiết phiếu nhập
+        $ctpn = new CTPN($phieuNhap, $spModel, $sl, $giaNhap, $phanTramLN, 1);
+        app(CTPN_BUS::class)->addModel($ctpn);
+
+        // --- PHẦN THAY ĐỔI: CỘNG DỒN SỐ LƯỢNG VÀ CẬP NHẬT GIÁ ---
+        if ($spModel) {
+            // Thay vì dùng updateModel (ghi đè), ta dùng hàm cộng dồn SQL
+            app(SanPham_BUS::class)->updateStockAndPrice($spId, $sl, $giaBanMoi);
         }
-        $phieuNhap->setTongTien($total);
-        app(PhieuNhap_BUS::class)->updateModel($phieuNhap);
-        return redirect()->back()->with('success', 'Phiếu nhập thêm thành công!');
     }
-    
+
+    // 5. Cập nhật tổng tiền cho phiếu nhập
+    $phieuNhap->setTongTien($total);
+    app(PhieuNhap_BUS::class)->updateModel($phieuNhap);
+
+    return redirect()->back()->with('success', 'Nhập hàng thành công! Kho hàng và giá bán đã được cập nhật.');
+}
 
     public function search(Request $request)
     {

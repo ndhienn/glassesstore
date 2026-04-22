@@ -107,7 +107,7 @@
                 </option>
             @endforeach
         </select>
-        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Refresh</button>
+        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Làm mới</button>
         <button type="button" class="btn btn-success p-3 w-10 ms-5" data-bs-toggle="modal" data-bs-target="#brandAddModal">
             <i class='bx bx-plus'></i> Thêm
         </button>
@@ -205,40 +205,42 @@
 </div>
 
 <!-- Add Brand Modal -->
-<div class="modal fade" id="brandAddModal" tabindex="-1" aria-labelledby="brandModalLabel" aria-hidden="true">
+<<div class="modal fade" id="brandAddModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="brandModalLabel">Thêm hãng</h5>
+                <h5 class="modal-title">Thêm hãng</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <form class="row g-3" method="post" action="{{ route('admin.hang.store') }}">
-                    @csrf
+            <form action="{{ route('admin.hang.store') }}" method="post">
+                @csrf
+                <div class="modal-body row g-3">
                     <div class="col-md-6">
-                        <label for="tenhang" class="form-label">Tên hãng</label>
-                        <input type="text" class="form-control" name="tenhang" required>
+                        <label class="form-label">Tên hãng</label>
+                        <input type="text" class="form-control" name="tenhang" value="{{ old('tenhang') }}" required>
+                        @if($errors->addBrand->has('tenhang'))
+                            <div class="text-danger small mt-1">{{ $errors->addBrand->first('tenhang') }}</div>
+                        @endif
                     </div>
                     <div class="col-md-6">
-                        <label for="mota" class="form-label">Mô tả</label>
-                        <textarea class="form-control" name="mota" rows="4"></textarea>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="trangthaiHD" class="form-label">Trạng thái</label>
+                        <label class="form-label">Trạng thái</label>
                         <select class="form-select" name="trangthaiHD" required>
                             <option value="1">Đang kinh doanh</option>
                             <option value="3">Ngừng kinh doanh</option>
                         </select>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Lưu</button>
+                    <div class="col-md-12">
+                        <label class="form-label">Mô tả</label>
+                        <textarea class="form-control" name="mota" rows="3">{{ old('mota') }}</textarea>
                     </div>
-                </form>
-            </div>
+                </div>
+                <div class="modal-footer justify-content-start"> <button type="submit" class="btn btn-primary">Lưu</button>
+                    
+                </div>
+            </form>
         </div>
     </div>
 </div>
-
 <!-- Update Brand Modal -->
 <div class="modal fade" id="brandUpdateModal" tabindex="-1" aria-labelledby="brandModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -251,15 +253,21 @@
                 <form class="row g-3" method="post" action="{{ route('admin.hang.update') }}">
                     @csrf
                     <input type="hidden" name="id">
+                    
                     <div class="col-md-6">
                         <label for="tenhang" class="form-label">Tên hãng</label>
-                        <input type="text" class="form-control" name="tenhang" required>
+                        <input type="text" class="form-control bg-light" name="tenhang" readonly style="cursor: not-allowed;">
                     </div>
+
                     <div class="col-md-6">
                         <label for="mota" class="form-label">Mô tả</label>
-                        <textarea class="form-control" name="mota" rows="4"></textarea>
+                        <textarea class="form-control" name="mota" rows="4">{{ old('mota') }}</textarea>
+                        @if($errors->updateBrand->has('mota'))
+                            <div class="text-danger small mt-1">{{ $errors->updateBrand->first('mota') }}</div>
+                        @endif
                     </div>
-                    <div class="modal-footer">
+
+                    <div class="modal-footer justify-content-start">
                         <button type="submit" class="btn btn-primary">Lưu</button>
                     </div>
                 </form>
@@ -273,5 +281,44 @@
     {{ session('success') }}
 </div>
 @endif
+<div id="modal-status" 
+     data-add-error="{{ $errors->hasBag('addBrand') && $errors->addBrand->any() ? '1' : '0' }}"
+     data-update-error="{{ $errors->hasBag('updateBrand') && $errors->updateBrand->any() ? '1' : '0' }}">
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Lấy trạng thái lỗi từ túi addBrand và updateBrand
+    // Nếu có lỗi, Blade sẽ render ra '1', nếu không sẽ là '0'
+    var hasAddError = "{{ $errors->hasBag('addBrand') && $errors->addBrand->any() ? '1' : '0' }}";
+    var hasUpdateError = "{{ $errors->hasBag('updateBrand') && $errors->updateBrand->any() ? '1' : '0' }}";
 
+    if (hasAddError === '1') {
+        var addModalEl = document.getElementById('brandAddModal');
+        if (addModalEl) {
+            var addModal = new bootstrap.Modal(addModalEl);
+            addModal.show();
+        }
+    }
+
+    if (hasUpdateError === '1') {
+        var updateModalEl = document.getElementById('brandUpdateModal');
+        if (updateModalEl) {
+            var updateModal = new bootstrap.Modal(updateModalEl);
+            updateModal.show();
+        }
+    }
+    
+    // Logic cho nút Sửa (Edit)
+    const editButtons = document.querySelectorAll('.btn-edit');
+    editButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            const modal = document.querySelector('#brandUpdateModal');
+            if (!modal) return;
+            modal.querySelector('input[name="id"]').value = this.dataset.id;
+            modal.querySelector('input[name="tenhang"]').value = this.dataset.tenhang;
+            modal.querySelector('textarea[name="mota"]').value = this.dataset.mota;
+        });
+    });
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

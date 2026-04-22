@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Validator;
 use App\Bus\CTHD_BUS;
 use App\Bus\Hang_BUS;
 use App\Bus\KieuDang_BUS;
@@ -31,124 +31,127 @@ class SanPhamController extends Controller
     }
 
     // Xử lý thêm sản phẩm
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'tenSanPham' => 'required|string|max:255',
-            'moTa' => 'required|string',
-            'thoiGianBaoHanh' => 'required|integer',
-            'anhSanPham' => 'required|image|mimes:webp|max:2048',
-        ], [
-            'tenSanPham.required' => 'Vui lòng nhập tên sản phẩm.',
-            'moTa.required' => 'Vui lòng nhập mô tả.',
-            'thoiGianBaoHanh.required' => 'Vui lòng nhập thời gian.',
-            'thoiGianBaoHanh.integer' => 'Phải là số.',
-            'anhSanPham.required' => 'Vui lòng chọn ảnh.',
-            'anhSanPham.image' => 'Ảnh sản phẩm không hợp lệ.',
-            'anhSanPham.mimes' => 'Ảnh sản phẩm phải có định dạng webp.',
-            'anhSanPham.max' => 'Ảnh sản phẩm không được lớn hơn 2MB.',
-        ]);
 
-        $tenSanPham = $validatedData['tenSanPham'];
-        $idHang = $this->hangBUS->getModelById($request->input('idHang'));
-        $idLSP = $this->loaiSanPhamBUS->getModelById($request->input('idLSP'));
-        $idKieuDang = $this->kieuDangBUS->getModelById($request->input('idKieuDang'));
-        $moTa = $validatedData['moTa'];
-        // $donGia = $request->input('donGia');
-        $thoiGianBaoHanh = $validatedData['thoiGianBaoHanh'];
+public function store(Request $request)
+{
+    // 1. Tạo validator và đẩy lỗi vào túi 'addProduct'
+    $validator = Validator::make($request->all(), [
+        // unique:sanpham,tensanpham tự động check không phân biệt hoa thường tùy vào database collation
+        'tenSanPham'      => 'required|string|max:255|unique:sanpham,tensanpham',
+        'moTa'            => 'required|string',
+        'thoiGianBaoHanh' => 'required|integer',
+        'anhSanPham' => 'required|file|extensions:jpg,jpeg,png,webp|max:2048',
+        'idHang'          => 'required',
+        'idLSP'           => 'required',
+        'idKieuDang'      => 'required',
+    ], [
+        'tenSanPham.required'      => 'Vui lòng nhập tên sản phẩm.',
+        'tenSanPham.unique'        => 'Tên sản phẩm đã tồn tại.',
+        'moTa.required'            => 'Vui lòng nhập mô tả.',
+        'thoiGianBaoHanh.required' => 'Vui lòng nhập thời gian.',
+        'thoiGianBaoHanh.integer'  => 'Phải là số nguyên.',
+        'anhSanPham.required'      => 'Vui lòng chọn ảnh.',
+        'anhSanPham.image'         => 'File phải là hình ảnh.',
+        'anhSanPham.mimes' => 'Ảnh phải có định dạng: jpg, jpeg, png, webp.',
+        'idHang.required'          => 'Vui lòng chọn hãng.',
+        'idLSP.required'           => 'Vui lòng chọn loại sản phẩm.',
+        'idKieuDang.required'      => 'Vui lòng chọn kiểu dáng.',
+    ]);
 
-        $anhSanPham = $request->file('anhSanPham');
-        // dd($request->all());
-        // Tạo sản phẩm mới
-        $sanPham = new SanPham(
-            null,
-            $tenSanPham,
-            $idHang,
-            $idLSP,
-            $idKieuDang,
-            $moTa,
-            null,
-            $thoiGianBaoHanh,
-            0,
-            1
-        );
-       
-        // Thêm sản phẩm vào database và lấy ID mới
-        $newSanPham = $this->sanPhamBUS->addModel($sanPham);
-
-        // Nếu có ảnh, di chuyển ảnh vào thư mục lưu trữ
-        if ($anhSanPham) {
-            $tenAnh = $newSanPham . '.' . $anhSanPham->getClientOriginalExtension();
-            $anhSanPham->move(public_path('productImg'), $tenAnh); // Di chuyển ảnh
-        } 
-
-        // Trả về thông báo thành công
-        return redirect()->back()->with('success', 'Thêm sản phẩm thành công!');
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'addProduct') 
+            ->withInput();
     }
 
-    public function update(Request $request) {
-        // dd($request->all());
-        $validatedData = $request->validate([
-            'tenSanPham' => 'required|string|max:255',
-            'moTa' => 'required|string',
-            'thoiGianBaoHanh' => 'required|integer',
-           
-        ], [
-            'tenSanPham.required' => 'Vui lòng nhập tên sản phẩm.',
-            'moTa.required' => 'Vui lòng nhập mô tả.',
-            'thoiGianBaoHanh.required' => 'Vui lòng nhập thời gian.',
-            'thoiGianBaoHanh.integer' => 'Phải là số.',
-            
-        ]);
-        
-        $idSanPham = $request->input('idSanPham');
-        $tenSanPham = $validatedData['tenSanPham'];
-        $idHang = $this->hangBUS->getModelById($request->input('idHang'));
-        $idLSP = $this->loaiSanPhamBUS->getModelById($request->input('idLSP'));
-        $idKieuDang = $this->kieuDangBUS->getModelById($request->input('idKieuDang'));
-        $moTa = $validatedData['moTa'];
-        $thoiGianBaoHanh = $validatedData['thoiGianBaoHanh'];
+    // 2. Thực hiện lưu thông qua BUS
+    $idHang = $this->hangBUS->getModelById($request->input('idHang'));
+    $idLSP = $this->loaiSanPhamBUS->getModelById($request->input('idLSP'));
+    $idKieuDang = $this->kieuDangBUS->getModelById($request->input('idKieuDang'));
 
-        $anhSanPham = $request->file('anhSanPham');
+    $sanPham = new SanPham(
+        null,
+        $request->input('tenSanPham'),
+        $idHang,
+        $idLSP,
+        $idKieuDang,
+        $request->input('moTa'),
+        null,
+        $request->input('thoiGianBaoHanh'),
+        0,
+        1
+    );
 
-        // Tạo sản phẩm mới
-        $sanPham = new SanPham(
-            $idSanPham,
-            $tenSanPham,
-            $idHang,
-            $idLSP,
-            $idKieuDang,
-            $moTa,
-            null,
-            $thoiGianBaoHanh,
-            $request->input('soluong'),
-            1
-        );
+   $newID = $this->sanPhamBUS->addModel($sanPham);
 
-        // Thêm sản phẩm vào database và lấy ID mới
-        $this->sanPhamBUS->updateModel($sanPham);
-        Log::info('id'. $idSanPham);
+    if ($request->hasFile('anhSanPham')) {
+        $file = $request->file('anhSanPham');
+        // Lưu theo đuôi gốc của file để đảm bảo tính toàn vẹn
+        $tenAnh = $newID . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('productImg'), $tenAnh);
+    } 
 
-        // Xử lý file ảnh nếu có gửi lên
-        if ($anhSanPham) {
-            $tenAnh = $idSanPham . '.webp'; // Đảm bảo tên ảnh là <idSanPham>.webp
-            $duongDanAnhCu = public_path('productImg/' . $tenAnh);
+    return redirect()->back()->with('success', 'Thêm sản phẩm thành công!');
+}
 
-            // Xóa ảnh cũ nếu tồn tại
-            if (File::exists($duongDanAnhCu)) {
-                Log::info('Xóa ảnh cũ: ' . $duongDanAnhCu, ['exists' => File::exists($duongDanAnhCu)]);
-                File::delete($duongDanAnhCu);
-            }
-           
-            
+public function update(Request $request)
+{
+    $idSanPham = $request->input('idSanPham');
+    // 1. Tạo validator và đẩy lỗi vào túi 'updateProduct'
+    $validator = Validator::make($request->all(), [
+        // unique:table,column,except,idColumn (Bỏ qua chính ID đang sửa khi check trùng tên)
+        'moTa'            => 'required|string',
+        'thoiGianBaoHanh' => 'required|integer',
+        'idHang'          => 'required',
+        'idLSP'           => 'required',
+        'idKieuDang'      => 'required',
+    ], [
+        'tenSanPham.required'      => 'Tên không được để trống.',
+        'tenSanPham.unique'        => 'Tên sản phẩm này đã tồn tại.',
+        'moTa.required'            => 'Mô tả không được để trống.',
+        'thoiGianBaoHanh.integer'  => 'Thời gian phải là số.',
+    ]);
 
-            // Lưu ảnh mới
-            $anhSanPham->move(public_path('productImg'), $tenAnh);
-            
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'updateProduct') // Tách biệt túi lỗi
+            ->withInput();
+    }
+
+    // 2. Thực hiện cập nhật thông qua BUS
+    $idHang = $this->hangBUS->getModelById($request->input('idHang'));
+    $idLSP = $this->loaiSanPhamBUS->getModelById($request->input('idLSP'));
+    $idKieuDang = $this->kieuDangBUS->getModelById($request->input('idKieuDang'));
+
+    $sanPham = new SanPham(
+        $idSanPham,
+        $request->input('tenSanPham'),
+        $idHang,
+        $idLSP,
+        $idKieuDang,
+        $request->input('moTa'),
+        null,
+        $request->input('thoiGianBaoHanh'),
+        $request->input('soluong') ?? 0,
+        1
+    );
+
+    $this->sanPhamBUS->updateModel($sanPham);
+
+    // 3. Xử lý ảnh (Xóa cũ lưu mới)
+    if ($request->hasFile('anhSanPham')) {
+        $file = $request->file('anhSanPham');
+        $tenAnh = $idSanPham . '.webp';
+        $duongDanOld = public_path('productImg/' . $tenAnh);
+
+        if (File::exists($duongDanOld)) {
+            File::delete($duongDanOld);
         }
-        return redirect()->back()->with('success', 'Cập nhật thành công!');
+        $file->move(public_path('productImg'), $tenAnh);
     }
 
+    return redirect()->back()->with('success', 'Cập nhật thành công!');
+}
 
 
     // Xử lý xóa sản phẩm

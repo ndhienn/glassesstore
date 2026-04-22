@@ -1,16 +1,23 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // --- 1. XỬ LÝ FORM TÌM KIẾM (GET) ---
     const searchForm = document.querySelector('form[method="GET"]');
+    
     if (searchForm) {
         searchForm.addEventListener('submit', function (e) {
             e.preventDefault();
+            
             const formData = new FormData(searchForm);
             const url = new URL(window.location.href);
             const currentParams = new URLSearchParams(window.location.search);
+            
+            // Đảm bảo luôn có modun để tránh mất trang hiện tại
             if (!currentParams.has('modun')) {
                 currentParams.set('modun', 'hoadon');
             }
+            
+            // Duyệt qua các trường trong form để cập nhật tham số URL
             for (const [key, value] of formData.entries()) {
                 if (value.trim() !== '') {
                     currentParams.set(key, value);
@@ -18,9 +25,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     currentParams.delete(key);
                 }
             }
+            
+            // Xóa tham số phân trang 'page' khi bắt đầu tìm kiếm mới
+            currentParams.delete('page');
+            
             url.search = currentParams.toString();
             window.location.href = url.toString();
         });
+
+        // Tự động submit khi thay đổi lựa chọn ở select "Tỉnh"
         const tinhSelect = searchForm.querySelector('select[name="keywordTinh"]');
         if (tinhSelect) {
             tinhSelect.addEventListener('change', function () {
@@ -28,41 +41,22 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     }
+
+    // --- 2. XỬ LÝ THÔNG BÁO (ALERT) TỰ TẮT SAU 3 GIÂY ---
+    const alerts = document.querySelectorAll('.alert');
     
-    const refreshBtn = document.getElementById('refreshBtn');
-    refreshBtn.addEventListener('click', function () {
-        const url = new URL(window.location.href);
-        url.searchParams.delete('keyword');
-        url.searchParams.delete('page');
-        window.location.href = url.toString();
-    });
-
-    // Handle Edit button click
-    const editButtons = document.querySelectorAll('.edit-btn');
-    editButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const id = this.getAttribute('data-id');
-            const tenLSP = this.getAttribute('data-tenlsp');
-            const moTa = this.getAttribute('data-mota');
-            const trangThai = this.getAttribute('data-trangthai');
-            document.getElementById('editTenLSP').value = tenLSP;
-            document.getElementById('editMoTa').value = moTa;
-            document.getElementById('editTrangThaiHD').value = trangThai;
-            const form = document.getElementById('editTypeProductForm');
-            form.action = `{{ route('admin.loaisanpham.update', ['id' => '__ID__']) }}`.replace('__ID__', id);
-        });
-    });
-
-    // Handle Delete button click
-    const deleteButtons = document.querySelectorAll('.delete-btn');
-    deleteButtons.forEach(button => {
-        button.addEventListener('click', function () {
-            const id = this.getAttribute('data-id');
-            const tenLSP = this.getAttribute('data-tenlsp');
-            document.getElementById('deleteProductTypeId').value = id;
-            document.getElementById('productTypeName').textContent = tenLSP;
-            document.getElementById('productTypeId').textContent = id;
-        });
+    alerts.forEach(function(alert) {
+        setTimeout(function() {
+            // Sử dụng hiệu ứng fade của Bootstrap bằng cách gỡ class 'show'
+            alert.classList.remove('show');
+            
+            // Chờ hiệu ứng mờ kết thúc (150ms) rồi mới xóa hẳn khỏi giao diện
+            setTimeout(function() {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 150); 
+        }, 3000); // 3000ms = 3 giây
     });
 });
 </script>
@@ -71,7 +65,7 @@ document.addEventListener('DOMContentLoaded', function () {
     <form class="d-flex me-2 mb-3" method="get" role="search">
         <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
         <button class="btn btn-outline-success me-2" type="submit">Tìm</button>    
-        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Refresh</button>
+        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Làm mới</button>
     </form>
     
     <!-- Nút Plus để mở Modal -->
@@ -102,19 +96,32 @@ document.addEventListener('DOMContentLoaded', function () {
                     </span>
                 </td>
                 <td>
-                    <button class="btn btn-warning btn-sm edit-btn" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#editTypeProductModal" 
-                            data-id="{{ $loai->getId() }}" 
-                            data-tenlsp="{{ $loai->gettenLSP() }}" 
-                            data-mota="{{ $loai->getmoTa() }}" 
-                            data-trangthai="{{ $loai->getTrangThaiHD() ? 1 : 0 }}">Sửa</button>
-                    <button class="btn btn-danger btn-sm delete-btn" 
-                            data-bs-toggle="modal" 
-                            data-bs-target="#deleteProductTypeModal" 
-                            data-id="{{ $loai->getId() }}" 
-                            data-tenlsp="{{ $loai->gettenLSP() }}">Xóa</button>
-                </td>
+    <button class="btn btn-warning btn-sm edit-btn" 
+            data-bs-toggle="modal" 
+            data-bs-target="#editTypeProductModal" 
+            data-id="{{ $loai->getId() }}" 
+            data-tenlsp="{{ $loai->gettenLSP() }}" 
+            data-mota="{{ $loai->getmoTa() }}" 
+            data-trangthai="{{ $loai->getTrangThaiHD() ? 1 : 0 }}">Sửa</button>
+
+    <form method="POST" action="{{ route('admin.loaisanpham.delete') }}" style="display:inline;">
+        @csrf
+        @method('DELETE')
+        <input type="hidden" name="id" value="{{ $loai->getId() }}">
+        
+        @if($loai->getTrangThaiHD() == 1)
+            {{-- Đang hoạt động -> Nút Ngừng hoạt động (Nền đỏ, chữ trắng) --}}
+            <button type="submit" class="btn btn-danger text-white btn-sm" onclick="return confirm('Ngừng hoạt động loại sản phẩm này?')">
+                Ngừng
+            </button>
+        @else
+            {{-- Đang ngừng -> Nút Kích hoạt (Nền xanh lá, chữ trắng) --}}
+            <button type="submit" class="submit btn btn-success text-white btn-sm" onclick="return confirm('Kích hoạt lại loại sản phẩm này?')">
+                Kích hoạt
+            </button>
+        @endif
+    </form>
+</td>
             </tr>
             @endforeach
         </tbody>
@@ -168,23 +175,25 @@ document.addEventListener('DOMContentLoaded', function () {
                     @csrf 
                     <div class="row mb-3">
                         <div class="col">
-                            <label class="form-label">Tên sản phẩm</label>
+                            <label class="form-label">Tên loại sản phẩm</label>
                             <input type="text" name="tenLSP" class="form-control" placeholder="Nhập tên loại sản phẩm" value="{{ old('tenLSP') }}">
-                            @error('tenLSP')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
+                            @if($errors->addLSP->has('tenLSP'))
+                                <div class="text-danger small mt-1">{{ $errors->addLSP->first('tenLSP') }}</div>
+                            @endif
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
                             <label class="form-label">Mô tả</label>
                             <textarea class="form-control" name="moTa" rows="3" placeholder="Nhập mô tả">{{ old('moTa') }}</textarea>
-                            @error('moTa')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
+                            @if($errors->addLSP->has('moTa'))
+                                <div class="text-danger small mt-1">{{ $errors->addLSP->first('moTa') }}</div>
+                            @endif
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Lưu</button>
+                    <div class="modal-footer justify-content-start px-0"> <button type="submit" class="btn btn-primary">Lưu</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    </div>
                 </form>
             </div>
         </div>
@@ -200,47 +209,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
             </div>
             <div class="modal-body">
-                <form method="post" id="editTypeProductForm" action="{{ route('admin.loaisanpham.update', ['id' => '__ID__']) }}">
+                <form method="post" id="editTypeProductForm" action="">
                     @csrf
                     @method('PUT')
                     <div class="row mb-3">
                         <div class="col">
-                            <label class="form-label">Tên sản phẩm</label>
-                            <input type="text" name="tenLSP" class="form-control" id="editTenLSP" placeholder="Nhập tên loại sản phẩm" value="{{ old('tenLSP') }}">
-                            @error('tenLSP')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
+                            <label class="form-label">Tên loại sản phẩm</label>
+                            <input type="text" name="tenLSP" class="form-control bg-light" id="editTenLSP" readonly style="cursor: not-allowed;">
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
                             <label class="form-label">Mô tả</label>
-                            <textarea class="form-control" name="moTa" id="editMoTa" rows="3" placeholder="Nhập mô tả">{{ old('moTa') }}</textarea>
-                            @error('moTa')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
+                            <textarea class="form-control" name="moTa" id="editMoTa" rows="3">{{ old('moTa') }}</textarea>
+                            @if($errors->updateLSP->has('moTa'))
+                                <div class="text-danger small mt-1">{{ $errors->updateLSP->first('moTa') }}</div>
+                            @endif
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
                             <label class="form-label">Trạng thái</label>
                             <select name="trangThaiHD" id="editTrangThaiHD" class="form-control">
-                                <option value="1" {{ old('trangThaiHD', 1) == 1 ? 'selected' : '' }}>Hoạt động</option>
-                                <option value="0" {{ old('trangThaiHD', 1) == 0 ? 'selected' : '' }}>Ngừng hoạt động</option>
+                                <option value="1">Hoạt động</option>
+                                <option value="0">Ngừng hoạt động</option>
                             </select>
-                            @error('trangThaiHD')
-                                <div class="text-danger">{{ $message }}</div>
-                            @enderror
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Lưu</button>
+                    <div class="modal-footer justify-content-start px-0"> <button type="submit" class="btn btn-primary">Lưu</button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Modal Xóa Loại Sản Phẩm -->
+<!-- Modal kích hoạt Loại Sản Phẩm -->
 <div class="modal fade" id="deleteProductTypeModal" tabindex="-1" aria-labelledby="deleteProductTypeModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -262,25 +266,72 @@ document.addEventListener('DOMContentLoaded', function () {
     </div>
 </div>
 
-@if(session('success'))
-<div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
-    {{ session('success') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-@endif
-@if(session('error'))
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-    {{ session('error') }}
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-@endif
-@if ($errors->any())
-<div class="alert alert-danger alert-dismissible fade show" role="alert">
-    @foreach ($errors->all() as $error)
-        {{ $error }}<br>
-    @endforeach
-    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-</div>
-@endif
+<div id="alert-container">
+    @if(session('success'))
+        <div class="alert alert-success alert-dismissible fade show auto-close-alert" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
 
+    @if(session('error') || $errors->any())
+        <div class="alert alert-danger alert-dismissible fade show auto-close-alert" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            @if(session('error'))
+                {{ session('error') }}
+            @else
+                {{ $errors->first() }} @endif
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+</div>
+<div id="lsp-modal-status" 
+     data-add-error="{{ $errors->hasBag('addLSP') && $errors->addLSP->any() ? '1' : '0' }}"
+     data-update-error="{{ $errors->hasBag('updateLSP') && $errors->updateLSP->any() ? '1' : '0' }}">
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Chuyển đổi trạng thái lỗi từ Blade sang JS an toàn
+    var hasAddError = "{{ $errors->hasBag('addLSP') && $errors->addLSP->any() ? '1' : '0' }}";
+    var hasUpdateError = "{{ $errors->hasBag('updateLSP') && $errors->updateLSP->any() ? '1' : '0' }}";
+
+    // Tự động mở Modal Thêm nếu có lỗi
+    if (hasAddError === '1') {
+        var addModalEl = document.getElementById('addTypeProductModal');
+        if (addModalEl) {
+            new bootstrap.Modal(addModalEl).show();
+        }
+    }
+
+    // Tự động mở Modal Sửa nếu có lỗi
+    if (hasUpdateError === '1') {
+        var editModalEl = document.getElementById('editTypeProductModal');
+        if (editModalEl) {
+            new bootstrap.Modal(editModalEl).show();
+        }
+    }
+
+    // Xử lý đổ dữ liệu vào Modal Sửa khi nhấn nút .btn-edit
+    const editButtons = document.querySelectorAll('.btn-edit');
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const ten = this.dataset.ten;
+            const mota = this.dataset.mota;
+            const status = this.dataset.status;
+
+            const form = document.getElementById('editTypeProductForm');
+            if (form) {
+                // Thay thế ID vào route update
+                form.action = "{{ route('admin.loaisanpham.update', ['id' => ':id']) }}".replace(':id', id);
+                
+                document.getElementById('editTenLSP').value = ten;
+                document.getElementById('editMoTa').value = mota;
+                document.getElementById('editTrangThaiHD').value = status;
+            }
+        });
+    });
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

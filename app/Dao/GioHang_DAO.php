@@ -134,5 +134,17 @@ class GioHang_DAO
         }
         return $list;
     }
+    public function getTotalAmount($idGioHang): float
+    {
+    $query = "SELECT SUM(ct.SO_LUONG * sp.GIA_BAN) as tong_tien 
+              FROM CHITIETGIOHANG ct 
+              JOIN SANPHAM sp ON ct.ID_SANPHAM = sp.ID 
+              WHERE ct.ID_GIOHANG = ?";
+    
+    $rs = database_connection::executeQuery($query, $idGioHang);
+    $row = $rs->fetch_assoc();
+    
+    return $row['tong_tien'] ?? 0;
+    }
 }
 ?>

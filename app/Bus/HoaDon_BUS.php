@@ -3,6 +3,11 @@ namespace App\Bus;
 use App\Dao\HoaDon_DAO;
 use App\Dao\CTHD_DAO;
 use App\Bus\CTHD_BUS;
+use App\Bus\CTSP_BUS;
+use App\Bus\SanPham_BUS;
+use App\Bus\GioHang_BUS;
+use App\Bus\CTGH_BUS;
+use App\Bus\Auth_BUS;
 use App\Interface\BUSInterface;
 use App\Models\HoaDon;
 use Illuminate\Support\Arr;
@@ -167,73 +172,69 @@ class HoaDon_BUS{
         return $hd;
     }
 
-    public function chotDonHangSauThanhToan($idHoaDon) 
-    {
-        // 1. Lấy thông tin hóa đơn và chi tiết hóa đơn từ DB
-        $hd = $this->getModelById($idHoaDon);
-        $listCTHD = app(CTHD_BUS::class)->getCTHTbyIDHD($idHoaDon); // Bạn cần đảm bảo DAO có hàm lấy danh sách CTHD theo ID hóa đơn
+   public function chotDonHangSauThanhToan($idHoaDon) 
+{
+    // Khởi tạo các BUS cần thiết
+    $cthdBus = app(CTHD_BUS::class);
+    $ctspBus = app(CTSP_BUS::class);
+    $spBus   = app(SanPham_BUS::class);
+    $ctghBus = app(CTGH_BUS::class);
+    $authBus = app(Auth_BUS::class);
+    $ghBus   = app(GioHang_BUS::class);
+
+    $hd = $this->getModelById($idHoaDon);
+    if (!$hd) return false;
+
+    $listCTHD = $cthdBus->getCTHTbyIDHD($idHoaDon);
+    if (empty($listCTHD)) return false;
+
+    $email = $authBus->getEmailFromToken();
+    $gh = $ghBus->getByEmail($email);
+
+    foreach ($listCTHD as $cthd) {
+        if (!$cthd) continue;
+
+        $soSeri = $cthd->getSoSeri();
+        $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
         
-        $email = app(\App\Bus\Auth_BUS::class)->getEmailFromToken();
-        $gh = app(GioHang_BUS::class)->getByEmail($email);
+        if ($ctsp) {
+            $sp = $ctsp->getIdSP(); 
+            if ($sp) {
+                $ctspBus->updateStatus($soSeri, 0); // Đã bán
+                $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
+                $spBus->updateModel($sp);
 
-        // 2. VÒNG LẶP TRỪ KHO VÀ DỌN DẸP
-        foreach ($listCTHD as $cthd) {
-            $soSeri = $cthd->getSoSeri();
-            
-            // Lấy thông tin Seri
-            $ctsp = app(CTSP_BUS::class)->getCTSPBySoSeri($soSeri);
-            $sp = $ctsp->getIdSP();
-            $idSanPham = $sp->getId();
-
-            // a. Đánh dấu Seri này là ĐÃ BÁN (0)
-            app(CTSP_BUS::class)->updateStatus($soSeri, 0);
-
-            // b. Trừ số lượng tồn kho của Sản phẩm gốc đi 1
-            $total = $sp->getSoLuong() - 1; 
-            $sp->setSoLuong($total);
-            app(SanPham_BUS::class)->updateModel($sp);
-
-            // c. Xóa món này khỏi giỏ hàng của user
-            app(CTGH_BUS::class)->deleteCTGH($gh->getIdGH(), $idSanPham);
+                if ($gh) {
+                    $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                }
+            }
         }
+    }
 
-        // 3. Cập nhật trạng thái Hóa Đơn thành PAID
-        $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
+    // THAY THẾ Ở ĐÂY: Dùng số nguyên thay vì Enum
+    $hd->setTrangThai('PAID'); 
+    $this->updateModel($hd);
+    
+    session()->forget('listSP');
+    return true;
+}
+    public function huyThanhToanDonHang($idHoaDon) {
+    $hd = $this->getModelById($idHoaDon);
+    if (!$hd) return false;
+
+    $trangThaiHienTai = $hd->getTrangThai();
+    
+    // Giả sử: 2 là Chờ thanh toán, 3 là Đã hủy
+    if ($trangThaiHienTai == 2) {
+        $hd->setTrangThai(3); 
         $this->updateModel($hd);
-
-        // Dọn dẹp Session giỏ hàng
-        session()->forget('listSP');
-
         return true;
     }
-    public function huyThanhToanDonHang($idHoaDon) {
-        $hd = $this->getModelById($idHoaDon);
 
-        // LỚP KHIÊN 1: Kiểm tra xem hóa đơn có tồn tại không
-        if (!$hd) {
-            return false; 
-        }
-
-        // LỚP KHIÊN 2: Chỉ cho phép hủy nếu đơn hàng đang "Chờ thanh toán" (PENDING) hoặc "Đã đặt" (DADAT)
-        // Tuyệt đối không được hủy đơn đã PAID.
-        $trangThaiHienTai = $hd->getTrangThai();
-        
-        if ($trangThaiHienTai === \App\Enum\HoaDonEnum::PENDING || $trangThaiHienTai === \App\Enum\HoaDonEnum::DADAT) {
-            
-            // Đổi trạng thái thành Đã hủy
-            $hd->setTrangThai(\App\Enum\HoaDonEnum::CANCELLED);
-            $this->updateModel($hd);
-            
-            /* * MẸO CHO TƯƠNG LAI: 
-             * Nếu sau này ở hàm `createHoaDon`, bạn mở comment cái dòng "Giữ chỗ Seri (Status = 2)"
-             * thì ở hàm Hủy này, bạn phải viết thêm 1 vòng lặp để nhả các Seri đó ra, 
-             * đổi chúng lại thành Status = 1 (Chưa bán) để người khác còn mua được nhé!
-             */
-
-            return true;
-        }
-
-        // Trả về false nếu cố tình hủy một đơn không hợp lệ (VD: Đơn đã PAID)
-        return false;
+    return false;
+}
+    public function searchByEmailOrSDT(string $keyword): array
+    {
+        return $this->hoaDonDAO->searchByEmailOrSDT($keyword);
     }
 }

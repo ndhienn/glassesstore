@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Bus\Hang_BUS;
 use App\Models\Hang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class HangController extends Controller
 {
@@ -15,58 +16,58 @@ class HangController extends Controller
     }
 
     public function store(Request $request)
-    {
-        // Validation dữ liệu
-        $request->validate([
-            'tenhang' => 'required|string|max:255',
-            'mota' => 'nullable|string',
-            'trangthaiHD' => 'required|in:1,3',
-        ]);
+{
+    // Tạo validator và đẩy lỗi vào túi 'addBrand'
+    $validator = Validator::make($request->all(), [
+        'tenhang' => 'required|string|max:255|unique:hang,tenhang',
+        'mota' => 'nullable|string',
+        'trangthaiHD' => 'required|in:1,3',
+    ], [
+        'tenhang.required' => 'Vui lòng nhập tên hãng.',
+        'tenhang.unique' => 'Tên hãng này đã tồn tại.', // Database mặc định không phân biệt hoa thường
+    ]);
 
-        // Lấy dữ liệu từ form
-        $tenHang = $request->input('tenhang');
-        $moTa = $request->input('mota');
-        $trangThaiHD = $request->input('trangthaiHD');
-
-        // Tạo đối tượng hãng mới, không cần ID
-        $hang = new Hang(null, $tenHang, $moTa, $trangThaiHD);
-
-        // Thêm hãng vào cơ sở dữ liệu qua Hang_BUS
-        $this->hangBUS->addModel($hang);
-
-        // Quay lại trang trước và thông báo thành công
-        return redirect()->back()->with('success', 'Hãng đã được thêm thành công!');
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'addBrand')
+            ->withInput();
     }
 
-    public function update(Request $request)
-    {
-        // Validation dữ liệu
-        $request->validate([
-            'id' => 'required|exists:hang,id',
-            'tenhang' => 'required|string|max:255',
-            'mota' => 'nullable|string',
-        ]);
+    $hang = new Hang(null, $request->input('tenhang'), $request->input('mota'), $request->input('trangthaiHD'));
+    $this->hangBUS->addModel($hang);
 
-        // Lấy dữ liệu từ form
-        $id = $request->input('id');
-        $tenHang = $request->input('tenhang');
-        $moTa = $request->input('mota');
+    return redirect()->back()->with('success', 'Hãng đã được thêm thành công!');
+}
 
-        // Lấy hãng hiện tại để giữ trạng thái
-        $existingHang = $this->hangBUS->getModelById($id);
-        if (!$existingHang) {
-            return redirect()->back()->with('error', 'Hãng không tồn tại!');
-        }
+public function update(Request $request)
+{
+    // Tạo validator và đẩy lỗi vào túi 'updateBrand'
+    $validator = Validator::make($request->all(), [
+        'id' => 'required',
+        'mota' => 'nullable|string',
+    ], [
+        'mota.string' => 'Mô tả phải là chuỗi ký tự.',
+    ]);
 
-        // Tạo đối tượng hãng với thông tin mới, giữ nguyên trạng thái
-        $hang = new Hang($id, $tenHang, $moTa, $existingHang->gettrangThaiHD());
-
-        // Cập nhật hãng qua Hang_BUS
-        $this->hangBUS->updateModel($hang);
-
-        // Quay lại trang trước và thông báo thành công
-        return redirect()->back()->with('success', 'Hãng đã được cập nhật thành công!');
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'updateBrand')
+            ->withInput();
     }
+
+    $id = $request->input('id');
+    $existingHang = $this->hangBUS->getModelById($id);
+
+    if (!$existingHang) {
+        return redirect()->back()->with('error', 'Hãng không tồn tại!');
+    }
+
+    // Luôn lấy tên cũ từ Database để đảm bảo tính NOT NULL và không bị sửa đổi
+    $hang = new Hang($id, $existingHang->gettenHang(), $request->input('mota'), $existingHang->gettrangThaiHD());
+    $this->hangBUS->updateModel($hang);
+
+    return redirect()->back()->with('success', 'Hãng đã được cập nhật thành công!');
+}
 
     public function controlDelete(Request $request)
     {

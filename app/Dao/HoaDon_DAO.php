@@ -240,8 +240,32 @@ class HoaDon_DAO{
 
         return $list;
     }
+    public function searchByEmailOrSDT(string $keyword): array
+{
+    $list = [];
+    // Chỉ JOIN các bảng liên quan đến Khách hàng để lấy Số điện thoại
+    $query = "
+        SELECT DISTINCT hd.* FROM hoadon hd
+        LEFT JOIN taikhoan tk ON hd.EMAIL = tk.EMAIL
+        LEFT JOIN nguoidung nd_kh ON tk.IDNGUOIDUNG = nd_kh.ID
+        WHERE hd.EMAIL LIKE ? 
+           OR nd_kh.SODIENTHOAI LIKE ?
+    ";
+    
+    // Tham số tìm kiếm
+    $param = "%" . $keyword . "%";
+    
+    // Chỉ truyền 2 tham số (cho Email và SDT) vào hàm executeQuery
+    $rs = database_connection::executeQuery($query, $param, $param);
 
-
+    while ($row = $rs->fetch_assoc()) {
+        $model = $this->createHoaDonModel($row);
+        if ($model) {
+            $list[] = $model;
+        }
+    }
+    return $list;
+}
 
 
 

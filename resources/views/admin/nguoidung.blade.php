@@ -43,44 +43,45 @@
             window.location.href = currentUrl.toString();
         });
 
-        // Tìm kiếm: giữ lại tất cả query hiện có và chỉ cập nhật 'keyword' + 'keywordQuyen'
-        const searchForm = document.querySelector('form[role="search"]');
-        if (searchForm) {
-            searchForm.addEventListener('submit', function (e) {
-                e.preventDefault();
+        
+       const searchForm = document.querySelector('form[role="search"]');
+if (searchForm) {
+    searchForm.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-                const currentUrl = new URL(window.location.href);
-                const keywordInput = document.getElementById('keyword');
-                const tinhSelect = searchForm.querySelector('select[name="keywordTinh"]');
+        const currentUrl = new URL(window.location.href);
+        const keywordInput = document.getElementById('keyword');
+    
+        const activeSelect = searchForm.querySelector('select[name="keywordActive"]');
 
-                // Luôn cập nhật keyword nếu có
-                if (keywordInput && keywordInput.value.trim()) {
-                    currentUrl.searchParams.set('keyword', keywordInput.value.trim());
-                } else {
-                    currentUrl.searchParams.delete('keyword');
-                }
-
-                // Luôn cập nhật tinh nếu có
-                if (tinhSelect && tinhSelect.value) {
-                    currentUrl.searchParams.set('keywordTinh', tinhSelect.value);
-                } else {
-                    currentUrl.searchParams.delete('keywordTinh');
-                }
-
-                // Reset về page 1 nếu có param page
-                currentUrl.searchParams.delete('page');
-
-                window.location.href = currentUrl.toString();
-            });
-
-            // Khi chọn lọc tỉnh => submit form (auto giữ lại URL như ở trên)
-            const tinhSelect = searchForm.querySelector('select[name="keywordTinh"]');
-            if (tinhSelect) {
-                tinhSelect.addEventListener('change', function () {
-                    searchForm.dispatchEvent(new Event('submit'));
-                });
-            }
+        // 1. Cập nhật keyword (Số điện thoại)
+        if (keywordInput && keywordInput.value.trim()) {
+            currentUrl.searchParams.set('keyword', keywordInput.value.trim());
+        } else {
+            currentUrl.searchParams.delete('keyword');
         }
+
+        // 2. Cập nhật trạng thái (Thay cho lọc tỉnh)
+        if (activeSelect && activeSelect.value !== "") {
+            currentUrl.searchParams.set('keywordActive', activeSelect.value);
+        } else {
+            currentUrl.searchParams.delete('keywordActive');
+        }
+
+        // Reset về page 1 khi tìm kiếm/lọc
+        currentUrl.searchParams.delete('page');
+
+        window.location.href = currentUrl.toString();
+    });
+
+    // 3. Tự động submit khi thay đổi bộ lọc trạng thái
+    const activeSelect = searchForm.querySelector('select[name="keywordActive"]');
+    if (activeSelect) {
+        activeSelect.addEventListener('change', function () {
+            searchForm.dispatchEvent(new Event('submit'));
+        });
+    }
+}
     });
 </script>
 @if(session('success'))
@@ -96,20 +97,20 @@
 @endif
 <div class="p-3 bg-light flex">
     <form class="d-flex me-2 mb-3" method="get" role="search">
-        <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
+        <input class="form-control me-2 w-25" type="search" 
+       placeholder="Tìm kiếm theo SĐT..." 
+       aria-label="Search" id="keyword" name="keyword" 
+       value="{{ request('keyword') }}">
 
-        <button class="btn btn-outline-success me-2" type="submit">Tìm</button>
+<button class="btn btn-outline-success me-2" type="submit">Tìm</button>
 
-        <select class="form-select w-25 ms-2" name="keywordTinh">
-            <option disabled {{ request('keywordTinh') ? '' : 'selected' }}>Lọc theo tỉnh</option>
-            @foreach($listTinh as $it)
-                <option value="{{ $it->getId() }}" {{ request('keywordTinh') == $it->getId() ? 'selected' : '' }}>
-                    {{ $it->getId() }} - {{ $it->getTenTinh() }}
-                </option>
-            @endforeach
-        </select>
+<select class="form-select w-25 ms-2" name="keywordActive">
+    <option value="" {{ request('keywordActive') === null ? 'selected' : '' }}>Tất cả trạng thái</option>
+    <option value="1" {{ request('keywordActive') === '1' ? 'selected' : '' }}>Hoạt động</option>
+    <option value="0" {{ request('keywordActive') === '0' ? 'selected' : '' }}>Đã khóa</option>
+</select>
 
-        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Refresh</button>
+        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Làm mới</button>
         <button type="button" class="btn btn-success p-3 w-10 ms-5" data-bs-toggle="modal" data-bs-target="#userAddModal">
             <i class='bx bx-plus'></i>
         </button>
@@ -155,7 +156,7 @@
                     <td>{{ $tk-> getCccd() }}</td>
                     <td>
                         <span class="badge {{ $tk->getTrangThaiHD() ? 'bg-success' : 'bg-danger' }}">
-                            {{ $tk->getTrangThaiHD() ? 'Hoạt động' : 'Ngừng hoạt động' }}
+                            {{ $tk->getTrangThaiHD() ? 'Hoạt động' : 'Đã khóa' }}
                         </span>
                     </td>
                     <td>
@@ -173,11 +174,14 @@
                             data-bs-target="#userUpdateModal">Sửa</button>
 
                         <form method="POST" action="{{ route('admin.nguoidung.controlDelete') }}" style="display:inline;">
-                            @csrf
-                            <input type="hidden" name="id" value="{{ $tk->getId() }}">
-                            <input type="hidden" name="trangThaiHD" value="{{ $tk->getTrangThaiHD() }}">
-                            <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
-                        </form>
+    @csrf
+    <input type="hidden" name="id" value="{{ $tk->getId() }}">
+    @if($tk->getTrangThaiHD() == 1)
+        <button type="submit" class="btn btn-danger btn-sm">Khóa</button>
+    @else
+        <button type="submit" class="btn btn-success btn-sm">Mở</button>
+    @endif
+</form>
                     </td>
                 </tr>
                 @endforeach
@@ -230,174 +234,187 @@
 
     </div>
 </div>
-<!-- modal them taikhoan -->
 <div class="modal fade" id="userAddModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg"> <!-- modal-lg để modal to hơn -->
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="userModalLabel">Thông tin người dùng</h5>
+        <h5 class="modal-title" id="userModalLabel">Thông tin người dùng mới</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form class="row g-3" method="post" action="{{ route('admin.nguoidung.store') }}">
-        @csrf  <!-- Thêm csrf token để bảo vệ bảo mật -->
+          @csrf 
+          
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label">Họ tên</label>
-              <input type="text" class="form-control" name="fullname" value="{{old('fullname')}}">
-              <div class="d-flex justify-content-end">
-                @error('fullname') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              <label class="form-label">Họ tên</label>
+              <input type="text" class="form-control" name="HOTEN" value="{{ old('HOTEN') }}">
+              @if($errors->addUser->has('HOTEN'))
+                <div class="text-danger small mt-1">{{ $errors->addUser->first('HOTEN') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label" name="birthdate">Ngày sinh</label>
-              <input type="date" class="form-control" name="birthdate" value="{{old('birthdate')}}">
-              <div class="d-flex justify-content-end">
-                @error('birthdate') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              <label class="form-label">Ngày sinh</label>
+              <input type="date" class="form-control" name="NGAYSINH" value="{{ old('NGAYSINH') }}">
+              @if($errors->addUser->has('NGAYSINH'))
+                <div class="text-danger small mt-1">{{ $errors->addUser->first('NGAYSINH') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputPassword4" class="form-label">Giới tính</label>
-              <select name="gender" id="inputGroup" class="form-select" value="{{old('gender')}}">
-                <option selected disabled>Chọn giới tính</option>
-                <option value="MALE">Nam</option>
-                <option value="FEMALE">Nữ</option>
-                <option value="UNDEFINED">Khác</option>
+              <label class="form-label">Giới tính</label>
+              <select name="GIOITINH" class="form-select">
+                <option value="" selected disabled>Chọn giới tính</option>
+                <option value="MALE" {{ old('GIOITINH') == 'MALE' ? 'selected' : '' }}>Nam</option>
+                <option value="FEMALE" {{ old('GIOITINH') == 'FEMALE' ? 'selected' : '' }}>Nữ</option>
+                <option value="UNDEFINED" {{ old('GIOITINH') == 'UNDEFINED' ? 'selected' : '' }}>Khác</option>
               </select>
-              <div class="d-flex justify-content-end">
-                @error('gender') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              @if($errors->addUser->has('GIOITINH'))
+                <div class="text-danger small mt-1">{{ $errors->addUser->first('GIOITINH') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputGroup" class="form-label">Địa chỉ</label>
-              <input type="text" class="form-control" name="address" value="{{old('address')}}">
-              <div class="d-flex justify-content-end">
-                @error('address') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              <label class="form-label">Địa chỉ</label>
+              <input type="text" class="form-control" name="DIACHI" value="{{ old('DIACHI') }}">
+              @if($errors->addUser->has('DIACHI'))
+                <div class="text-danger small mt-1">{{ $errors->addUser->first('DIACHI') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputGroup" class="form-label">Tỉnh</label>
-              <select id="inputGroup" class="form-select" name="tinh" value="{{old('tinh')}}">
-                <option selected disabled>Chọn tỉnh</option>
+              <label class="form-label">Tỉnh</label>
+              <select class="form-select" name="IDTINH">
+                <option value="" selected disabled>Chọn tỉnh</option>
                 @foreach($listTinh as $it)
-                    <option value="{{ $it->getId() }}">
+                    <option value="{{ $it->getId() }}" {{ old('IDTINH') == $it->getId() ? 'selected' : '' }}>
                         {{ $it->getId() }} - {{ $it->getTenTinh() }}
                     </option>
                 @endforeach
               </select>
-              <div class="d-flex justify-content-end">
-                @error('tinh') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              @if($errors->addUser->has('IDTINH'))
+                <div class="text-danger small mt-1">{{ $errors->addUser->first('IDTINH') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label" name="sdt">Số điện thoại</label>
-              <input type="text" class="form-control" name="sdt" value="{{old('sdt')}}">
-              <div class="d-flex justify-content-end">
-                @error('sdt') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              <label class="form-label">Số điện thoại</label>
+              <input type="text" class="form-control" name="SODIENTHOAI" value="{{ old('SODIENTHOAI') }}">
+              @if($errors->addUser->has('SODIENTHOAI'))
+                <div class="text-danger small mt-1">{{ $errors->addUser->first('SODIENTHOAI') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label" name="cccd">CCCD</label>
-              <input type="text" class="form-control" name="cccd" value="{{old('cccd')}}">
-              <div class="d-flex justify-content-end">
-                @error('cccd') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              <label class="form-label">CCCD</label>
+              <input type="text" class="form-control" name="CCCD" value="{{ old('CCCD') }}">
+              @if($errors->addUser->has('CCCD'))
+                <div class="text-danger small mt-1">{{ $errors->addUser->first('CCCD') }}</div>
+              @endif
           </div>
+
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Lưu</button>
         </div>
         </form>
       </div>
-      
     </div>
   </div>
 </div>
 
-
-<div class="modal fade" id="userUpdateModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg"> <!-- modal-lg để modal to hơn -->
+<div class="modal fade" id="userUpdateModal" tabindex="-1" aria-labelledby="userUpdateModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="userModalLabel">Thông tin người dùng</h5>
+        <h5 class="modal-title" id="userUpdateModalLabel">Cập nhật thông tin người dùng</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form class="row g-3" method="post" action="{{ route('admin.nguoidung.update') }}">
-        @csrf
-        <input type="hidden" name="id">
-        <div class="col-md-6">
-            <label for="inputEmail4" class="form-label">Họ tên</label>
-            <input type="text" class="form-control" name="HOTEN" value="{{old('HOTEN')}}">
-            <div class="d-flex justify-content-end">
-                @error('HOTEN') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
-        </div>
-        <div class="col-md-6">
-            <label for="inputEmail4" class="form-label">Ngày sinh</label>
-            <input type="date" class="form-control" name="NGAYSINH" value="{{old('NGAYSINH')}}">
-            <div class="d-flex justify-content-end">
-                @error('NGAYSINH') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
-        </div>
-        <div class="col-md-6">
-            <label for="inputPassword4" class="form-label">Giới tính</label>
-            <select name="GIOITINH" id="inputGroup" class="form-select" value="{{old('GIOITINH')}}">
-                <option selected disabled>Chọn giới tính</option>
-                <option value="MALE">Nam</option>
-                <option value="FEMALE">Nữ</option>
-                <option value="UNDEFINED">Khác</option>
-            </select>
-            <div class="d-flex justify-content-end">
-                @error('GIOTINH') <div class="text-danger">{{ $message }}</div> @enderror
-            </div>
-        </div>
-        <div class="col-md-6">
-            <label for="inputGroup" class="form-label">Địa chỉ</label>
-            <input type="text" class="form-control" name="DIACHI" value="{{old('DIACHI')}}">
-            <div class="d-flex justify-content-end">
-                @error('DIACHI') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
-        </div>
-        <div class="col-md-6">
-            <label for="inputGroup" class="form-label">Tỉnh</label>
-            <select id="inputGroup" class="form-select" name="IDTINH" value="{{old('IDTINH')}}">
-                <option selected disabled>Chọn tỉnh</option>
+          @csrf
+          <input type="hidden" name="id" value="{{ old('id') }}">
+
+          <div class="col-md-6">
+              <label class="form-label">Họ tên</label>
+              <input type="text" class="form-control" name="HOTEN" value="{{ old('HOTEN') }}">
+              @if($errors->updateUser->has('HOTEN'))
+                <div class="text-danger small mt-1">{{ $errors->updateUser->first('HOTEN') }}</div>
+              @endif
+          </div>
+
+          <div class="col-md-6">
+              <label class="form-label">Ngày sinh</label>
+              <input type="date" class="form-control" name="NGAYSINH" value="{{ old('NGAYSINH') }}">
+              @if($errors->updateUser->has('NGAYSINH'))
+                <div class="text-danger small mt-1">{{ $errors->updateUser->first('NGAYSINH') }}</div>
+              @endif
+          </div>
+
+          <div class="col-md-6">
+              <label class="form-label">Giới tính</label>
+              <select name="GIOITINH" class="form-select">
+                <option value="" disabled>Chọn giới tính</option>
+                <option value="MALE" {{ old('GIOITINH') == 'MALE' ? 'selected' : '' }}>Nam</option>
+                <option value="FEMALE" {{ old('GIOITINH') == 'FEMALE' ? 'selected' : '' }}>Nữ</option>
+                <option value="UNDEFINED" {{ old('GIOITINH') == 'UNDEFINED' ? 'selected' : '' }}>Khác</option>
+              </select>
+              @if($errors->updateUser->has('GIOITINH'))
+                <div class="text-danger small mt-1">{{ $errors->updateUser->first('GIOITINH') }}</div>
+              @endif
+          </div>
+
+          <div class="col-md-6">
+              <label class="form-label">Địa chỉ</label>
+              <input type="text" class="form-control" name="DIACHI" value="{{ old('DIACHI') }}">
+              @if($errors->updateUser->has('DIACHI'))
+                <div class="text-danger small mt-1">{{ $errors->updateUser->first('DIACHI') }}</div>
+              @endif
+          </div>
+
+          <div class="col-md-6">
+              <label class="form-label">Tỉnh</label>
+              <select class="form-select" name="IDTINH">
+                <option value="" disabled>Chọn tỉnh</option>
                 @foreach($listTinh as $it)
-                    <option value="{{ $it->getId() }}">
+                    <option value="{{ $it->getId() }}" {{ old('IDTINH') == $it->getId() ? 'selected' : '' }}>
                         {{ $it->getId() }} - {{ $it->getTenTinh() }}
                     </option>
                 @endforeach
-            </select>
-            <div class="d-flex justify-content-end">
-                @error('IDTINH') <div class="text-danger">{{ $message }}</div> @enderror
-            </div>
-        </div>
-        <div class="col-md-6">
-            <label for="inputEmail4" class="form-label">Số điện thoại</label>
-            <input type="text" class="form-control" name="SODIENTHOAI" value="{{old('SODIENTHOAI')}}">
-            <div class="d-flex justify-content-end">
-                @error('SODIENTHOAI') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
-        </div>
-        <div class="col-md-6">
-            <label for="inputEmail4" class="form-label">CCCD</label>
-            <input type="text" class="form-control" name="CCCD" value="{{old('CCCD')}}">
-            <div class="d-flex justify-content-end">
-                @error('CCCD') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
-        </div>
-        <div class="col-md-6">
-            <label for="inputStatus" class="form-label">Trạng thái</label>
-            <select class="form-select" name="TRANGTHAIHD">
-                <option value="1">Hoạt động</option>
-                <option value="0">Không hoạt động</option>
-            </select>
-        </div>
-        <div class="modal-footer">
+              </select>
+              @if($errors->updateUser->has('IDTINH'))
+                <div class="text-danger small mt-1">{{ $errors->updateUser->first('IDTINH') }}</div>
+              @endif
+          </div>
+
+          <div class="col-md-6">
+              <label class="form-label">Số điện thoại</label>
+              <input type="text" class="form-control" name="SODIENTHOAI" value="{{ old('SODIENTHOAI') }}">
+              @if($errors->updateUser->has('SODIENTHOAI'))
+                <div class="text-danger small mt-1">{{ $errors->updateUser->first('SODIENTHOAI') }}</div>
+              @endif
+          </div>
+
+          <div class="col-md-6">
+              <label class="form-label">CCCD</label>
+              <input type="text" class="form-control" name="CCCD" value="{{ old('CCCD') }}">
+              @if($errors->updateUser->has('CCCD'))
+                <div class="text-danger small mt-1">{{ $errors->updateUser->first('CCCD') }}</div>
+              @endif
+          </div>
+
+          <div class="col-md-6">
+              <label class="form-label">Trạng thái</label>
+              <select class="form-select" name="TRANGTHAIHD">
+                  <option value="1" {{ old('TRANGTHAIHD') == '1' ? 'selected' : '' }}>Hoạt động</option>
+                  <option value="0" {{ old('TRANGTHAIHD') == '0' ? 'selected' : '' }}>Không hoạt động</option>
+              </select>
+          </div>
+
+          <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Lưu</button>
         </div>
         </form>
       </div>
-      
     </div>
   </div>
 </div>
@@ -406,4 +423,34 @@
     {{ session('success') }}
 </div>
 @endif
+<div id="error-trigger" 
+     data-add-error="{{ ($errors->hasBag('addUser') && $errors->addUser->any()) ? 'true' : 'false' }}"
+     data-update-error="{{ ($errors->hasBag('updateUser') && $errors->updateUser->any()) ? 'true' : 'false' }}">
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const trigger = document.getElementById('error-trigger');
+        if (!trigger) return;
+
+        // Nếu túi lỗi addUser có lỗi, tự động mở Modal Thêm
+        if (trigger.getAttribute('data-add-error') === 'true') {
+            const addModalEl = document.getElementById('userAddModal');
+            if (addModalEl) {
+                const addModal = new bootstrap.Modal(addModalEl);
+                addModal.show();
+            }
+        }
+
+        // Nếu túi lỗi updateUser có lỗi, tự động mở Modal Sửa
+        if (trigger.getAttribute('data-update-error') === 'true') {
+            const updateModalEl = document.getElementById('userUpdateModal');
+            if (updateModalEl) {
+                const updateModal = new bootstrap.Modal(updateModalEl);
+                updateModal.show();
+            }
+        }
+    });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+

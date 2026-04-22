@@ -78,10 +78,10 @@
 @endif
 <div class="p-3 bg-light flex">
     <form class="d-flex me-2 mb-3" method="get" role="search">
-        <input type="hidden" name="modun" value="nhacungcap">
+       <!-- <input type="hidden" name="modun" value="nhacungcap">
         <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
         <button class="btn btn-outline-success me-2" type="submit">Tìm</button>
-        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Refresh</button>
+        <button class="btn btn-info ms-2" id="refreshBtn" type="button">Refresh</button>!-->
         <button type="button" class="btn btn-success p-3 w-10 ms-5" data-bs-toggle="modal" data-bs-target="#supplierModal">
             <i class='bx bx-plus'></i>
         </button>
@@ -113,10 +113,12 @@
                     <td>{{ $supplier->getMoTa() }}</td>
                     <td>{{ $supplier->getDiachi() }}</td>
                     <td>
-                        <span class="badge {{ $supplier->getTrangthaiHD() ? 'bg-success' : 'bg-danger' }}">
-                            {{ $supplier->getTrangthaiHD() ? 'Hoạt động' : 'Ngừng hoạt động' }}
-                        </span>
-                    </td>
+    @if($supplier->getTrangthaiHD() == 1)
+        <span class="badge bg-success">Hoạt động</span>
+    @else
+        <span class="badge bg-danger">Ngừng hoạt động</span>
+    @endif
+</td>
                     <td>
                         <button class="btn btn-warning btn-sm btn-edit"
                             data-id="{{ $supplier->getIdNCC() }}"
@@ -136,7 +138,22 @@
                             <input type="hidden" name="mota" value="{{ $supplier->getMoTa() }}">
                             <input type="hidden" name="diachi" value="{{ $supplier->getDiachi() }}">
                             <input type="hidden" name="trangthaihd" value="{{ $supplier->getTrangthaiHD() }}">
-                            <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                        <form method="POST" action="{{ route('admin.nhacungcap.destroy') }}" style="display:inline;">
+                            @csrf
+                            <input type="hidden" name="id" value="{{ $supplier->getIdNCC() }}">
+                            {{-- Gửi trạng thái ngược lại: Nếu đang là 1 thì gửi 0, nếu là 0 thì gửi 1 --}}
+                            <input type="hidden" name="status_toggle" value="{{ $supplier->getTrangthaiHD() == 1 ? 0 : 1 }}">
+                            
+                            @if($supplier->getTrangthaiHD() == 1)
+                                <button type="submit" class="btn btn-danger text-white btn-sm" onclick="return confirm('Ngừng hoạt động nhà cung cấp này?')">
+                                    Ngừng
+                                </button>
+                            @else
+                                <button type="submit" class="btn btn-success text-white btn-sm" onclick="return confirm('Kích hoạt lại nhà cung cấp này?')">
+                                Kích hoạt
+                                </button>
+                            @endif
+                        </form>
                         </form>
                     </td>
                 </tr>
@@ -190,43 +207,43 @@
 </div>
 
 <!-- Modal Thêm nhà cung cấp -->
-<div class="modal fade" id="supplierModal" tabindex="-1" aria-labelledby="supplierModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+<div class="modal fade" id="supplierModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="supplierModalLabel">Thêm nhà cung cấp</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Thêm nhà cung cấp mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form method="POST" action="{{ route('admin.nhacungcap.store') }}">
                 @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="supplierName" class="form-label">Tên nhà cung cấp</label>
-                        <input type="text" class="form-control" id="supplierName" name="TENNCC" required>
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Tên nhà cung cấp</label>
+                        <input type="text" class="form-control" name="TENNCC" value="{{ old('TENNCC') }}" required>
+                        @if($errors->addNCC->has('TENNCC'))
+                            <div class="text-danger small mt-1">{{ $errors->addNCC->first('TENNCC') }}</div>
+                        @endif
                     </div>
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Số điện thoại</label>
-                        <input type="text" class="form-control" id="phone" name="SODIENTHOAI" required>
+                    <div class="col-md-6">
+                        <label class="form-label">Số điện thoại</label>
+                        <input type="text" class="form-control" name="SODIENTHOAI" value="{{ old('SODIENTHOAI') }}" required>
+                        @if($errors->addNCC->has('SODIENTHOAI'))
+                            <div class="text-danger small mt-1">{{ $errors->addNCC->first('SODIENTHOAI') }}</div>
+                        @endif
                     </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="description" name="MOTA"></textarea>
+                    <div class="col-md-12">
+                        <label class="form-label">Địa chỉ</label>
+                        <input type="text" class="form-control" name="DIACHI" value="{{ old('DIACHI') }}" required>
                     </div>
-                    <div class="mb-3">
-                        <label for="address" class="form-label">Địa chỉ</label>
-                        <input type="text" class="form-control" id="address" name="DIACHI" required>
+                    <div class="col-md-12">
+                        <label class="form-label">Mô tả</label>
+                        <textarea class="form-control" name="MOTA" rows="3" required>{{ old('MOTA') }}</textarea>
                     </div>
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Trạng thái</label>
-                        <select class="form-control" id="status" name="TRANGTHAIHD">
-                            <option value="1">Hoạt động</option>
-                            <option value="0">Không hoạt động</option>
-                        </select>
-                    </div>
+                    <input type="hidden" name="TRANGTHAIHD" value="1">
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <div class="modal-footer justify-content-start">
                     <button type="submit" class="btn btn-primary">Lưu</button>
+                    
                 </div>
             </form>
         </div>
@@ -235,49 +252,62 @@
 
 <!-- Modal Sửa nhà cung cấp -->
 <div class="modal fade" id="supplierUpdateModal" tabindex="-1" aria-labelledby="supplierModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="supplierModalLabel">Sửa nhà cung cấp</h5>
+                <h5 class="modal-title" id="supplierModalLabel">Cập nhật thông tin nhà cung cấp</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form method="POST" action="{{ route('admin.nhacungcap.update') }}">
                 @csrf
-                <input type="hidden" name="id" id="supplierId">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="supplierName" class="form-label">Tên nhà cung cấp</label>
-                        <input type="text" class="form-control" id="supplierName" name="TENNCC" required>
+                <input type="hidden" name="id" id="u_id" value="{{ old('id', session('editing_id')) }}">
+                
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label font-weight-bold">Tên nhà cung cấp</label>
+                        <input type="text" class="form-control bg-light" id="u_ten" name="TENNCC" 
+                               value="{{ old('TENNCC') }}" readonly style="cursor: not-allowed;">
                     </div>
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Số điện thoại</label>
-                        <input type="text" class="form-control" id="phone" name="SODIENTHOAI" required>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label font-weight-bold">Số điện thoại</label>
+                        <input type="text" class="form-control" id="u_sdt" name="SODIENTHOAI" 
+                               value="{{ old('SODIENTHOAI') }}" required>
+                        @if($errors->updateNCC->has('SODIENTHOAI'))
+                            <div class="text-danger small mt-1">{{ $errors->updateNCC->first('SODIENTHOAI') }}</div>
+                        @endif
                     </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Mô tả</label>
-                        <textarea class="form-control" id="description" name="MOTA"></textarea>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Địa chỉ</label>
+                        <input type="text" class="form-control" id="u_diachi" name="DIACHI" 
+                               value="{{ old('DIACHI') }}" required placeholder="Nhập địa chỉ">
                     </div>
-                    <div class="mb-3">
-                        <label for="address" class="form-label">Địa chỉ</label>
-                        <input type="text" class="form-control" id="address" name="DIACHI" required>
+
+                    <div class="col-md-12">
+                        <label class="form-label">Mô tả</label>
+                        <textarea class="form-control" id="u_mota" name="MOTA" rows="3" 
+                                  required placeholder="Nhập mô tả">{{ old('MOTA') }}</textarea>
                     </div>
-                    <div class="mb-3">
-                        <label for="status" class="form-label">Trạng thái</label>
-                        <select class="form-control" id="status" name="TRANGTHAIHD">
-                            <option value="1">Hoạt động</option>
-                            <option value="0">Không hoạt động</option>
+
+                    <div class="col-md-6">
+                        <label class="form-label">Trạng thái</label>
+                        <select class="form-select" id="u_status" name="TRANGTHAIHD">
+                            <option value="1" {{ old('TRANGTHAIHD') == '1' ? 'selected' : '' }}>Hoạt động</option>
+                            <option value="0" {{ old('TRANGTHAIHD') == '0' ? 'selected' : '' }}>Ngừng hoạt động</option>
                         </select>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                
+                <div class="modal-footer justify-content-start px-4">
                     <button type="submit" class="btn btn-primary">Lưu</button>
+                   
                 </div>
             </form>
         </div>
     </div>
 </div>
-<!-- Modal Xóa nhà cung cấp -->
+<!-- Modal hoạt động nhà cung cấp -->
 <div class="modal fade" id="supplierDeleteModal" tabindex="-1" aria-labelledby="supplierDeleteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -301,5 +331,46 @@
     {{ session('success') }}
 </div>
 @endif
+<div id="validation-status" 
+     data-add-error="{{ $errors->hasBag('addNCC') && $errors->addNCC->any() ? '1' : '0' }}"
+     data-update-error="{{ $errors->hasBag('updateNCC') && $errors->updateNCC->any() ? '1' : '0' }}">
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Logic đổ dữ liệu cho Modal Sửa (Giữ nguyên như bạn có)
+    const updateModalEl = document.getElementById('supplierUpdateModal');
+    if (updateModalEl) {
+        updateModalEl.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            if (!button) return;
 
+            document.getElementById('u_id').value = button.dataset.id || '';
+            document.getElementById('u_ten').value = button.dataset.name || '';
+            document.getElementById('u_sdt').value = button.dataset.phone || '';
+            document.getElementById('u_diachi').value = button.dataset.address || '';
+            document.getElementById('u_mota').value = button.dataset.description || '';
+            document.getElementById('u_status').value = button.dataset.status || '1';
+        });
+    }
+
+    // 2. Logic tự động mở lại Modal khi có lỗi (Sửa lại chỗ này để đọc từ thẻ div bạn vừa thêm)
+    const statusEl = document.getElementById('validation-status');
+    if (statusEl) {
+        // Kiểm tra lỗi cho Modal Thêm
+        if (statusEl.dataset.addError === '1') {
+            const addModalEl = document.getElementById('supplierModal');
+            if (addModalEl) {
+                bootstrap.Modal.getOrCreateInstance(addModalEl).show();
+            }
+        }
+        
+        // Kiểm tra lỗi cho Modal Sửa
+        if (statusEl.dataset.updateError === '1') {
+            if (updateModalEl) {
+                bootstrap.Modal.getOrCreateInstance(updateModalEl).show();
+            }
+        }
+    }
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

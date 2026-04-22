@@ -8,14 +8,14 @@
                 <div class="card-header">
                     <h3 class="card-title">Danh sách phiếu nhập</h3>
                     <div class="card-tools">
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPhieuNhapModal">
-                        <i class="fas fa-plus"></i> Thêm phiếu nhập
+                    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPhieuNhapModal">
+                        <i class="fas fa-plus"></i> Thêm mới
                     </button>
                 </div>
                 </div>
                 <div class="card-body">
                     <div class="row mb-3">
-                        <div class="col-md-6">
+                        <!--<div class="col-md-6">
                             <form method="GET">
                                 <input type="hidden" name="modun" value="kho">
                                 <div class="input-group">
@@ -32,7 +32,7 @@
                             <a href="{{ url()->current() }}?modun=kho" class="btn btn-secondary">
                                 <i class="fas fa-sync-alt"></i> Làm mới
                             </a>
-                        </div>
+                        </div>!-->
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped">
@@ -50,7 +50,7 @@
                                 @foreach($listPhieuNhap as $phieuNhap)
                                 <tr>
                                     <td>{{ $phieuNhap->getId() }}</td>
-                                    <td>{{ $phieuNhap->getIdNCC()->getIdNCC() }}</td>
+                                    <td>{{ $phieuNhap->getIdNCC()->getTenNCC() }}</td>
                                     <td>{{ $phieuNhap->getNgayTao() }}</td>
                                     <td>{{ number_format($phieuNhap->getTongTien(), 0, ',', '.') }} đ</td>
 
@@ -138,7 +138,8 @@
                                 <th>Sản phẩm</th>
                                 <th>Số lượng</th>
                                 <th>Phần trăm lợi nhuận</th>
-                                <th>Đơn giá</th>
+                                <th>Giá nhập</th>
+                                <th>Giá bán</th>
                                 <th>Thành tiền</th>
                             </tr>
                         </thead>
@@ -168,14 +169,17 @@
                     <meta name="csrf-token" content="{{ csrf_token() }}">
                     <div class="row mb-3">
                         <div class="col-md-6">
-                            <label for="ncc-select" class="form-label">Nhà cung cấp</label>
-                            <select class="form-control" id="ncc-select" name="ncc" required>
-                                <option value="">Chọn nhà cung cấp</option>
-                                @foreach($listNCC as $ncc)
-                                    <option value="{{ $ncc->getIdNCC() }}">{{ $ncc->getTenNCC() }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+    <label for="ncc-select" class="form-label">Nhà cung cấp</label>
+    <select class="form-control" id="ncc-select" name="ncc" required>
+        <option value="">Chọn nhà cung cấp</option>
+        @foreach($listNCC as $ncc)
+            {{-- Thêm dòng kiểm tra này --}}
+            @if($ncc->getTrangthaiHD() == 1)
+                <option value="{{ $ncc->getIdNCC() }}">{{ $ncc->getTenNCC() }}</option>
+            @endif
+        @endforeach
+    </select>
+</div>
                         <div class="col-md-6">
                             <label for="ngayNhap" class="form-label">Ngày nhập</label>
                             <input type="date" class="form-control" id="ngayNhap" name="ngayNhap" required value="{{ date('Y-m-d') }}">
@@ -189,7 +193,7 @@
                                 <option value="">Chọn sản phẩm</option>
                                 @foreach($listSanPham as $sanPham)
                                     <option value="{{ $sanPham->getId() }}" data-gia="{{ $sanPham->getDonGia() }}">
-                                        {{ $sanPham->getTenSanPham() }} - {{ number_format($sanPham->getDonGia(), 0, ',', '.') }} đ
+                                        {{ $sanPham->getTenSanPham() }}
                                     </option>
                                 @endforeach
                             </select>
@@ -206,8 +210,12 @@
                             <input type="number" class="form-control" id="giaNhap" name="giaNhap" min="0" required>
                         </div>
                         <div class="col-md-4">
-                            <label for="phanTramLN" class="form-label">Phần trăm lợi nhuận</label>
-                            <input type="number" class="form-control" id="phanTramLN" name="phanTramLN" min="0" value="15" required>
+                            <label for="phanTramLN" class="form-label">Phần trăm lợi nhuận (dưới 25%) </label>
+                            <input type="number" class="form-control" id="phanTramLN" name="phanTramLN" min="0" value="15" max="25" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="giaBan" class="form-label">Giá bán dự kiến</label>
+                            <input type="number" class="form-control" id="giaBan" name="giaBan" min="0" required>
                         </div>
                     </div>
 
@@ -227,17 +235,19 @@
                                     <th>Số lượng</th>
                                     <th>Phần trăm lợi nhuận</th>
                                     <th>Giá nhập</th>
+                                    <th>Giá bán</th>
                                     <th>Thành tiền</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
                             <tfoot>
-                                <tr>
-                                    <td colspan="3" class="text-right"><strong>Tổng tiền:</strong></td>
-                                    <td colspan="2"><span id="totalAmount">0</span> đ</td>
-                                </tr>
-                            </tfoot>
+                            
+    <tr>
+        <td colspan="5" class="text-right"><strong>Tổng tiền:</strong></td>
+        <td><span id="totalAmount">0</span> đ</td>
+        <td></td> </tr>
+</tfoot>
                         </table>
                     </div>
                 </form>
@@ -253,7 +263,49 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const btnCtpn = document.querySelectorAll(".btn-ctpn");
+       
+    const giaNhapInput = document.getElementById('giaNhap');
+    const phanTramLNInput = document.getElementById('phanTramLN');
+    const giaBanInput = document.getElementById('giaBan');
+        
+    function updateGiaBan() {
+    const giaNhap = parseFloat(giaNhapInput.value) || 0;
+    const phanTram = parseFloat(phanTramLNInput.value) || 0;
+    
+    // Kiểm tra nếu lợi nhuận > 25% thì đổi màu ô nhập liệu để cảnh báo
+    if (phanTram > 25) {
+        phanTramLNInput.style.color = 'red';
+        phanTramLNInput.style.fontWeight = 'bold';
+    } else {
+        phanTramLNInput.style.color = '';
+        phanTramLNInput.style.fontWeight = '';
+    }
+
+    if (giaNhap > 0) {
+        giaBanInput.value = Math.round(giaNhap * (1 + phanTram / 100));
+    }
+}
+
+function updatePhanTram() {
+    const giaNhap = parseFloat(giaNhapInput.value) || 0;
+    const giaBan = parseFloat(giaBanInput.value) || 0;
+    if (giaNhap > 0) {
+        const phanTram = ((giaBan / giaNhap) - 1) * 100;
+        phanTramLNInput.value = phanTram.toFixed(2);
+        
+        // Cảnh báo nếu tính toán ngược từ giá bán ra > 25% lợi nhuận
+        if (phanTram > 25 || phanTram < 0) {
+            phanTramLNInput.style.color = 'red';
+        } else {
+            phanTramLNInput.style.color = '';
+        }
+    }
+}
+
+giaNhapInput.addEventListener('input', updateGiaBan);
+phanTramLNInput.addEventListener('input', updateGiaBan);
+giaBanInput.addEventListener('input', updatePhanTram);
+         const btnCtpn = document.querySelectorAll(".btn-ctpn");
         btnCtpn.forEach(function(btn) {
             btn.addEventListener("click", function() {
                 const modal = document.querySelector("#viewPhieuNhapModal");
@@ -283,6 +335,7 @@
                         let totalAmount = 0;
                         data.forEach(ctpn => {
                             const total = ctpn.donGia * ctpn.soLuong;
+                            const giaBan = Math.round(ctpn.donGia * (1 + ctpn.phanTramLN / 100));
                             totalAmount += total;
                             viewChitiet.innerHTML += `
                                 <tr>
@@ -290,17 +343,17 @@
                                     <td>${ctpn.soLuong}</td>
                                     <td>${ctpn.phanTramLN}</td>
                                     <td>${ctpn.donGia.toLocaleString()} đ</td>
+                                    <td class="text-success fw-bold">${giaBan.toLocaleString()} đ</td>
                                     <td>${total.toLocaleString()} đ</td>
                                 </tr>
                             `;
                         });
                         // Add total row
                         viewChitiet.innerHTML += `
-                            <tr>
-                                <td colspan="4" class="text-right"><strong>Tổng tiền:</strong></td>
-                                <td><strong>${totalAmount.toLocaleString()} đ</strong></td>
-                            </tr>
-                        `;
+            <tr>
+                <td colspan="5" class="text-right"><strong>Tổng tiền:</strong></td> <td><strong>${totalAmount.toLocaleString()} đ</strong></td>
+            </tr>
+        `;
                     })
                     .catch(error => console.error('Error fetching details:', error));
                 // Hiển thị modal
@@ -312,42 +365,71 @@
             const modal = document.querySelector("#addPhieuNhapModal");
             $(modal).modal('show');
         });
+
         // Xử lý thêm sản phẩm vào bảng
         const addProductBtn = document.getElementById('addProductBtn');
         addProductBtn.addEventListener("click", function() {
             const sanPhamSelect = document.getElementById('sanPham');
             const soLuongInput = document.getElementById('soLuong');
-            const giaNhapInput = document.getElementById('giaNhap');
-            const phanTramLNInput = document.getElementById('phanTramLN');
-
+            const nccSelect = document.getElementById('ncc-select');
             const sanPhamId = sanPhamSelect.value;
             const sanPhamText = sanPhamSelect.options[sanPhamSelect.selectedIndex].text;
             const soLuong = parseInt(soLuongInput.value);
             const giaNhap = parseFloat(giaNhapInput.value);
             const phanTramLN = parseFloat(phanTramLNInput.value);
-
+            const giaBan = parseFloat(giaBanInput.value);
             // Check if product already exists in table
+            const ngayNhapHienTai = document.getElementById('ngayNhap').value;
             const tableBody = document.querySelector("#productTable tbody");
             const existingRows = tableBody.querySelectorAll('tr');
-            let isDuplicate = false;
-
+            if (!nccSelect.value) {
+        alert("Vui lòng chọn Nhà cung cấp trước khi thêm sản phẩm!");
+        nccSelect.focus();
+        return;
+    }
+if (!sanPhamSelect.value) {
+        alert("Vui lòng chọn sản phẩm!");
+        sanPhamSelect.focus();
+        return;
+    }
+    if (!soLuongInput.value || soLuongInput.value <= 0) {
+        alert("Vui lòng nhập số lượng hợp lệ (lớn hơn 0)!");
+        soLuongInput.focus();
+        return;
+    }
+    if (!giaNhapInput.value || giaNhapInput.value < 0) {
+        alert("Vui lòng nhập giá nhập!");
+        giaNhapInput.focus();
+        return;
+    }
+    // Riêng giá bán và lợi nhuận thường đã tự nhảy, nhưng vẫn nên check
+    if (!giaBanInput.value) {
+        alert("Giá bán không được để trống!");
+        giaBanInput.focus();
+        return;
+    }
+            let isDuplicateSameDay = false;
             existingRows.forEach(row => {
-                const existingProductId = row.querySelector('input[type="hidden"]').value;
-                if (existingProductId === sanPhamId) {
-                    isDuplicate = true;
+            const existingProductId = row.querySelector('input[type="hidden"]').value;
+            // Lưu ý: Chúng ta cần lưu ngày nhập vào mỗi hàng hoặc so sánh với ngày nhập của form
+            const existingDate = row.getAttribute('data-ngay-nhap'); 
+
+            if (existingProductId === sanPhamId && existingDate === ngayNhapHienTai) {
+                isDuplicateSameDay = true;
                 }
             });
-
-            if (isDuplicate) {
-                alert("Sản phẩm này đã được thêm vào phiếu nhập!");
-                return;
-            }
-
+if (isDuplicateSameDay) {
+    alert("Sản phẩm này đã được thêm trong cùng ngày nhập này rồi!");
+    return;
+}
+if (!confirm("Bạn có chắc chắn muốn thêm sản phẩm này vào danh sách không?")) {
+        return; // Dừng lại nếu người dùng chọn Cancel
+    }
             if (sanPhamId && soLuong > 0 && giaNhap >= 0) {
                 const thanhTien = soLuong * giaNhap;
-
-                // Thêm sản phẩm vào bảng
+                const giaBan = parseFloat(document.getElementById('giaBan').value);
                 const row = document.createElement('tr');
+                row.setAttribute('data-ngay-nhap', ngayNhapHienTai);
                 row.innerHTML = `
                     <td>
                         <input type="hidden" value="${sanPhamId}">
@@ -356,9 +438,11 @@
                     <td>${soLuong}</td>
                     <td>${phanTramLN}</td>
                     <td>${giaNhap.toLocaleString()} đ</td>
+                    <td class="text-success fw-bold">${giaBan.toLocaleString()} đ</td>
                     <td>${thanhTien.toLocaleString()} đ</td>
                     <td><button type="button" class="btn btn-danger btn-sm removeBtn">Xóa</button></td>
                 `;
+                
                 tableBody.appendChild(row);
 
                 // Cập nhật tổng tiền
@@ -382,69 +466,67 @@
 
         // Hàm cập nhật tổng tiền
         function updateTotalAmount() {
-            const tableBody = document.querySelector("#productTable tbody");
-            let total = 0;
+    const tableBody = document.querySelector("#productTable tbody");
+    let total = 0;
 
-            Array.from(tableBody.querySelectorAll('tr')).forEach(row => {
-                const thanhTien = parseFloat(row.cells[4].textContent.replace(/ đ/g, '').replace(/,/g, ''));
-                total += thanhTien;
-            });
+    Array.from(tableBody.querySelectorAll('tr')).forEach(row => {
+        // Sửa: Lấy ô cuối cùng (Thành tiền) và lọc bỏ tất cả ký tự không phải số
+        const thanhTienText = row.cells[5].textContent.replace(/\D/g, ''); 
+        total += parseFloat(thanhTienText) || 0;
+    });
 
-            document.getElementById('totalAmount').textContent = total.toLocaleString();
-        }
+    document.getElementById('totalAmount').textContent = total.toLocaleString();
+}
         document.getElementById("savePhieuNhapBtn").addEventListener("click", function () {
-            const form = document.getElementById("addPhieuNhapForm");
-            const nccSelect = document.getElementById('ncc-select');
-            const ngayNhap = document.getElementById('ngayNhap');
+    const form = document.getElementById("addPhieuNhapForm");
+    const nccSelect = document.getElementById('ncc-select');
+    const ngayNhap = document.getElementById('ngayNhap');
 
-            // Validate required fields
-            if (!nccSelect.value) {
-                alert("Vui lòng chọn nhà cung cấp.");
-                return;
-            }
-            if (!ngayNhap.value) {
-                alert("Vui lòng chọn ngày nhập.");
-                return;
-            }
 
-            // Xoá input ẩn cũ nếu có
-            const oldHiddenInputs = form.querySelectorAll(".product-hidden-input");
-            oldHiddenInputs.forEach(input => input.remove());
 
-            const productRows = document.querySelectorAll("#productTable tbody tr");
+    if (!confirm("Bạn có chắc chắn muốn lưu phiếu nhập này không?")) {
+        return; 
+    }
+    const productRows = document.querySelectorAll("#productTable tbody tr");
+    if (productRows.length === 0) {
+        alert("Vui lòng thêm ít nhất một sản phẩm.");
+        return;
+    }
 
-            if (productRows.length === 0) {
-                alert("Vui lòng thêm ít nhất một sản phẩm.");
-                return;
-            }
+    // 2. Xoá các input ẩn cũ để tránh trùng lặp
+    form.querySelectorAll(".product-hidden-input").forEach(input => input.remove());
 
-            productRows.forEach((row, index) => {
-                const sanPhamId = row.querySelector("input[type=hidden]").value;
-                const soLuong = parseInt(row.children[1].innerText);
-                const phanTramLN = parseFloat(row.children[2].innerText);
-                const giaNhap = parseFloat(row.children[3].innerText.replace(/\D/g, ''));
+    // 3. Duyệt qua từng hàng để lấy dữ liệu
+    productRows.forEach((row, index) => {
+        const sanPhamId = row.querySelector("input[type=hidden]").value;
+        const soLuong = parseInt(row.children[1].innerText);
+        const phanTramLN = parseFloat(row.children[2].innerText);
+        
+        // Lọc bỏ ký tự không phải số để tránh lỗi NaN
+        const giaNhap = parseFloat(row.children[3].innerText.replace(/\D/g, ''));
+        const giaBanValue = parseFloat(row.children[4].innerText.replace(/\D/g, ''));
 
-                // Tạo các input hidden để submit
-                const inputs = [
-                    { name: `products[${index}][sanPham]`, value: sanPhamId },
-                    { name: `products[${index}][soLuong]`, value: soLuong },
-                    { name: `products[${index}][phanTramLN]`, value: phanTramLN },
-                    { name: `products[${index}][giaNhap]`, value: giaNhap }
-                ];
+        const inputs = [
+            { name: `products[${index}][sanPham]`, value: sanPhamId },
+            { name: `products[${index}][soLuong]`, value: soLuong },
+            { name: `products[${index}][phanTramLN]`, value: phanTramLN },
+            { name: `products[${index}][giaNhap]`, value: giaNhap },
+            { name: `products[${index}][giaBan]`, value: giaBanValue }
+        ];
 
-                inputs.forEach(({ name, value }) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = name;
-                    input.value = value;
-                    input.classList.add("product-hidden-input"); // để sau còn xoá
-                    form.appendChild(input);
-                });
-            });
-
-            // Submit form
-            form.submit();
+        inputs.forEach(({ name, value }) => {
+            const input = document.createElement("input");
+            input.type = "hidden";
+            input.name = name;
+            input.value = value;
+            input.classList.add("product-hidden-input");
+            form.appendChild(input);
         });
+    });
+
+    // 4. Gửi form
+    form.submit();
+});
         const successAlert = document.getElementById('successAlert');
         if (successAlert) {
             setTimeout(() => {

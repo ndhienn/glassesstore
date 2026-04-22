@@ -98,10 +98,12 @@ use App\Bus\TaiKhoan_BUS;
 @endif
 <div class="p-3 bg-light flex">
     <form class="d-flex me-2 mb-3" method="get" role="search">
-        <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
-
-        <button class="btn btn-outline-success me-2" type="submit">Tìm</button>
-
+       <input type="hidden" name="modun" value="taikhoan">
+    <input class="form-control me-2 w-25" type="search" 
+           placeholder="Tìm kiếm (email, sdt)" 
+           aria-label="Search" id="keyword" name="keyword" 
+           value="{{ request('keyword') }}">
+    <button class="btn btn-outline-success me-2" type="submit">Tìm</button>
         <select class="form-select w-25 ms-2" name="keywordQuyen">
             <option disabled {{ request('keywordQuyen') ? '' : 'selected' }}>Lọc theo quyền</option>
             @foreach($listQ as $it)
@@ -122,6 +124,7 @@ use App\Bus\TaiKhoan_BUS;
                 <tr>
                     <th scope="col">Tên tài khoản</th>
                     <th scope="col">Email</th>
+                    <th scope="col">SĐT</th>
                     <th scope="col">Tên người dùng</th>
                     <th scope="col">Tên quyền</th>
                     <th scope="col">Trạng thái</th>
@@ -139,11 +142,12 @@ use App\Bus\TaiKhoan_BUS;
                 <tr>
                     <td>{{ $tk->getTenTK() }}</td>
                     <td>{{ $tk->getEmail() }}</td>
+                    <td>{{ $tk->getIdNguoiDung()->getSodienthoai() }}</td>
                     <td>{{ $tk->getIdNguoiDung()->getHoTen() }}</td>
                     <td>{{ $tk->getIdQuyen()->getTenQuyen() }}</td>
                     <td>
                         <span class="badge {{ $tk->getTrangThaiHD() ? 'bg-success' : 'bg-danger' }}">
-                            {{ $tk->getTrangThaiHD() ? 'Hoạt động' : 'Ngừng hoạt động' }}
+                            {{ $tk->getTrangThaiHD() ? 'Hoạt động' : 'Đã khóa' }}
                         </span>
                     </td>
                     <td>
@@ -151,6 +155,7 @@ use App\Bus\TaiKhoan_BUS;
                         <button class="btn btn-warning btn-sm btn-edit"
                             data-username="{{ $tk->getTenTK() }}"
                             data-email="{{ $tk->getEmail() }}"
+                            data-sdt="{{ $tk->getIdNguoiDung()->getSodienthoai() }}"
                             data-password="{{ $tk->getPassword() }}"
                             data-idnguoidung="{{ $tk->getIdNguoiDung()->getId() }}"
                             data-idquyen="{{ $tk->getIdQuyen()->getId() }}"
@@ -225,155 +230,148 @@ use App\Bus\TaiKhoan_BUS;
 </div>
 <!-- modal them taikhoan -->
 <div class="modal fade" id="accountAddModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg"> <!-- modal-lg để modal to hơn -->
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="userModalLabel">Thông tin tài khoản</h5>
+        <h5 class="modal-title" id="userModalLabel">Thông tin tài khoản mới</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form class="row g-3" method="post" action="{{ route('admin.taikhoan.store') }}">
-        @csrf  <!-- Thêm csrf token để bảo vệ bảo mật -->
+          @csrf 
+          
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label" name="username">Username</label>
+              <label class="form-label">Username</label>
               <input type="text" class="form-control" name="username" value="{{ old('username') }}">
-              <div class="d-flex justify-content-end">
-                @error('username') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              {{-- Hiển thị lỗi từ túi addAccount --}}
+              @if($errors->addAccount->has('username'))
+                <div class="text-danger small mt-1">{{ $errors->addAccount->first('username') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label" name="email">Email</label>
+              <label class="form-label">Email</label>
               <input type="text" class="form-control" name="email" value="{{ old('email') }}">
-              <div class="d-flex justify-content-end">
-                @error('email') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              @if($errors->addAccount->has('email'))
+                <div class="text-danger small mt-1">{{ $errors->addAccount->first('email') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputPassword4" class="form-label" name="password">Password</label>
-              <input type="password" class="form-control" name="password" value="{{ old('password') }}">
-              <div class="d-flex justify-content-end">
-                @error('password') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              <label class="form-label">Password</label>
+              <input type="password" class="form-control" name="password">
+              @if($errors->addAccount->has('password'))
+                <div class="text-danger small mt-1">{{ $errors->addAccount->first('password') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputGroup" class="form-label">Nhóm quyền</label>
-              <select id="inputGroup" class="form-select" name="idquyen" value="{{ old('idquyen') }}">
+              <label class="form-label">Nhóm quyền</label>
+              <select class="form-select" name="idquyen">
                 <option selected disabled>Chọn quyền</option>
                 @foreach($listQ as $it)
-                    <option value="{{ $it->getId() }}">
+                    <option value="{{ $it->getId() }}" {{ old('idquyen') == $it->getId() ? 'selected' : '' }}>
                         {{ $it->getTenQuyen() }}
                     </option>
                 @endforeach
               </select>
-              <div class="d-flex justify-content-end">
-                @error('idquyen') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              @if($errors->addAccount->has('idquyen'))
+                <div class="text-danger small mt-1">{{ $errors->addAccount->first('idquyen') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputGroup" class="form-label">Người dùng</label>
-              <select id="inputGroup" class="form-select" name="idnguoidung" value="{{ old('idnguoidung') }}">
+              <label class="form-label">Người dùng</label>
+              <select class="form-select" name="idnguoidung">
                 <option selected disabled>Chọn người dùng</option>
                 @foreach($listND as $it)
-                    <option value="{{ $it->getId() }}">
+                    <option value="{{ $it->getId() }}" {{ old('idnguoidung') == $it->getId() ? 'selected' : '' }}>
                         {{ $it->getId() }} - {{ $it->getHoTen() }}
                     </option>
                 @endforeach
               </select>
-              <div class="d-flex justify-content-end">
-                @error('idnguoidung') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              @if($errors->addAccount->has('idnguoidung'))
+                <div class="text-danger small mt-1">{{ $errors->addAccount->first('idnguoidung') }}</div>
+              @endif
           </div>
-          <!-- <div class="col-md-6">
-              <label for="inputStatus" class="form-label">Trạng thái</label>
-              <select id="inputStatus" class="form-select">
-                <option selected>Choose...</option>
-                <option>Hoạt động</option>
-                <option>Ngừng hoạt động</option>
-              </select>
-          </div> -->
+
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Lưu</button>
-        </div>
+          </div>
         </form>
       </div>
-      
     </div>
   </div>
 </div>
+
 <!-- modal update taikhoan -->
 <div class="modal fade" id="accountUpdateModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg"> <!-- modal-lg để modal to hơn -->
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="userModalLabel">Thông tin tài khoản</h5>
+        <h5 class="modal-title" id="userModalLabel">Cập nhật thông tin tài khoản</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form class="row g-3" method="post" action="{{ route('admin.taikhoan.update') }}">
-        @csrf  <!-- Thêm csrf token để bảo vệ bảo mật -->
+          @csrf 
+          
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label" name="username">Username</label>
-              <input type="text" class="form-control" name="username" value="{{old('username')}}">
-              <div class="d-flex justify-content-end">
-                @error('username') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              <label class="form-label">Username</label>
+              <input type="text" class="form-control bg-secondary-subtle" name="username" value="{{ old('username') }}" readonly>
+              @if($errors->updateAccount->has('username'))
+                <div class="text-danger small mt-1">{{ $errors->updateAccount->first('username') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputEmail4" class="form-label" name="email">Email</label>
-              <input type="text" class="form-control" name="email" value="{{old('email')}}">
-              <!-- <div class="d-flex justify-content-end">
-                @error('email') <div class="text-danger">{{ $message }}</div> @enderror
-              </div> -->
+              <label class="form-label">Email</label>
+              <input type="text" class="form-control bg-secondary-subtle" name="email" value="{{ old('email') }}" readonly>
+              @if($errors->updateAccount->has('email'))
+                <div class="text-danger small mt-1">{{ $errors->updateAccount->first('email') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputPassword4" class="form-label" name="password">Mật khẩu mới (để trống nếu không đổi):</label>
-              <input type="password" class="form-control" name="password" placeholder="********" value="{{old('password')}}">
-              <!-- <div class="d-flex justify-content-end">
-                @error('password') <div class="text-danger">{{ $message }}</div> @enderror
-              </div> -->
+              <label class="form-label">Mật khẩu mới (để trống nếu không đổi)</label>
+              <input type="password" class="form-control" name="password" placeholder="********">
+              @if($errors->updateAccount->has('password'))
+                <div class="text-danger small mt-1">{{ $errors->updateAccount->first('password') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputGroup" class="form-label">Nhóm quyền</label>
-              <select id="inputGroup" class="form-select" name="idquyen" value="{{old('idquyen')}}">
+              <label class="form-label">Nhóm quyền</label>
+              <select class="form-select" name="idquyen">
                 <option selected disabled>Chọn quyền</option>
                 @foreach($listQ as $it)
-                    <option value="{{ $it->getId() }}">
+                    <option value="{{ $it->getId() }}" {{ old('idquyen') == $it->getId() ? 'selected' : '' }}>
                         {{ $it->getTenQuyen() }}
                     </option>
                 @endforeach
               </select>
-              <div class="d-flex justify-content-end">
-                @error('idquyen') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
+              @if($errors->updateAccount->has('idquyen'))
+                <div class="text-danger small mt-1">{{ $errors->updateAccount->first('idquyen') }}</div>
+              @endif
           </div>
+
           <div class="col-md-6">
-              <label for="inputGroup" class="form-label">Người dùng</label>
-              <select id="inputGroup" class="form-select" name="idnguoidung" value="{{old('idnguoidung')}}">
-                <option selected disabled>Chọn người dùng</option>
+              <label class="form-label">Người dùng</label>
+              {{-- Giữ Select nhưng khóa lại vì thường không đổi chủ sở hữu tài khoản --}}
+              <select class="form-select" name="idnguoidung" style="pointer-events: none; background-color: #e9ecef;">
                 @foreach($listND as $it)
-                    <option value="{{ $it->getId() }}">
+                    <option value="{{ $it->getId() }}" {{ old('idnguoidung') == $it->getId() ? 'selected' : '' }}>
                         {{ $it->getId() }} - {{ $it->getHoTen() }}
                     </option>
                 @endforeach
               </select>
-              <div class="d-flex justify-content-end">
-                @error('idnguoidung') <div class="text-danger">{{ $message }}</div> @enderror
-              </div>
           </div>
-          <!-- <div class="col-md-6">
-              <label for="inputStatus" class="form-label">Trạng thái</label>
-              <select id="inputStatus" class="form-select">
-                <option selected>Choose...</option>
-                <option>Hoạt động</option>
-                <option>Ngừng hoạt động</option>
-              </select>
-          </div> -->
+
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Lưu</button>
-        </div>
+          </div>
         </form>
       </div>
-      
     </div>
   </div>
 </div>
@@ -382,4 +380,33 @@ use App\Bus\TaiKhoan_BUS;
     {{ session('success') }}
 </div>
 @endif
+<div id="error-trigger" 
+     data-add-error="{{ ($errors->hasBag('addAccount') && $errors->addAccount->any()) ? 'true' : 'false' }}"
+     data-update-error="{{ ($errors->hasBag('updateAccount') && $errors->updateAccount->any()) ? 'true' : 'false' }}">
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const trigger = document.getElementById('error-trigger');
+        if (!trigger) return;
+
+        // Nếu túi lỗi addAccount có lỗi, tự động mở Modal Thêm tài khoản
+        if (trigger.getAttribute('data-add-error') === 'true') {
+            const addModalEl = document.getElementById('accountAddModal');
+            if (addModalEl) {
+                const addModal = new bootstrap.Modal(addModalEl);
+                addModal.show();
+            }
+        }
+
+        // Nếu túi lỗi updateAccount có lỗi, tự động mở Modal Sửa tài khoản
+        if (trigger.getAttribute('data-update-error') === 'true') {
+            const updateModalEl = document.getElementById('accountUpdateModal');
+            if (updateModalEl) {
+                const updateModal = new bootstrap.Modal(updateModalEl);
+                updateModal.show();
+            }
+        }
+    });
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

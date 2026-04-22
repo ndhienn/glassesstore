@@ -7,53 +7,75 @@
     use App\Bus\SanPham_BUS;
     use App\Bus\CTSP_BUS;
     use App\Bus\DiaChi_BUS;
-use App\Bus\NguoiDung_BUS;
-use App\Models\DiaChi;
+    use App\Bus\NguoiDung_BUS;
+    use App\Bus\Auth_BUS;
+    use App\Bus\TaiKhoan_BUS;
+    use App\Models\DiaChi;
 
-    $listSP = session('listSP');
+    // --- XỬ LÝ DANH SÁCH SẢN PHẨM (listSP) ---
+    $listSP = session('listSP', []); // Mặc định là mảng rỗng nếu không có session
+
+    // Chuẩn hóa dữ liệu để luôn là Object/Array có thể foreach
     if (is_string($listSP)) {
         $listSP = json_decode($listSP); 
     } elseif (is_array($listSP)) {
-        if (isset($listSP[0]) && is_array($listSP[0])) {
-            $listSP = json_decode(json_encode($listSP)); 
-        }
+        // Chuyển mảng lồng mảng thành mảng đối tượng để dùng được toán tử ->
+        $listSP = json_decode(json_encode($listSP)); 
     }
-    // if (session()->has('listSP')) {
-    //     session()->forget('listSP');
-    // }
-    // session(['listSP' => $listSP]);
 
-    $listPTTT = session('listPTTT');
-    $listDVVC = session('listDVVC');
-    $listTinh = session('listTinh');
-    $user = session('user');
+    // --- LẤY THÔNG TIN SESSION KHÁC ---
+    $listPTTT = session('listPTTT', []);
+    $listDVVC = session('listDVVC', []);
+    $listTinh = session('listTinh', []);
+    $user     = session('user');
+    $isLogin  = session('isLogin', false);
 
     // ========================================================
-    // LỚP BẢO VỆ 1: CỨU HỘ USER NẾU BỊ RỚT SESSION TỪ VNPAY VỀ
+    // LỚP BẢO VỆ 1: CỨU HỘ USER (Tránh lỗi null khi quay lại)
     // ========================================================
     if (!$user) {
-        $email = app(\App\Bus\Auth_BUS::class)->getEmailFromToken();
+        $email = app(Auth_BUS::class)->getEmailFromToken();
         if ($email) {
-            $user = app(\App\Bus\TaiKhoan_BUS::class)->getModelById($email);
-            session(['user' => $user]); // Nhặt được thì cất lại vào Session cho lần sau
+            $user = app(TaiKhoan_BUS::class)->getModelById($email);
+            if ($user) {
+                session(['user' => $user]); 
+            }
         }
     }
 
     // ========================================================
-    // LỚP BẢO VỆ 2: KIỂM TRA CHẮC CHẮN CÓ USER MỚI LẤY ĐỊA CHỈ
+    // LỚP BẢO VỆ 2: LẤY ĐỊA CHỈ AN TOÀN
     // ========================================================
     $listDiaChi = [];
-    if ($user && $user->getIdNguoiDung()) {
-        $listDiaChi = app(DiaChi_BUS::class)->getByIdND($user->getIdNguoiDung()->getId());
+    if ($user && method_exists($user, 'getIdNguoiDung') && $user->getIdNguoiDung()) {
+        $nguoiDung = $user->getIdNguoiDung();
+        if (method_exists($nguoiDung, 'getId')) {
+            $listDiaChi = app(DiaChi_BUS::class)->getByIdND($nguoiDung->getId());
+        }
     }
-    $isLogin = session('isLogin');
-    $tongTien = 0;
+
+    // ========================================================
+    // LỚP BẢO VỆ 3: TÍNH TỔNG TIỀN (Chặn lỗi Foreach Null)
+    // ========================================================
     $sum = 0;
-    foreach ($listSP as $key) {
-        # code...
-        $tmp = app(SanPham_BUS::class)->getModelById($key->idsp);
-        $sum += $tmp->getDonGia() * $key->quantity;
+    $tongTien = 0; // Thêm biến này nếu bạn dùng ở dưới
+
+    if (!empty($listSP) && (is_array($listSP) || is_object($listSP))) {
+        foreach ($listSP as $key) {
+            // Kiểm tra thuộc tính idsp tồn tại để không sập code
+            if (isset($key->idsp)) {
+                $tmp = app(SanPham_BUS::class)->getModelById($key->idsp);
+                
+                if ($tmp) {
+                    $soLuong = $key->quantity ?? 1;
+                    $sum += $tmp->getDonGia() * $soLuong;
+                }
+            }
+        }
     }
+    
+    // Gán lại cho tongTien nếu cần
+    $tongTien = $sum;
 ?>
 @if(session('success'))
 <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
@@ -200,37 +222,44 @@ use App\Models\DiaChi;
             <h1 class="text-dark fw-semibold">Thanh toán</h1>
             <!-- <form id="paymentForm" class="d-flex flex-column gap-3 p-3" method="get"> -->
                 <!-- <input type="hidden" name="listSP" id="listSPInput">     -->
-                <input type="hidden" name="tongtien" value="{{$sum}}">
-                <div class="d-flex flex-column">
-                    <label class="text-dark fw-semibold" for="">Họ tên *</label>
-                    <input disabled class="p-2  border border-0 rounded hover:border-blue-500" type="text"  id="" value="{{$user->getIdNguoiDung()->getHoTen()}}" required>
-                </div>
-                <div class="d-flex flex-column">
-                    <label class="text-dark fw-semibold" for="">Số điện thoại *</label>
-                    <input disabled class="p-2 border border-0 rounded hover:border-blue-500" type="text"  id="" value="{{$user->getIdNguoiDung()->getSoDienThoai()}}" required>
-                </div>
-                <div class="d-flex flex-column">
-                    <label class="text-dark fw-semibold" for="">Email *</label>
-                    <input disabled class="p-2  border border-0 rounded hover:border-blue-500" type="text"  id="" value="{{$user->getEmail()}}" required>
-                </div>
-                <div class="d-flex flex-column">
-                    <label class="text-dark fw-semibold text-break " for="">Địa chỉ *</label>
-                    <!-- <input class="rounded hover:border-blue-500" type="text" name="pttt" id="" required> -->
-                    <!-- <select class="p-2 rounded hover:border-blue-500" name="pttt" id="">
-                        <option value="" disabled>Chọn phương thức thanh toán</option>
-                        @foreach($listPTTT as $pttt) 
-                            <option value="{{$pttt->getId()}}">{{$pttt->getTenPTTT()}}</option>
-                        @endforeach
-                    </select> -->
-                    <button class="bg-white border border-0 p-2 rounded d-flex justify-content-between" id="btn-diachi" data-bs-toggle="modal"
-                                                                            data-bs-target="#accountUpdateModal">
-                        <div id="hienThiDiachi" class="text-break">
-                            <!-- <input type="hidden" name="diachi"> -->
-                            {{$user->getIdNguoiDung()->getDiaChi()}}
-                        </div>
-                        <i class="fa-solid fa-arrow-right pt-1"></i>
-                    </button>
-                </div>
+                <input type="hidden" name="tongtien" value="{{ $sum ?? 0 }}">
+
+<div class="d-flex flex-column">
+    <label class="text-dark fw-semibold" for="">Họ tên *</label>
+    {{-- Kiểm tra $user và getIdNguoiDung() trước khi gọi getHoTen() --}}
+    <input disabled class="p-2 border border-0 rounded hover:border-blue-500" type="text" 
+           value="{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getHoTen() : '' }}" required>
+</div>
+
+<div class="d-flex flex-column">
+    <label class="text-dark fw-semibold" for="">Số điện thoại *</label>
+    {{-- Tương tự cho số điện thoại --}}
+    <input disabled class="p-2 border border-0 rounded hover:border-blue-500" type="text" 
+           value="{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getSoDienThoai() : '' }}" required>
+</div>
+
+<div class="d-flex flex-column">
+    <label class="text-dark fw-semibold" for="">Email *</label>
+    {{-- Email thường nằm trực tiếp ở đối tượng TaiKhoan ($user) --}}
+    <input disabled class="p-2 border border-0 rounded hover:border-blue-500" type="text" 
+           value="{{ $user ? $user->getEmail() : '' }}" required>
+</div>
+
+<div class="d-flex flex-column">
+    <label class="text-dark fw-semibold text-break" for="">Địa chỉ *</label>
+    <button class="bg-white border border-0 p-2 rounded d-flex justify-content-between" type="button" id="btn-diachi" 
+            data-bs-toggle="modal" data-bs-target="#accountUpdateModal">
+        <div id="hienThiDiachi" class="text-break">
+            {{-- Kiểm tra địa chỉ, nếu không có thì hiện thông báo nhắc chọn --}}
+            @if($user && $user->getIdNguoiDung())
+                {{ $user->getIdNguoiDung()->getDiaChi() ?? 'Chưa có địa chỉ, vui lòng cập nhật' }}
+            @else
+                Vui lòng đăng nhập để chọn địa chỉ
+            @endif
+        </div>
+        <i class="fa-solid fa-arrow-right pt-1"></i>
+    </button>
+</div>
                 
                 <div class="d-flex flex-column">
                     <label class="text-dark fw-semibold" for="">Phương thức thanh toán *</label>
@@ -249,15 +278,19 @@ use App\Models\DiaChi;
         
         <div class="d-flex flex-column gap-3 p-3 bg-body-secondary rounded" style="width: 50%;height: 100%;">
             <form class="d-flex flex-column gap-3 p-3" id="formSubmit" action="{{route('payment.changestatus')}}" method="post">
-                <!-- <input type="hidden" name="listSP" id="listSPInput" value='{{ json_encode($listSP) }}'> -->
-                <!-- <input type="hidden" name="listSP" id="listSPInput" value='{{ json_encode($listSP) }}'> -->
                 @csrf
                 <meta name="csrf-token" content="{{ csrf_token() }}">
-                <!-- <input type="hidden" name="listCTHD" id="listCTHD"> -->
-                <input type="hidden" name="tinh" id="idtinh" value="{{$user->getIdNguoiDung()->getTinh()->getId()}}">
+                
+                {{-- Lớp bảo vệ cho ID Tỉnh --}}
+                <input type="hidden" name="tinh" id="idtinh" 
+                    value="{{ ($user && $user->getIdNguoiDung() && $user->getIdNguoiDung()->getTinh()) ? $user->getIdNguoiDung()->getTinh()->getId() : '' }}">
+                
                 <input type="hidden" name="pttt" id="idpttt" value="1">
-                <!-- <input type="hidden" name="dvvc" id="iddvvc"> -->
-                <input type="hidden" name="diachi" id="diachidata" value="{{$user->getIdNguoiDung()->getDiaChi()}}">
+
+                {{-- Lớp bảo vệ cho Địa chỉ --}}
+                <input type="hidden" name="diachi" id="diachidata" 
+                    value="{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getDiaChi() : '' }}">
+
                 <div class="d-flex justify-content-between">
                     <p class="fw-semibold fs-5" style="color: black;">Sản phẩm</p>
                     <p class="fw-semibold fs-5" style="color: black;">Thành tiền</p>
@@ -315,16 +348,22 @@ use App\Models\DiaChi;
                         <p class="text-danger fw-semibold fs-4" id="tongtien">{{ number_format($sum, 0, ',', '.') }}₫</p>
                     </div>
                 </div>
-                @if($flag == true)
-                    <div class="d-flex flex-column gap-3" style="align-items: center;">
-                        <button disabled id="saveHoaDon" class="btn btn-info text-white fs-4 fw-semibold" style="width: 300px;" type="submit">Thanh toán</button>
-                    </div>    
-                @else
-                    <div class="d-flex flex-column gap-3" style="align-items: center;">
-                        <button id="saveHoaDon" class="btn btn-info text-white fs-4 fw-semibold" style="width: 300px;" type="submit">Đặt hàng</button>
-                        <!-- <button id="btnThanhToan" style="display: none;">Thanh toán</button> -->
-                    </div>
-                @endif
+                {{-- Kiểm tra nếu biến flag tồn tại và có giá trị true --}}
+@if(isset($flag) && $flag == true)
+    <div class="d-flex flex-column gap-3" style="align-items: center;">
+        {{-- Nút thanh toán thường bị disable khi đang chờ phản hồi từ cổng thanh toán --}}
+        <button disabled id="saveHoaDon" class="btn btn-info text-white fs-4 fw-semibold" style="width: 300px;" type="submit">
+            Thanh toán
+        </button>
+    </div>    
+@else
+    <div class="d-flex flex-column gap-3" style="align-items: center;">
+        {{-- Mặc định hiện nút Đặt hàng nếu không có flag hoặc flag là false --}}
+        <button id="saveHoaDon" class="btn btn-info text-white fs-4 fw-semibold" style="width: 300px;" type="submit">
+            Đặt hàng
+        </button>
+    </div>
+@endif
                 
             </form>
             

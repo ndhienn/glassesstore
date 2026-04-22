@@ -13,6 +13,7 @@ use App\Bus\TaiKhoan_BUS;
   }else{
     $tenquyen = "Nhân viên";
   }
+  $currentModun = $_GET['modun'] ?? '';
 ?>
 <style>
 .sidebar-nav {
@@ -21,6 +22,22 @@ use App\Bus\TaiKhoan_BUS;
     scrollbar-width: thin; 
     scrollbar-color: #B0BEC5 #1A2526; 
 }
+.sidebar-item.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-left: 3px solid #3b7ddd;
+}
+
+.sidebar-item.active a.sidebar-link {
+    color: #3b7ddd !important;
+}
+
+.sidebar-nav {
+    max-height: calc(100vh - 100px); 
+    overflow-y: auto;
+    scrollbar-width: thin; 
+    scrollbar-color: #B0BEC5 #1A2526; 
+}
+
 </style>
 <aside id="sidebar" class="expand d-block">
 <div class="d-flex p-4" style="background-color: #2c3e50;">
@@ -40,25 +57,32 @@ use App\Bus\TaiKhoan_BUS;
 </div>
 
   <ul class="sidebar-nav">
-    
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 5))
-    <li class="sidebar-item" id="taikhoan">
-      <a href="/admin?modun=taikhoan" class="sidebar-link">
-        <i class='bx bxs-user-account'></i>
-        <span>Tài khoản</span>
-      </a>
-    </li>
+      <li class="sidebar-item <?= ($currentModun == 'nguoidung') ? 'active' : '' ?>" id="nguoidung">
+        <a href="/admin?modun=nguoidung" class="sidebar-link">
+          <i class='bx bxs-user'></i>
+          <span>Người dùng</span>
+        </a>
+      </li>
+      @endif
+    @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 5))
+      <li class="sidebar-item <?= ($currentModun == 'taikhoan') ? 'active' : '' ?>" id="taikhoan">
+        <a href="/admin?modun=taikhoan" class="sidebar-link">
+          <i class='bx bxs-user-account'></i>
+          <span>Tài khoản</span>
+        </a>
+      </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 1))
-    <li class="sidebar-item" id="sanpham">
-      <a href="/admin?modun=sanpham" class="sidebar-link">
-        <i class='bx bx-glasses'></i>
-        <span>Sản phẩm</span>
-      </a>
-    </li>
+      <li class="sidebar-item <?= ($currentModun == 'sanpham') ? 'active' : '' ?>" id="sanpham">
+        <a href="/admin?modun=sanpham" class="sidebar-link">
+          <i class='bx bx-glasses'></i>
+          <span>Sản phẩm</span>
+        </a>
+      </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 13))
-    <li class="sidebar-item" id="loaisanpham">
+    <li class="sidebar-item <?= ($currentModun == 'loaisanpham') ? 'active' : '' ?>" id="loai sanpham">
       <a href="/admin?modun=loaisanpham" class="sidebar-link">
         <i class='bx bx-bar-chart'></i>
         <span>Loại sản phẩm</span>
@@ -66,7 +90,7 @@ use App\Bus\TaiKhoan_BUS;
     </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 14))
-    <li class="sidebar-item" id="hang">
+    <li class="sidebar-item <?= ($currentModun == 'hang') ? 'active' : '' ?>" id="hang">
       <a href="/admin?modun=hang" class="sidebar-link">
         <i class='bx bx-bar-chart'></i>
         <span>Hãng</span>
@@ -74,16 +98,16 @@ use App\Bus\TaiKhoan_BUS;
     </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 2))
-    <li class="sidebar-item" id="hoadon">
-      <a href="/admin?modun=hoadon" class="sidebar-link">
-        <i class='bx bx-cart'></i>
-        <span>Hóa đơn</span>
-      </a>
-    </li>
+      <li class="sidebar-item <?= ($currentModun == 'hoadon') ? 'active' : '' ?>" id="hoadon">
+        <a href="/admin?modun=hoadon" class="sidebar-link">
+          <i class='bx bx-cart'></i>
+          <span>Hóa đơn</span>
+        </a>
+      </li>
     @endif
 
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 15))
-    <li class="sidebar-item" id="thanhpho">
+    <li class="sidebar-item <?= ($currentModun == 'thanhpho') ? 'active' : '' ?>" id="thanhpho">
       <a href="/admin?modun=thanhpho" class="sidebar-link" >
         <i class='bx bxs-truck'></i>
         <span>Thành phố</span>
@@ -91,15 +115,15 @@ use App\Bus\TaiKhoan_BUS;
     </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 3))
-    <li class="sidebar-item" id="ncc">
-      <a href="/admin?modun=nhacungcap" class="sidebar-link"  >
-        <i class='bx bx-edit-alt'></i>
-        <span>Nhà cung cấp</span>
-      </a>
-    </li>
+      <li class="sidebar-item <?= ($currentModun == 'nhacungcap') ? 'active' : '' ?>" id="ncc">
+        <a href="/admin?modun=nhacungcap" class="sidebar-link">
+          <i class='bx bx-edit-alt'></i>
+          <span>Nhà cung cấp</span>
+        </a>
+      </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 4))
-    <li class="sidebar-item" id="kho">
+    <li class="sidebar-item <?= ($currentModun == 'kho') ? 'active' : '' ?>" id="kho">
       <a href="/admin?modun=kho" class="sidebar-link"  >
         <i class='bx bx-home-alt'></i>  
         <span>Nhập kho</span>
@@ -107,17 +131,17 @@ use App\Bus\TaiKhoan_BUS;
     </li>
     @endif
 
-    @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 16))
-    <li class="sidebar-item" id="baohanh">
+    <!--@if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 16))
+    <li class="sidebar-item <?= ($currentModun == 'baohanh') ? 'active' : '' ?>" id="baohanh">
       <a href="/admin?modun=baohanh" class="sidebar-link"  >
         <i class='bx bx-shield-plus'></i>
         <span>Bảo hành</span>
       </a>
     </li>
-    @endif
+    @endif!-->
 
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 7))
-    <li class="sidebar-item" id="thongke">
+    <li class="sidebar-item <?= ($currentModun == 'thongke') ? 'active' : '' ?>" id="thongke">
       <a href="/admin?modun=thongke" class="sidebar-link"  >
         <i class='bx bx-bar-chart'></i>
         <span>Thống kê</span>
@@ -125,7 +149,7 @@ use App\Bus\TaiKhoan_BUS;
     </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 9))
-    <li class="sidebar-item" id="quyen">
+    <li class="sidebar-item <?= ($currentModun == 'quyen') ? 'active' : '' ?>" id="quyen">
       <a href="/admin?modun=quyen" class="sidebar-link">
         <i class='bx bx-bug'></i>
         <span>Quyền</span>
@@ -133,7 +157,7 @@ use App\Bus\TaiKhoan_BUS;
     </li>
     @endif
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 12))
-    <li class="sidebar-item" id="nguoidung">
+    <li class="sidebar-item <?= ($currentModun == 'nguoidung') ? 'active' : '' ?>" id="nguoidung">
       <a href="/admin?modun=nguoidung" class="sidebar-link">
         <i class='bx bx-user'></i>
         <span>Người dùng</span>

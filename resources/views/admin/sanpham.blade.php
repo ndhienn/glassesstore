@@ -21,42 +21,159 @@
   }
   document.addEventListener('DOMContentLoaded', function() {
 
-    // Tìm kiếm: giữ lại tất cả query hiện có và chỉ cập nhật 'keyword' + 'keywordQuyen'
-    const searchForm = document.querySelector('form[role="search"]');
-    if (searchForm) {
-      searchForm.addEventListener('submit', function(e) {
-        e.preventDefault();
+  // 1. KHAI BÁO CÁC PHẦN TỬ CHUNG
+    const addProductModal = document.getElementById('addProductModal');
+    const updateProductModal = document.getElementById('updateProductModal');
+    const addForm = document.getElementById('addForm');
 
-        const currentUrl = new URL(window.location.href);
-        const keywordInput = document.getElementById('keyword');
+    // 2. XỬ LÝ XEM TRƯỚC ẢNH CHO MODAL THÊM SẢN PHẨM
+    if (addProductModal) {
+        const fileInputAdd = addProductModal.querySelector('input[name="anhSanPham"]');
+        const previewImageAdd = addProductModal.querySelector('#previewImage1');
 
-        if (keywordInput && keywordInput.value.trim()) {
-          currentUrl.searchParams.set('keyword', keywordInput.value.trim());
-        } else {
-          currentUrl.searchParams.delete('keyword');
+        if (fileInputAdd && previewImageAdd) {
+            fileInputAdd.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Vui lòng chọn file ảnh (PNG, JPEG, WebP).');
+                        this.value = '';
+                        previewImageAdd.style.display = 'none';
+                        return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) { // 5MB
+                        alert('Kích thước file tối đa là 5MB.');
+                        this.value = '';
+                        previewImageAdd.style.display = 'none';
+                        return;
+                    }
+
+                    if (previewImageAdd.src && previewImageAdd.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(previewImageAdd.src);
+                    }
+                    previewImageAdd.src = URL.createObjectURL(file);
+                    previewImageAdd.style.display = 'block';
+                } else {
+                    previewImageAdd.style.display = 'none';
+                }
+            });
         }
-
-        // Reset về page 1 nếu có param page
-        currentUrl.searchParams.delete('page');
-
-        window.location.href = currentUrl.toString();
-      });
-
     }
 
+    // 3. XỬ LÝ XEM TRƯỚC ẢNH CHO MODAL CẬP NHẬT SẢN PHẨM
+    if (updateProductModal) {
+        const fileInputUpdate = updateProductModal.querySelector('input[name="anhSanPham"]');
+        const previewImageUpdate = updateProductModal.querySelector('#previewImage');
+
+        if (fileInputUpdate && previewImageUpdate) {
+            fileInputUpdate.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+                    if (!validTypes.includes(file.type)) {
+                        alert('Vui lòng chọn file ảnh (PNG, JPEG, WebP).');
+                        this.value = '';
+                        previewImageUpdate.style.display = 'none';
+                        return;
+                    }
+
+                    if (previewImageUpdate.src && previewImageUpdate.src.startsWith('blob:')) {
+                        URL.revokeObjectURL(previewImageUpdate.src);
+                    }
+                    previewImageUpdate.src = URL.createObjectURL(file);
+                    previewImageUpdate.style.display = 'block';
+                } else {
+                    const idSanPham = updateProductModal.querySelector('input[name="idSanPham"]')?.value;
+                    previewImageUpdate.src = idSanPham ? `/productImg/${idSanPham.trim()}.webp` : '';
+                    previewImageUpdate.style.display = idSanPham ? 'block' : 'none';
+                }
+            });
+
+            // Khôi phục ảnh gốc khi mở modal sửa
+            updateProductModal.addEventListener('shown.bs.modal', function() {
+                const idSanPham = this.querySelector('input[name="idSanPham"]')?.value;
+                if (idSanPham && !fileInputUpdate.files.length) {
+                    previewImageUpdate.src = `/productImg/${idSanPham.trim()}.webp`;
+                    previewImageUpdate.style.display = 'block';
+                }
+            });
+        }
+    }
+
+    // 4. CHẶN SUBMIT FORM THÊM NẾU CHƯA CHỌN ẢNH (Dòng xử lý lỗi 394)
+    if (addForm) {
+        addForm.addEventListener('submit', function(event) {
+            const fileInput = this.querySelector('input[name="anhSanPham"]');
+            if (fileInput && !fileInput.files.length) {
+                alert('Vui lòng chọn ảnh sản phẩm trước khi lưu.');
+                event.preventDefault();
+            }
+        });
+    }
+
+    // 5. TỰ ĐỘNG ĐÓNG THÔNG BÁO THÀNH CÔNG
+    const successAlert = document.getElementById('successAlert');
+    if (successAlert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(successAlert);
+            bsAlert.close();
+        }, 3000);
+    }
+    
+    // Tìm kiếm: giữ lại tất cả query hiện có và chỉ cập nhật 'keyword' + 'keywordQuyen'
+   const searchForm = document.querySelector('form[role="search"]');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const currentUrl = new URL(window.location.href);
+            const keywordInput = document.getElementById('keyword');
+            // Lấy thêm select trạng thái
+            const trangThaiSelect = searchForm.querySelector('select[name="trangthai"]');
+
+            // 1. Cập nhật keyword (Tên sản phẩm)
+            if (keywordInput && keywordInput.value.trim()) {
+                currentUrl.searchParams.set('keyword', keywordInput.value.trim());
+            } else {
+                currentUrl.searchParams.delete('keyword');
+            }
+
+            // 2. Cập nhật trangthai
+            if (trangThaiSelect && trangThaiSelect.value !== "") {
+                currentUrl.searchParams.set('trangthai', trangThaiSelect.value);
+            } else {
+                currentUrl.searchParams.delete('trangthai');
+            }
+
+            // Reset về page 1 và đảm bảo đúng modun
+            currentUrl.searchParams.delete('page');
+            currentUrl.searchParams.set('modun', 'sanpham');
+
+            window.location.href = currentUrl.toString();
+        });
+
+        // Tự động lọc khi người dùng thay đổi lựa chọn trong Select
+        const ts = searchForm.querySelector('select[name="trangthai"]');
+        if (ts) {
+            ts.addEventListener('change', () => {
+                searchForm.dispatchEvent(new Event('submit'));
+            });
+        }
+    }
+
+    // Nút làm mới: Xóa cả keyword và trangthai
     const refreshBtn = document.getElementById('refreshBtn');
-    refreshBtn.addEventListener('click', function() {
-      const url = new URL(window.location.href);
-
-      // Xóa keyword khỏi URL
-      url.searchParams.delete('keyword');
-
-      // Reset về trang đầu nếu có tham số phân trang
-      url.searchParams.delete('page');
-
-      // Chuyển hướng
-      window.location.href = url.toString();
-    });
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            const url = new URL(window.location.href);
+            url.searchParams.delete('keyword');
+            url.searchParams.delete('trangthai');
+            url.searchParams.delete('page');
+            window.location.href = url.toString();
+        });
+    }
 
     const editButtons = document.querySelectorAll('.btn-edit');
     const previewImage = document.getElementById('previewImage');
@@ -89,102 +206,7 @@
       });
     });
 
-    // Xử lý modal thêm sản phẩm: xem trước ảnh
-    const addProductModal = document.getElementById('addProductModal');
-    const fileInputAdd = addProductModal.querySelector('input[name="anhSanPham"]');
-    const previewImageAdd = addProductModal.querySelector('#previewImage1');
-
-    fileInputAdd.addEventListener('change', function() {
-      const file = this.files[0];
-      if (file) {
-        // Kiểm tra định dạng file
-        const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-          alert('Vui lòng chọn file ảnh (PNG, JPEG, WebP).');
-          this.value = ''; // Xóa file đã chọn
-          previewImageAdd.src = '';
-          previewImageAdd.style.display = 'none';
-          return;
-        }
-        // Kiểm tra kích thước file (tối đa 5MB)
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        if (file.size > maxSize) {
-          alert('Kích thước file tối đa là 5MB.');
-          this.value = '';
-          previewImageAdd.src = '';
-          previewImageAdd.style.display = 'none';
-          return;
-        }
-        // Thu hồi URL cũ nếu có
-        if (previewImageAdd.src) {
-          URL.revokeObjectURL(previewImageAdd.src);
-        }
-        previewImageAdd.src = URL.createObjectURL(file);
-        previewImageAdd.style.display = 'block';
-      } else {
-        if (previewImageAdd.src) {
-          URL.revokeObjectURL(previewImageAdd.src);
-        }
-        previewImageAdd.src = '';
-        previewImageAdd.style.display = 'none';
-      }
-    });
-
-    // Xử lý modal cập nhật sản phẩm: xem trước ảnh
-    const updateProductModal = document.getElementById('updateProductModal');
-    const fileInputUpdate = updateProductModal.querySelector('input[name="anhSanPham"]');
-    const previewImageUpdate = updateProductModal.querySelector('#previewImage');
-
-    fileInputUpdate.addEventListener('change', function() {
-        const file = this.files[0];
-        if (file) {
-            const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
-            if (!validTypes.includes(file.type)) {
-                alert('Vui lòng chọn file ảnh (PNG, JPEG, WebP).');
-                this.value = '';
-                previewImageUpdate.src = '';
-                previewImageUpdate.style.display = 'none';
-                return;
-            }
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (file.size > maxSize) {
-                alert('Kích thước file tối đa là 5MB.');
-                this.value = '';
-                previewImageUpdate.src = '';
-                previewImageUpdate.style.display = 'none';
-                return;
-            }
-            if (previewImageUpdate.src) {
-                URL.revokeObjectURL(previewImageUpdate.src);
-            }
-            previewImageUpdate.src = URL.createObjectURL(file);
-            previewImageUpdate.style.display = 'block';
-        } else {
-            // Khôi phục ảnh hiện tại của sản phẩm nếu không chọn file
-            const idSanPham = updateProductModal.querySelector('input[name="idSanPham"]').value;
-            previewImageUpdate.src = idSanPham ? `/productImg/${idSanPham}.webp` : '';
-            previewImageUpdate.style.display = idSanPham ? 'block' : 'none';
-        }
-    });
-
-    // Khôi phục ảnh hiện tại khi modal hiển thị lại sau validation thất bại
-    const updateModal = new bootstrap.Modal(updateProductModal);
-    updateProductModal.addEventListener('shown.bs.modal', function() {
-        const idSanPham = updateProductModal.querySelector('input[name="idSanPham"]').value;
-        if (idSanPham && !fileInputUpdate.files.length) {
-            previewImageUpdate.src = `/productImg/${idSanPham}.webp`;
-            previewImageUpdate.style.display = 'block';
-        }
-    });
-
-  })
-
-  document.querySelector('#addForm').addEventListener('submit', function(event) {
-    var fileInput = document.querySelector('input[name="anhSanPham"]');
-    if (!fileInput.files.length) {
-      alert('Vui lòng chọn ảnh sản phẩm.');
-      event.preventDefault(); // Ngừng gửi form nếu không chọn file
-    }
+    
   });
 
   setTimeout(function() {
@@ -225,8 +247,13 @@
 
 <div class="p-3 bg-light">
   <form class="d-flex me-2 mb-3" method="get" role="search">
-    <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
+    <input class="form-control me-2 w-25" type="search" placeholder="Tìm kiếm (tên sp)" aria-label="Search" id="keyword" name="keyword" value="{{ request('keyword') }}">
     <button class="btn btn-outline-success me-2" type="submit">Tìm</button>
+    <select name="trangthai" class="form-select me-2 w-25" style="background-color: #fff; border: 1px solid #dee2e6; color: #000;">
+    <option value="">Tất cả trạng thái</option>
+    <option value="1" {{ request('trangthai') == '1' ? 'selected' : '' }}>Đang kinh doanh</option>
+    <option value="0" {{ request('trangthai') == '0' ? 'selected' : '' }}>Ngừng kinh doanh</option>
+    </select>
     <button class="btn btn-info ms-2" id="refreshBtn" type="button">Làm mới</button>
   </form>
   <!-- Nút Plus để mở Modal -->
@@ -238,7 +265,6 @@
   <table class="table table-hover">
     <thead>
       <tr>
-        <th scope="col">ID</th>
         <th scope="col">Tên</th>
         <th scope="col">Hãng</th>
         <th scope="col">Số lượng</th>
@@ -254,7 +280,7 @@
     <tbody>
       @foreach($listSP as $sanPham)
       <tr>
-        <td>{{ $sanPham->getId() }}</td>
+    
         <td>{{ $sanPham->getTenSanPham() }}</td>
         <td>{{ $mapTenHang[$sanPham->getIdHang()->getId()] }}</td>
         <td>{{ $sanPham->getSoLuong()}}</td>
@@ -282,17 +308,24 @@
             data-soluong="{{ $sanPham->getSoLuong() }}"
             data-thoigianbaohanh="{{ $sanPham->getThoiGianBaoHanh() }}"
             data-mota="{{ $sanPham->getMoTa() }}"
-            
-            >
-
-            Sửa
-          </button>
+            >Sửa</button>
           <form id="deleteForm" method="POST" action="{{ route('admin.sanpham.check') }}" style="display:inline;">
-            @csrf
-            <meta name="csrf-token" content="{{ csrf_token() }}">
-            <input type="hidden" name="product_id" id="product_id" value="{{ $sanPham->getId() }}">
-            <button type="submit" data-product_id="{{ $sanPham->getId() }}" class="btn btn-danger btn-sm btn-delete">Xóa</button>
-          </form>
+    @csrf
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <input type="hidden" name="product_id" id="product_id" value="{{ $sanPham->getId() }}">
+    
+    @if($sanPham->getTrangThaiHD() == 1)
+        {{-- Nếu đang kinh doanh thì hiển thị nút Ngừng --}}
+        <button type="submit" data-product_id="{{ $sanPham->getId() }}" class="btn btn-danger btn-sm btn-delete">
+            Ngừng
+        </button>
+    @else
+        {{-- Nếu đã ngừng thì hiển thị nút Kích hoạt lại --}}
+        <button type="submit" data-product_id="{{ $sanPham->getId() }}" class="btn btn-success btn-sm btn-delete">
+            Kích hoạt
+        </button>
+    @endif
+</form>
 
         </td>
       </tr>
@@ -349,85 +382,87 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="addProductModalLabel">Thêm sản phẩm</h5>
+        <h5 class="modal-title" id="addProductModalLabel">Thêm sản phẩm mới</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
       </div>
       <div class="modal-body">
-        <form method="post" action="{{ route('admin.sanpham.store') }}" enctype="multipart/form-data">
+        <form method="post" id="addForm" action="{{ route('admin.sanpham.store') }}" enctype="multipart/form-data">
           @csrf
-          <!-- Hàng 1: Tên sản phẩm & Loại Sản Phẩm & Hãng -->
+          
           <div class="row mb-3">
             <div class="col-4">
               <label class="form-label">Tên sản phẩm</label>
               <input type="text" name="tenSanPham" class="form-control" placeholder="Nhập tên sản phẩm" value="{{ old('tenSanPham') }}">
-              @error('tenSanPham')
-              <div class="text-danger">{{ $message }}</div>
-              @enderror
-
+              @if($errors->addProduct->has('tenSanPham'))
+                <div class="text-danger small mt-1">{{ $errors->addProduct->first('tenSanPham') }}</div>
+              @endif
             </div>
+
             <div class="col-4">
               <label class="form-label">Loại sản phẩm</label>
-              <select id="" class="form-select" name="idLSP">
+              <select class="form-select" name="idLSP">
                 @foreach($listLSPIsActive as $it)
-                <option value="{{ $it->getId() }}">
-                  {{ $it->gettenLSP() }}
-                </option>
+                  @if($it->getTrangThaiHD() == 1)
+                    <option value="{{ $it->getId() }}" {{ old('idLSP') == $it->getId() ? 'selected' : '' }}>
+                        {{ $it->gettenLSP() }}
+                    </option>
+                  @endif
                 @endforeach
               </select>
             </div>
+
             <div class="col-4">
               <label class="form-label">Hãng</label>
-              <select id="inputCompany" name="idHang" class="form-select">
+              <select name="idHang" class="form-select">
                 @foreach($listHangIsActive as $it)
-                <option value="{{ $it->getId() }}">
-                  {{ $it->gettenHang() }}
-                </option>
+                  <option value="{{ $it->getId() }}" {{ old('idHang') == $it->getId() ? 'selected' : '' }}>
+                    {{ $it->gettenHang() }}
+                  </option>
                 @endforeach
               </select>
             </div>
           </div>
 
-          <!-- Hàng 2: Thời gian bảo hành & Mức giá -->
           <div class="row mb-3">
-            <div class="col-4">
-              <label class="form-label">Thời gian bảo hành</label>
-              <input type="text" name="thoiGianBaoHanh" class="form-control" placeholder="Nhập thời gian bảo hành" value="{{ old('thoiGianBaoHanh') }}">
-              @error('thoiGianBaoHanh')
-              <div class="text-danger">{{ $message }}</div>
-              @enderror
+            <div class="col-6">
+              <label class="form-label">Thời gian bảo hành (tháng)</label>
+              <input type="text" name="thoiGianBaoHanh" class="form-control" placeholder="Nhập thời gian" value="{{ old('thoiGianBaoHanh') }}">
+              @if($errors->addProduct->has('thoiGianBaoHanh'))
+                <div class="text-danger small mt-1">{{ $errors->addProduct->first('thoiGianBaoHanh') }}</div>
+              @endif
             </div>
-            <div class="col-4">
+
+            <div class="col-6">
               <label class="form-label">Kiểu dáng</label>
-              <select id="inputKieuDang" name="idKieuDang" class="form-select">
+              <select name="idKieuDang" class="form-select">
                 @foreach($listKieuDang as $it)
-                <option value="{{ $it->getId() }}">
-                  {{ $it->getTenKieuDang() }}
-                </option>
+                  <option value="{{ $it->getId() }}" {{ old('idKieuDang') == $it->getId() ? 'selected' : '' }}>
+                    {{ $it->getTenKieuDang() }}
+                  </option>
                 @endforeach
               </select>
             </div>
           </div>
 
-          <!-- Hàng 3: Mô tả -->
           <div class="mb-3">
             <label class="form-label">Mô tả</label>
             <textarea class="form-control" name="moTa" rows="3" placeholder="Nhập mô tả">{{ old('moTa') }}</textarea>
-            @error('moTa')
-            <div class="text-danger">{{ $message }}</div>
-            @enderror
+            @if($errors->addProduct->has('moTa'))
+              <div class="text-danger small mt-1">{{ $errors->addProduct->first('moTa') }}</div>
+            @endif
           </div>
 
-          <!-- Hàng 4: Ảnh sản phẩm -->
           <div class="mb-3">
             <label class="form-label">Ảnh sản phẩm</label>
             <input type="file" class="form-control" accept="image/*" name="anhSanPham">
-            @error('anhSanPham')
-            <div class="text-danger">{{ $message }}</div>
-            @enderror
-            <img id="previewImage1" src="" alt="Ảnh sản phẩm" style="max-width: 200px; margin-top: 10px; display: none;">
+            @if($errors->addProduct->has('anhSanPham'))
+              <div class="text-danger small mt-1">{{ $errors->addProduct->first('anhSanPham') }}</div>
+            @endif
+            <img id="previewImage1" src="" alt="Ảnh sản phẩm" style="max-width: 150px; margin-top: 10px; display: none; border-radius: 5px;">
           </div>
-          <!-- Nút Lưu -->
+                <div class="modal-footer justify-content-start">
           <button type="submit" class="btn btn-primary">Lưu</button>
+      </div>
         </form>
       </div>
     </div>
@@ -447,78 +482,74 @@
           @csrf
           <input type="hidden" name="soluong">
           <input type="hidden" name="idSanPham" value="{{ old('idSanPham') }}">
-          <!-- Hàng 1: Tên sản phẩm & Loại Sản Phẩm & Hãng -->
+
           <div class="row mb-3">
             <div class="col-4">
-              <label class="form-label">Tên sản phẩm</label>
-              <input type="text" name="tenSanPham" class="form-control" placeholder="Nhập tên sản phẩm" value="{{ old('tenSanPham') }}">
-              @error('tenSanPham')
-              <div class="text-danger">{{ $message }}</div>
-              @enderror
-            </div>
+            <label class="form-label">Tên sản phẩm</label>
+            <input type="text" name="tenSanPham" class="form-control bg-light" 
+                  value="{{ old('tenSanPham') }}" readonly>
+        </div>
+            
             <div class="col-4">
               <label class="form-label">Loại sản phẩm</label>
-              <select id="" class="form-select" name="idLSP">
+              <select class="form-select" name="idLSP">
                 @foreach($listLSPIsActive as $it)
-                <option value="{{ $it->getId() }}">
-                  {{ $it->gettenLSP() }}
-                </option>
+                  <option value="{{ $it->getId() }}" {{ old('idLSP') == $it->getId() ? 'selected' : '' }}>
+                    {{ $it->gettenLSP() }}
+                  </option>
                 @endforeach
               </select>
             </div>
+
             <div class="col-4">
               <label class="form-label">Hãng</label>
-              <select id="inputCompany" name="idHang" class="form-select">
+              <select name="idHang" class="form-select">
                 @foreach($listHangIsActive as $it)
-                <option value="{{ $it->getId() }}">
-                  {{ $it->gettenHang() }}
-                </option>
+                  <option value="{{ $it->getId() }}" {{ old('idHang') == $it->getId() ? 'selected' : '' }}>
+                    {{ $it->gettenHang() }}
+                  </option>
                 @endforeach
               </select>
             </div>
           </div>
 
-          <!-- Hàng 2: Thời gian bảo hành & Mức giá -->
           <div class="row mb-3">
             <div class="col-4">
               <label class="form-label">Thời gian bảo hành</label>
-              <input type="text" name="thoiGianBaoHanh" class="form-control" placeholder="Nhập thời gian bảo hành" value="{{ old('thoiGianBaoHanh') }}">
-              @error('thoiGianBaoHanh')
-              <div class="text-danger">{{ $message }}</div>
-              @enderror
+              <input type="text" name="thoiGianBaoHanh" class="form-control" value="{{ old('thoiGianBaoHanh') }}">
+              @if($errors->updateProduct->has('thoiGianBaoHanh'))
+                <div class="text-danger small mt-1">{{ $errors->updateProduct->first('thoiGianBaoHanh') }}</div>
+              @endif
             </div>
+
             <div class="col-4">
               <label class="form-label">Kiểu dáng</label>
-              <select id="inputKieuDang" name="idKieuDang" class="form-select">
+              <select name="idKieuDang" class="form-select">
                 @foreach($listKieuDang as $it)
-                <option value="{{ $it->getId() }}">
-                  {{ $it->getTenKieuDang() }}
-                </option>
+                  <option value="{{ $it->getId() }}" {{ old('idKieuDang') == $it->getId() ? 'selected' : '' }}>
+                    {{ $it->getTenKieuDang() }}
+                  </option>
                 @endforeach
               </select>
             </div>
-            
           </div>
 
-
-          <!-- Hàng 3: Mô tả -->
           <div class="mb-3">
             <label class="form-label">Mô tả</label>
-            <textarea class="form-control" name="moTa" rows="3" placeholder="Nhập mô tả">{{ old('moTa') }}</textarea>
-            @error('moTa')
-            <div class="text-danger">{{ $message }}</div>
-            @enderror
+            <textarea class="form-control" name="moTa" rows="3">{{ old('moTa') }}</textarea>
+            @if($errors->updateProduct->has('moTa'))
+              <div class="text-danger small mt-1">{{ $errors->updateProduct->first('moTa') }}</div>
+            @endif
           </div>
 
-          <!-- Hàng 4: Ảnh sản phẩm -->
           <div class="mb-3">
             <label class="form-label">Ảnh sản phẩm</label>
             <input type="file" class="form-control" accept="image/*" name="anhSanPham">
             <img id="previewImage" src="" alt="Ảnh sản phẩm" style="max-width: 200px; margin-top: 10px;">
-
           </div>
-          <!-- Nút Lưu -->
-          <button type="submit" class="btn btn-primary">Lưu</button>
+                 <div class="modal-footer justify-content-start">
+            <button type="submit" class="btn btn-primary">Lưu</button>
+        </div>
         </form>
       </div>
     </div>
@@ -559,6 +590,26 @@
   </div>
 </div>
 @endif
+<div id="error-data" 
+     data-has-add-error="{{ $errors->hasBag('addProduct') && $errors->addProduct->any() ? 'true' : 'false' }}"
+     data-has-update-error="{{ $errors->hasBag('updateProduct') && $errors->updateProduct->any() ? 'true' : 'false' }}">
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const errorData = document.getElementById('error-data');
+    if (!errorData) return;
 
+    const hasAddError = errorData.getAttribute('data-has-add-error') === 'true';
+    const hasUpdateError = errorData.getAttribute('data-has-update-error') === 'true';
+
+    if (hasAddError) {
+        new bootstrap.Modal(document.getElementById('addProductModal')).show();
+    }
+
+    if (hasUpdateError) {
+        new bootstrap.Modal(document.getElementById('updateProductModal')).show();
+    }
+});
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">

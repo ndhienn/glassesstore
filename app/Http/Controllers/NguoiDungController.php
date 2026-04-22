@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Hash;
 use App\Bus\Auth_BUS;
 use App\Bus\DiaChi_BUS;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ use App\Enum\GioiTinhEnum;
 use App\Models\DiaChi;
 use App\Models\NguoiDung;
 
+
 class NguoiDungController extends Controller
 {
     protected $tinhBUS;
@@ -25,93 +27,162 @@ class NguoiDungController extends Controller
         $this->nguoiDungBUS = $nguoi_dung_bus;
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'fullname' => 'required|string|max:255',
-            'birthdate' => 'required|date',
-            'address' => 'required|string|max:255',
-            'idquyen' => 'required|exists:quyen,id',
-            'idnguoidung' => 'required|exists:nguoidung,id',
-            'gender' => 'required|in:MALE,FEMALE,UNDEFINED', // Validate gender
-            'sdt' => 'required|regex:/^[0-9]{10,11}$/', // Validate phone number
-            'cccd' => 'required|digits:12', // Validate ID card
-        ]);
-        $fullname = $request->input('fullname');
-        $birthdate = $request->input('birthdate');
-        $address = $request->input('address');  
-        $gioiTinhInput = $request->input('gender');
+    
 
-        switch($gioiTinhInput) {
-            case 'MALE':
-                $gioiTinh = GioiTinhEnum::MALE;
-                break;
-            case 'FEMALE':
-                $gioiTinh = GioiTinhEnum::FEMALE;
-                break;
-            case 'UNDEFINED':
-                $gioiTinh = GioiTinhEnum::UNDEFINED;
-                break;
-            default:
-                return redirect()->back()->with('error', 'Giới tính không hợp lệ');
-        }
+public function store(Request $request)
+{
+    $maxDate = now()->subYears(16)->format('Y-m-d');
 
-        $tinh = $this->tinhBUS->getModelById($request->input('tinh'));
-        $sdt = $request->input('sdt');
-        $cccd = $request->input('cccd');  
+    $attributes = [
+        'HOTEN' => 'Họ tên',
+        'NGAYSINH' => 'Ngày sinh',
+        'GIOITINH' => 'Giới tính',
+        'DIACHI' => 'Địa chỉ',
+        'IDTINH' => 'Tỉnh',
+        'SODIENTHOAI' => 'Số điện thoại',
+        'CCCD' => 'CCCD',
+    ];
 
-        $nguoidung = new NguoiDung(null, $fullname, $birthdate, $gioiTinh, $address, $tinh, $sdt, $cccd, 1);
-        $this->nguoiDungBUS->addModel($nguoidung);
-
-        return redirect()->back()->with('success', 'Người dùng đã được thêm thành công!');
-    }
-
-    public function update(Request $request)
-    {
-        $request->validate([
-            'id' => 'required|exists:nguoidung,id', // Ensure ID exists
-            'HOTEN' => 'required|string|max:255',
-            'NGAYSINH' => 'required|date',
-            'GIOITINH' => 'required|in:MALE,FEMALE,UNDEFINED', // Validate gender
-            'DIACHI' => 'required|string|max:255',
-            'IDTINH' => 'required|exists:tinh,id', // Validate province
-            'SODIENTHOAI' => 'required|regex:/^[0-9]{10,11}$/', // Validate phone number
-            'CCCD' => 'required|digits:12', // Validate ID card
-        ]);
-        $id = $request->input('id');
-        $hoten = $request->input('HOTEN');
-        $ngaysinh = $request->input('NGAYSINH');
-        $gioitinhInput = $request->input('GIOITINH');
-
-        switch($gioitinhInput) {
-            case 'MALE':
-                $gioitinh = GioiTinhEnum::MALE;
-                break;
-            case 'FEMALE':
-                $gioitinh = GioiTinhEnum::FEMALE;
-                break;
-            case 'UNDEFINED':
-                $gioitinh = GioiTinhEnum::UNDEFINED;
-                break;
-            default:
-                return redirect()->back()->with('error', 'Giới tính không hợp lệ');
-        }
-
-        $diachi = $request->input('DIACHI');
-        $tinh = $this->tinhBUS->getModelById($request->input('IDTINH'));
-        $sdt = $request->input('SODIENTHOAI');
-        $cccd = $request->input('CCCD');
-        $trangthaihd = $request->input('TRANGTHAIHD');
-
-        $nguoidung = new NguoiDung($id, $hoten, $ngaysinh, $gioitinh, $diachi, $tinh, $sdt, $cccd, $trangthaihd);
-        $result = $this->nguoiDungBUS->updateModel($nguoidung);
+    $messages = [
+        'required' => ':attribute không được để trống.',
+        // Thông báo cho Số điện thoại
+        'SODIENTHOAI.regex' => 'Số điện thoại phải nhập đúng 10 số.',
+        'SODIENTHOAI.unique' => 'Số điện thoại này đã tồn tại.',
         
-        if (!$result) {
-            return redirect()->back()->with('error', 'Cập nhật người dùng thất bại');
-        }
+        // Thông báo cho CCCD
+        'CCCD.digits' => 'CCCD phải nhập đúng 12 số.',
+        'CCCD.unique' => 'Số CCCD này đã tồn tại.',
+        
+        // Các thông báo khác
+        'NGAYSINH.before_or_equal' => 'Người dùng phải từ 16 tuổi trở lên.',
+        'date' => ':attribute không đúng định dạng.',
+    ];
 
-        return redirect()->back()->with('success', 'Người dùng đã được cập nhật thành công!');
+    $validator = Validator::make($request->all(), [
+        'HOTEN' => 'required|string|max:255',
+        'NGAYSINH' => 'required|date|before_or_equal:' . $maxDate,
+        'GIOITINH' => 'required',
+        'DIACHI' => 'required',
+        'IDTINH' => 'required',
+        // Kiểm tra định dạng 10 số trước, sau đó mới kiểm tra trùng (unique)
+        'SODIENTHOAI' => [
+            'required',
+            'regex:/^[0-9]{10}$/', 
+            'unique:nguoidung,SODIENTHOAI'
+        ],
+        // Kiểm tra 12 chữ số trước, sau đó mới kiểm tra trùng
+        'CCCD' => [
+            'required',
+            'digits:12',
+            'unique:nguoidung,CCCD'
+        ],
+    ], $messages, $attributes);
+
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'addUser')
+            ->withInput();
     }
+
+    // Logic xử lý thêm (giữ nguyên switch/match của bạn)
+    $gioiTinh = match($request->input('GIOITINH')) {
+        'MALE' => GioiTinhEnum::MALE,
+        'FEMALE' => GioiTinhEnum::FEMALE,
+        'UNDEFINED' => GioiTinhEnum::UNDEFINED,
+        default => null,
+    };
+
+    $tinh = $this->tinhBUS->getModelById($request->input('IDTINH'));
+    $nguoidung = new NguoiDung(
+        null, 
+        $request->input('HOTEN'), 
+        $request->input('NGAYSINH'), 
+        $gioiTinh, 
+        $request->input('DIACHI'), 
+        $tinh, 
+        $request->input('SODIENTHOAI'), 
+        $request->input('CCCD'), 
+        1
+    );
+    
+    $this->nguoiDungBUS->addModel($nguoidung);
+    return redirect()->back()->with('success', 'Thêm thành công!');
+}
+
+public function update(Request $request)
+{
+    $maxDate = now()->subYears(16)->format('Y-m-d');
+
+    // Định nghĩa tên hiển thị để thông báo không bị rời rạc
+    $attributes = [
+        'HOTEN' => 'Họ tên',
+        'NGAYSINH' => 'Ngày sinh',
+        'GIOITINH' => 'Giới tính',
+        'DIACHI' => 'Địa chỉ',
+        'IDTINH' => 'Tỉnh',
+        'SODIENTHOAI' => 'Số điện thoại',
+        'CCCD' => 'CCCD',
+    ];
+
+    $messages = [
+        'required' => ':attribute không được để trống.',
+        'digits' => ':attribute phải nhập đúng :digits số.',
+        'regex' => ':attribute phải nhập đúng 10 số.',
+        'unique' => ':attribute này đã bị trùng.',
+        'NGAYSINH.before_or_equal' => 'Người dùng phải từ 16 tuổi trở lên.',
+        'exists' => 'Bản ghi không tồn tại.',
+    ];
+
+    $validator = Validator::make($request->all(), [
+        'id' => 'required|exists:nguoidung,id',
+        'HOTEN' => 'required|string|max:255',
+        'NGAYSINH' => 'required|date|before_or_equal:' . $maxDate,
+        'GIOITINH' => 'required',
+        'DIACHI' => 'required',
+        'IDTINH' => 'required',
+        // Kiểm tra đúng 10 số trước (regex), sau đó mới kiểm tra trùng (unique)
+        'SODIENTHOAI' => [
+            'required',
+            'regex:/^[0-9]{10}$/',
+            'unique:nguoidung,SODIENTHOAI,' . $request->id
+        ],
+        // Kiểm tra đúng 12 số trước (digits), sau đó mới kiểm tra trùng (unique)
+        'CCCD' => [
+            'required',
+            'digits:12',
+            'unique:nguoidung,CCCD,' . $request->id
+        ],
+    ], $messages, $attributes);
+
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator, 'updateUser')
+            ->withInput();
+    }
+    // Logic xử lý update tương tự...
+    $gioiTinh = match($request->input('GIOITINH')) {
+        'MALE' => GioiTinhEnum::MALE,
+        'FEMALE' => GioiTinhEnum::FEMALE,
+        'UNDEFINED' => GioiTinhEnum::UNDEFINED,
+        default => null,
+    };
+
+    $tinh = $this->tinhBUS->getModelById($request->input('IDTINH'));
+    $nguoidung = new NguoiDung(
+        $request->id, 
+        $request->input('HOTEN'), 
+        $request->input('NGAYSINH'), 
+        $gioiTinh, 
+        $request->input('DIACHI'), 
+        $tinh, 
+        $request->input('SODIENTHOAI'), 
+        $request->input('CCCD'), 
+        $request->input('TRANGTHAIHD')
+    );
+
+    $this->nguoiDungBUS->updateModel($nguoidung);
+    return redirect()->back()->with('success', 'Cập nhật thành công!');
+}
 
     public function controlDelete(Request $request)
     {
@@ -126,48 +197,61 @@ class NguoiDungController extends Controller
         // Placeholder for checking if user exists
     }
 
-    public function updateInfo(Request $request)
-    {
-        $id = $request->input('id');
-        $hoten = $request->input('hoTen');
-        $sdt = $request->input('soDienThoai');
-        $diachi = $request->input('diaChi');
-        
-        // Get existing user to preserve other fields
-        $existingUser = $this->nguoiDungBUS->getModelById($id);
-        if (!$existingUser) {
-            return redirect()->back()->with('error', 'Không tìm thấy người dùng');
-        }
+   public function updateInfo(Request $request)
+{
+    // 1. Kiểm tra dữ liệu đầu vào (Validation)
+    $validator = Validator::make($request->all(), [
+        'soDienThoai' => 'required|digits:10', // Bắt buộc phải là số và đúng 10 chữ số
+    ], [
+        'soDienThoai.required' => 'Số điện thoại không được để trống.',
+        'soDienThoai.digits' => 'Số điện thoại phải bao gồm đúng 10 chữ số.',
+    ]);
 
-        // Convert string gender to enum
-        $gioiTinhStr = $existingUser->getGioiTinh();
-        $gioiTinh = match ($gioiTinhStr) {
-            'MALE' => GioiTinhEnum::MALE,
-            'FEMALE' => GioiTinhEnum::FEMALE,
-            default => GioiTinhEnum::UNDEFINED,
-        };
-
-        // Create new user object with updated fields
-        $nguoidung = new NguoiDung(
-            $id,
-            $hoten,
-            $existingUser->getNgaySinh(),
-            $gioiTinh,
-            $diachi,
-            $existingUser->getTinh(),
-            $sdt,
-            $existingUser->getCccd(),
-            $existingUser->getTrangThaiHD()
-        );
-
-        $result = $this->nguoiDungBUS->updateModel($nguoidung);
-        
-        if (!$result) {
-            return redirect()->back()->with('error', 'Cập nhật thông tin thất bại');
-        }   
-       
-        return redirect()->back()->with('success', 'Cập nhật thông tin thành công!');
+    // Nếu validation thất bại, quay lại và kèm theo lỗi
+    if ($validator->fails()) {
+        return redirect()->back()
+            ->withErrors($validator)
+            ->withInput();
     }
+
+    $id = $request->input('id');
+    $hoten = $request->input('hoTen');
+    $sdt = $request->input('soDienThoai');
+    $diachi = $request->input('diaChi');
+    
+    $existingUser = $this->nguoiDungBUS->getModelById($id);
+    if (!$existingUser) {
+        return redirect()->back()->with('error', 'Không tìm thấy người dùng');
+    }
+
+    $gioiTinhStr = $existingUser->getGioiTinh();
+    $gioiTinh = match ($gioiTinhStr) {
+        'MALE' => GioiTinhEnum::MALE,
+        'FEMALE' => GioiTinhEnum::FEMALE,
+        default => GioiTinhEnum::UNDEFINED,
+    };
+
+    $nguoidung = new NguoiDung(
+        $id,
+        $hoten,
+        $existingUser->getNgaySinh(),
+        $gioiTinh,
+        $diachi,
+        $existingUser->getTinh(),
+        $sdt,
+        $existingUser->getCccd(),
+        $existingUser->getTrangThaiHD()
+    );
+
+    $result = $this->nguoiDungBUS->updateModel($nguoidung);
+    
+    if (!$result) {
+        return redirect()->back()->with('error', 'Cập nhật thông tin thất bại');
+    }   
+   
+    // Trả về kèm session 'success'
+    return redirect()->back()->with('success', 'Cập nhật thông tin thành công!');
+}
     // public function addAddress(Request $request){
     //     // dd($request->all());
     //     // $idnd = $request->idnd;

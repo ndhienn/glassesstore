@@ -15,6 +15,36 @@ use App\Bus\SanPham_BUS;
     ?>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+
+   let isLoading = false;
+    let debounceTimeout = null;
+// 1. XỬ LÝ DROPDOWN USER 
+    try {
+        const userBtn = document.getElementById('userDropdownBtn');
+        const userDropdown = document.getElementById('userDropdownMenu');
+
+        if (userBtn && userDropdown) {
+            userBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Đã nhấn vào User Dropdown");
+                
+                const isHidden = userDropdown.style.display === 'none' || userDropdown.style.display === '';
+                userDropdown.style.display = isHidden ? 'block' : 'none';
+            });
+
+            // Ngăn đóng menu khi click vào bên trong (chỗ nút Đăng xuất)
+            userDropdown.addEventListener('click', (e) => e.stopPropagation());
+
+            // Đóng khi click ra ngoài
+            document.addEventListener('click', () => {
+                userDropdown.style.display = 'none';
+            });
+        }
+    } catch (e) {
+        console.error("Lỗi dropdown user:", e);
+    }
+    
     const searchForm = document.querySelector('form[role="search"]');
 
     function loadProducts(params = '') {
@@ -570,7 +600,7 @@ use App\Bus\SanPham_BUS;
       </div>
     </div>
     <div class="copyright">
-      <p style="margin: 0;">Anna 2018-2023. Design by OKHUB Viet Nam</p>
+      <p style="margin: 0;">Anna 2018-2026. Design by OKHUB Viet Nam</p>
     </div>
   </footer>
 
@@ -596,7 +626,7 @@ use App\Bus\SanPham_BUS;
             <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Thương hiệu: <div class=" fw-bold" style="color: red;" name="hang"></div></div>
             <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Mô tả: <div name="mota"></div></div>
             <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Thời gian bảo hành: <div name="tgbh"></div> tháng</div>
-            <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Số lượng tồn kho: <div name="stock"> </div></div>
+            <div class="fs-6 fw-semibold d-flex flex-row gap-3 align-center" style="color: #413f3f;">Số lượng:<div name="stock"> </div></div>
             
           </div>
         </div>
@@ -608,7 +638,7 @@ use App\Bus\SanPham_BUS;
                   @csrf
                   <input type="hidden" name="idgh" value="{{$gh->getIdGH()}}">
                   <input type="hidden" name="idsp" value="">
-                  <button type="submit" class="btn btn-light" style="width: 200px;">Thêm vào giỏ hàng</button>
+                  <button type="submit" class="btn btn-light" style="width: 200px; border: 2px solid #ced4da;">Thêm vào giỏ</button>
               </form>
               <button type="button" class="btn btn-light" style="width: 150px;">Mua ngay</button>
             @else
@@ -626,4 +656,20 @@ use App\Bus\SanPham_BUS;
 @elseif(session('success'))
     <div class="alert alert-success successAlert">{{ session('success') }}</div>        
 @endif
+<script>
+    let lastScrollTop = 0;
+  const navbar = document.getElementById("navbar-ctn");
+
+  window.addEventListener("scroll", function() {
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (scrollTop > lastScrollTop && scrollTop > 100) {
+      navbar.classList.add("nav-hidden");
+    } else {
+      navbar.classList.remove("nav-hidden");
+    }
+    
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+  }, false);
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

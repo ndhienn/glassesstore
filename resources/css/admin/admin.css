@@ -107,3 +107,16 @@ a.sidebar-link:hover {
     display: none !important;
 }
 
+
+.sidebar-item.active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-item.active a.sidebar-link {
+    border-left: 3px solid #3b7ddd; 
+    color: #3b7ddd;
+}
+
+.sidebar-item.active a.sidebar-link i {
+    color: #3b7ddd;
+}

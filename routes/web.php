@@ -497,6 +497,7 @@ Route::get('/success', function(Request $request) {
         'hoaDon' => $hoaDon
     ]);
 });
+Route::get('/thanh-toan-thanh-cong/{orderId}', [PaymentController::class, 'showSuccessPage'])->name('order.success');
 Route::view('/createdPayment', 'client.MuaNgay');
 Route::get('/getCTHD', [HoaDonController::class, 'getCTHDByIDSPAndIDHD'])->name('payment.getCTHDByIDSPAndIDHD');
 Route::get('/muangay', [HoaDonController::class, 'muangay'])->name('payment.muangay');
@@ -575,4 +576,10 @@ Route::get('/vnpay-create/{hd}', [PaymentController::class, 'createPayment'])->n
 // Route nhận kết quả trả về từ VNPay
 Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
 Route::get('/vnpay-ipn', [\App\Http\Controllers\PaymentController::class, 'vnpayIpn'])->name('vnpay.ipn');
+Route::get('/paymentcancelled/{orderId}', [PaymentController::class, 'showCancelledPage'])->name('payment.cancelled');
+
+//route dẫn đến thanh toán phòng khi người dùng tắt nhầm trang thanh toán
+Route::get('/payment/retry/{order_id}', [PaymentController::class, 'retryPayment'])->name('payment.retry');
+//route huỷ đơn hàng và hoàn kho khi người dùng đã thanh toán
+Route::post('/huy-don-hang/{id}', [HoaDonController::class, 'handleHuyDon'])->name('hoa-don.huy');
 ?>

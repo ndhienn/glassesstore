@@ -12,6 +12,9 @@ use App\Interface\BUSInterface;
 use App\Models\HoaDon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Validator;
+use App\Jobs\CheckVnpayPaymentStatus;
+use Illuminate\Support\Facades\Redis;
+use Carbon\Carbon;
 class HoaDon_BUS{
 
     private $hoaDonDAO;
@@ -124,9 +127,13 @@ class HoaDon_BUS{
         // $dvvc = app(DVVC_BUS::class)->getModelById($request->input('dvvc'));
         $diachi = $request->input('diachi');
         
+        
         $email = app(Auth_BUS::class)->getEmailFromToken();
         $user = app(TaiKhoan_BUS::class)->getModelById($email);
-
+        
+        if (!$tinh || !$pttt || !$user) {
+            throw new \Exception('Dữ liệu Tỉnh/Thành, Phương thức TT hoặc User không hợp lệ!');
+        }
         // Lấy giỏ hàng từ Session
         $listSP = session('listSP');
         if (is_string($listSP)) {
@@ -167,74 +174,129 @@ class HoaDon_BUS{
                 // app(CTSP_BUS::class)->updateStatus($listCTSP[$i]->getSoSeri(), 2); 
             }
         }
-
+        
         // Trả về Hóa đơn để Controller mang ID đi tạo link VNPay
         return $hd;
     }
 
-   public function chotDonHangSauThanhToan($idHoaDon) 
-{
-    // Khởi tạo các BUS cần thiết
-    $cthdBus = app(CTHD_BUS::class);
-    $ctspBus = app(CTSP_BUS::class);
-    $spBus   = app(SanPham_BUS::class);
-    $ctghBus = app(CTGH_BUS::class);
-    $authBus = app(Auth_BUS::class);
-    $ghBus   = app(GioHang_BUS::class);
+    public function chotDonHangSauThanhToan($request, $idHoaDon, $status) 
+    {
+        $source = session('checkout_source');
 
-    $hd = $this->getModelById($idHoaDon);
-    if (!$hd) return false;
+        // Khởi tạo các BUS cần thiết
+        $cthdBus = app(CTHD_BUS::class);
+        $ctspBus = app(CTSP_BUS::class);
+        $spBus   = app(SanPham_BUS::class);
+        $ctghBus = app(CTGH_BUS::class);
+        $authBus = app(Auth_BUS::class);
+        $ghBus   = app(GioHang_BUS::class);
 
-    $listCTHD = $cthdBus->getCTHTbyIDHD($idHoaDon);
-    if (empty($listCTHD)) return false;
+        $hd = $this->getModelById($idHoaDon);
+        if (!$hd) return false;
 
-    $email = $authBus->getEmailFromToken();
-    $gh = $ghBus->getByEmail($email);
+        $listCTHD = $cthdBus->getCTHTbyIDHD($idHoaDon);
+        if (empty($listCTHD)) return false;
 
-    foreach ($listCTHD as $cthd) {
-        if (!$cthd) continue;
+        $email = $authBus->getEmailFromToken();
+        $gh = $ghBus->getByEmail($email);
 
-        $soSeri = $cthd->getSoSeri();
-        $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
-        
-        if ($ctsp) {
-            $sp = $ctsp->getIdSP(); 
-            if ($sp) {
-                $ctspBus->updateStatus($soSeri, 0); // Đã bán
-                $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
-                $spBus->updateModel($sp);
+        foreach ($listCTHD as $cthd) {
+            if (!$cthd) continue;
 
-                if ($gh) {
-                    $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+            $soSeri = $cthd->getSoSeri();
+            $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
+            
+            if ($ctsp) {
+                $sp = $ctsp->getIdSP(); 
+                if ($sp) {
+                    $ctspBus->updateStatus($soSeri, 0); // Đã bán
+                    $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
+                    $spBus->updateModel($sp);
+
+                    if ($gh) {
+                        if ($source === 'cart') {
+                            $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                        } 
+                        // else ($source = 'buy_now') {
+                            
+                        // }
+                    }
                 }
             }
         }
+
+        if ($status === "PAID") {
+            $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
+        }
+        $this->updateModel($hd);
+        session()->forget('listSP');
+        return true;
     }
-
-    // THAY THẾ Ở ĐÂY: Dùng số nguyên thay vì Enum
-    $hd->setTrangThai('PAID'); 
-    $this->updateModel($hd);
     
-    session()->forget('listSP');
-    return true;
-}
     public function huyThanhToanDonHang($idHoaDon) {
-    $hd = $this->getModelById($idHoaDon);
-    if (!$hd) return false;
+        $hd = $this->getModelById($idHoaDon);
+        if (!$hd) return false;
 
-    $trangThaiHienTai = $hd->getTrangThai();
-    
-    // Giả sử: 2 là Chờ thanh toán, 3 là Đã hủy
-    if ($trangThaiHienTai == 2) {
-        $hd->setTrangThai(3); 
+        $hd->setTrangThai(\App\Enum\HoaDonEnum::CANCELLED);
         $this->updateModel($hd);
         return true;
     }
-
-    return false;
-}
     public function searchByEmailOrSDT(string $keyword): array
     {
         return $this->hoaDonDAO->searchByEmailOrSDT($keyword);
+    }
+    public function setLinkThanhToan($idHoaDon, $link, $ref) {
+        $hd = $this->getModelById($idHoaDon);
+        if (!$hd) return false;
+
+        $hd->setLinktt($link);
+        $hd->setOrderCode($ref);
+        $this->updateModel($hd);
+        if ($hd->getIdPTTT()->getId() == 3) {
+            CheckVnpayPaymentStatus::dispatch($hd->getId())->delay(now()->addMinutes(15));
+        }
+        return true;
+    }
+    public function hoanKho($idHoaDon) {
+        $cthdBus = app(CTHD_BUS::class);
+        $ctspBus = app(CTSP_BUS::class);
+        $spBus   = app(SanPham_BUS::class);
+
+        $listCTHD = $cthdBus->getCTHTbyIDHD($idHoaDon);
+        if (empty($listCTHD)) return false;
+
+        foreach ($listCTHD as $cthd) {
+            if (!$cthd) continue;
+
+            $soSeri = $cthd->getSoSeri();
+            $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
+            
+            if ($ctsp) {
+                $sp = $ctsp->getIdSP(); 
+                if ($sp) {
+                    $ctspBus->updateStatus($soSeri, 1); 
+                    $sp->setSoLuong($sp->getSoLuong() + 1);
+                    $spBus->updateModel($sp);
+                }
+            }
+        }
+
+        return true;
+    }
+    public function huyDonHangVaHoanKho($idHoaDon) 
+    {
+        $hd = $this->getModelById($idHoaDon);
+        if (!$hd) return false;
+
+        if ($hd->getIdPTTT()->getId() == 1) {
+            $this->hoanKho($idHoaDon);
+        }
+
+        // 3. Cập nhật trạng thái hóa đơn thành Hủy (CANCELLED)
+        // Bạn hãy kiểm tra xem trong HoaDonEnum đã có cột CANCELLED hoặc tương đương chưa
+        $hd->setTrangThai(\App\Enum\HoaDonEnum::CANCELLED); 
+        $this->updateModel($hd);
+
+        return true;
     }
 }

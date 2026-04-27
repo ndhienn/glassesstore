@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentAttempt extends Model
 {
     protected $table = 'payment_attempts';
+    public $timestamps = false;
 
     protected $fillable = [
         'order_id', 
@@ -19,7 +20,9 @@ class PaymentAttempt extends Model
         'redirect_url',
         'return_url', 
         'ipn_url', 
-        'expire_at'
+        'expire_at',
+        'created_at',
+        'updated_at',
     ];
     // Thuộc về 1 Hóa đơn
     public function hoadon()

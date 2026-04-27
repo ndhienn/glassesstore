@@ -5,13 +5,19 @@ use Exception;
 class database_connection {
     private $connection = null;
     private static $instance;
-    private static $host = "localhost";
-    private static $port = "3306";
-    private static $dbname = "laravel";
-    private static $user = "root";
-    private static $pass = "";
+    private static $host = null;
+    private static $port = null;
+    private static $dbname = null;
+    private static $user = null;
+    private static $pass = null;
 
-    private function __construct(){}
+    private function __construct(){
+        self::$host = env('DB_HOST', '127.0.0.1');
+        self::$port = env('DB_PORT', '3306');
+        self::$dbname = env('DB_DATABASE', 'glassesstore');
+        self::$user = env('DB_USERNAME', 'root');
+        self::$pass = env('DB_PASSWORD', '276951438');
+    }
 
     public static function getInstance() {
         if(self::$instance == null) {

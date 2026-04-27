@@ -7,14 +7,14 @@ use App\Enum\HoaDonEnum;
 
 class HoaDon extends Model
 {
-    private $id, $tongTien, $ngayTao, $diaChi, $orderCode;
+    private $id, $tongTien, $ngayTao, $diaChi, $orderCode, $linktt;
     private Tinh $tinh;
     private TaiKhoan $email;
     private NguoiDung $idNhanVien;
     private PTTT $idPTTT;
     private HoaDonEnum $trangThai;
 
-    public function __construct($id = null,TaiKhoan $email, NguoiDung $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, Tinh $tinh, HoaDonEnum $trangThai, $orderCode = null)
+    public function __construct($id = null,TaiKhoan $email, NguoiDung $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, Tinh $tinh, HoaDonEnum $trangThai, $orderCode = null, $linktt = null)
     {
         $this->id = $id;
         $this->email = $email;
@@ -26,8 +26,19 @@ class HoaDon extends Model
         $this->tinh = $tinh;
         $this->trangThai = $trangThai;
         $this->orderCode = $orderCode;
+        $this->linktt = $linktt;
     }
 
+    public function getLinktt()
+    {
+        return $this->linktt;
+    }
+    public function setLinktt($linktt)
+    {
+        $this->linktt = $linktt;
+    }
+
+     // 1 Hóa đơn -> N Nỗ lực thanh toán
     public function paymentAttempts()
     {
         return $this->hasMany(PaymentAttempt::class, 'order_id', 'id');

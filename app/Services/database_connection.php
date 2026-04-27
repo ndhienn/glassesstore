@@ -42,7 +42,14 @@ class database_connection {
             try {
                 // Kiểm tra nếu chưa có kết nối hoặc kết nối đã chết (ping thất bại)
                 if($this->connection == null || !$this->connection->ping()) {
-                    $this->connection = new mysqli(self::$host, self::$user, self::$pass, self::$dbname, self::$port);
+                    // 1. Khởi tạo đối tượng mysqli trước
+                    $this->connection = mysqli_init();
+                    
+                    // 2. Bật chế độ SSL (TiDB bắt buộc cái này)
+                    $this->connection->ssl_set(NULL, NULL, NULL, NULL, NULL);
+                    
+                    // 3. Thực hiện kết nối thực sự với cờ MYSQLI_CLIENT_SSL
+                    $this->connection->real_connect(self::$host, self::$user, self::$pass, self::$dbname, self::$port, NULL, MYSQLI_CLIENT_SSL);
                     
                     if ($this->connection->connect_error) {
                         throw new Exception("Kết nối MySQL thất bại: " . $this->connection->connect_error);

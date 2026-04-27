@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\URL;
 use App\Bus\Auth_BUS;
 use App\Bus\ChiTietBaoHanh_BUS;
 use App\Bus\ChucNang_BUS;
@@ -152,5 +153,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+        if (config('app.env') !== 'local') {
+            URL::forceScheme('https');
+        }
     }
 }

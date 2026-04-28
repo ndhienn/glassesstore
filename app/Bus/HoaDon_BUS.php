@@ -252,9 +252,9 @@ class HoaDon_BUS{
         $hd->setLinktt($link);
         $hd->setOrderCode($ref);
         $this->updateModel($hd);
-        if ($hd->getIdPTTT()->getId() == 3) {
-            CheckVnpayPaymentStatus::dispatch($hd->getId())->delay(now()->addMinutes(15));
-        }
+        // if ($hd->getIdPTTT()->getId() == 3) {
+        //     CheckVnpayPaymentStatus::dispatch($hd->getId())->delay(now()->addMinutes(15));
+        // }
         return true;
     }
     public function hoanKho($idHoaDon) {

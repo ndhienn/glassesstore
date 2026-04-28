@@ -36,9 +36,11 @@ RUN composer install --no-dev --optimize-autoloader
 # 8. Cấp quyền cho thư mục storage và bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 9. TẠO FILE KHỞI ĐỘNG GỘP (Thêm lệnh optimize)
+# 9. TẠO FILE KHỞI ĐỘNG GỘP (Thêm lệnh tự động xóa Cache)
 RUN echo '#!/bin/bash\n\
-echo "Tối ưu hóa tốc độ Laravel..."\n\
+echo "Dọn dẹp rác Cache cũ..."\n\
+php artisan optimize:clear\n\
+echo "Tạo bộ nhớ đệm mới..."\n\
 php artisan optimize\n\
 echo "Khởi động bộ xử lý Hàng đợi (Queue Worker)..."\n\
 php artisan queue:work --tries=3 &\n\

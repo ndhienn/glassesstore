@@ -72,7 +72,7 @@ class PaymentController extends Controller
                 // app(PaymentTransaction_BUS::class)->saveSuccessTransaction($orderId, $request->all());
 
                 // Chốt đơn hàng sau khi thanh toán thành công
-                app(\App\Bus\HoaDon_BUS::class)->chotDonHangSauThanhToan($request, $orderId, "PAID");
+                app(\App\BUS\HoaDon_BUS::class)->chotDonHangSauThanhToan($request, $orderId, "PAID");
 
 
                 // Trả về view thành công trực tiếp để URL không bị redirect dài dòng
@@ -83,7 +83,7 @@ class PaymentController extends Controller
             // Trường hợp người dùng hủy (Mã 24) hoặc lỗi khác
             if ($vnp_ResponseCode == '24') {
                 //cập nhật đơn hàng thành đã đặt nhưng chưa thanh toán (Cancelled)
-                app(\App\Bus\HoaDon_BUS::class)->huyThanhToanDonHang($orderId);
+                app(\App\BUS\HoaDon_BUS::class)->huyThanhToanDonHang($orderId);
                 $url = \URL::signedRoute('payment.cancelled', ['orderId' => $orderId]);
                 return redirect($url)->with('message', 'Bạn đã hủy thanh toán đơn hàng!');
             }

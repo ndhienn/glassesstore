@@ -36,9 +36,10 @@ RUN composer install --no-dev --optimize-autoloader
 # 8. Cấp quyền cho thư mục storage và bootstrap/cache
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 9. TẠO FILE KHỞI ĐỘNG GỘP (Bí quyết cho gói Render Free)
-# File này sẽ chạy ngầm queue worker và đồng thời bật Apache
+# 9. TẠO FILE KHỞI ĐỘNG GỘP (Thêm lệnh optimize)
 RUN echo '#!/bin/bash\n\
+echo "Tối ưu hóa tốc độ Laravel..."\n\
+php artisan optimize\n\
 echo "Khởi động bộ xử lý Hàng đợi (Queue Worker)..."\n\
 php artisan queue:work --tries=3 &\n\
 echo "Khởi động Web Server (Apache)..."\n\

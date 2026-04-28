@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Lalezar&family=Noto+Sans:ital,wght@0,100..900;1,100..900&family=Outfit:wght@100..900&family=Roboto+Slab:wght@100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Sigmar&family=Space+Grotesk:wght@300..700&display=swap');
+
+
+.content-ctn{
+    margin: 170px 5% 50px;
+    font-family: Space Grotesk;
+    display: flex;
+
+}
+.content-left,.content-right{
+    transition: transform 0.4s ease;
+}
+
+.form-group label,.form-check label{
+    font-weight: 400;
+    font-size: 20px;
+    display: block;
+    text-align: start;
+}
+button{
+    background-color: #55d5d2;
+    outline: none;
+    border: none;
+    color: white;
+    height: 50px;
+    border-radius: 20px !important; 
+    margin-bottom: 20px !important;
+}

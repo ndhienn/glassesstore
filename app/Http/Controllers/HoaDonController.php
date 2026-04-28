@@ -311,5 +311,6 @@ class HoaDonController extends Controller {
             return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
         }
     }
+
 }
 ?>

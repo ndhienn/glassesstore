@@ -7,14 +7,22 @@ use App\Enum\HoaDonEnum;
 
 class HoaDon extends Model
 {
+<<<<<<< HEAD
     private $id, $tongTien, $ngayTao, $diaChi, $orderCode, $linktt;
+=======
+    private $id, $tongTien, $ngayTao, $diaChi, $orderCode;
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     private Tinh $tinh;
     private TaiKhoan $email;
     private NguoiDung $idNhanVien;
     private PTTT $idPTTT;
     private HoaDonEnum $trangThai;
 
+<<<<<<< HEAD
     public function __construct($id = null,TaiKhoan $email, NguoiDung $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, Tinh $tinh, HoaDonEnum $trangThai, $orderCode = null, $linktt = null)
+=======
+    public function __construct($id = null,TaiKhoan $email, NguoiDung $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, Tinh $tinh, HoaDonEnum $trangThai, $orderCode = null)
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     {
         $this->id = $id;
         $this->email = $email;
@@ -26,6 +34,7 @@ class HoaDon extends Model
         $this->tinh = $tinh;
         $this->trangThai = $trangThai;
         $this->orderCode = $orderCode;
+<<<<<<< HEAD
         $this->linktt = $linktt;
     }
 
@@ -39,6 +48,10 @@ class HoaDon extends Model
     }
 
      // 1 Hóa đơn -> N Nỗ lực thanh toán
+=======
+    }
+
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     public function paymentAttempts()
     {
         return $this->hasMany(PaymentAttempt::class, 'order_id', 'id');

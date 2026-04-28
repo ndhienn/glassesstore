@@ -173,6 +173,7 @@ class NguoiDung_DAO {
         return null;
     }
 
+<<<<<<< HEAD
     public function getNguoiDungByEmail($email)
     {
         $query = "SELECT * FROM nguoidung WHERE ID IN (SELECT IDNGUOIDUNG FROM taikhoan WHERE EMAIL = ?)";
@@ -185,5 +186,7 @@ class NguoiDung_DAO {
         }
         return null;
     }
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 }
 ?>

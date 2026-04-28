@@ -27,6 +27,7 @@ class HoaDon_DAO{
 
     public function insert($e): int
     {
+<<<<<<< HEAD
         try {
         $sql = "INSERT INTO hoadon (EMAIL, IDNHANVIEN, TONGTIEN, IDPTTT, NGAYTAO, DIACHI, IDTINH, TRANGTHAI)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -45,10 +46,27 @@ class HoaDon_DAO{
         // 1. In thử mảng dữ liệu xem có cái nào bị NULL không
         // dd($args); 
 
+=======
+        $sql = "INSERT INTO hoadon (EMAIL, IDNHANVIEN, TONGTIEN, IDPTTT, NGAYTAO, DIACHI, IDTINH, TRANGTHAI)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        // $args = [$e->getEmail()->getEmail(), $e->getIdNhanVien()->getId(), $e->getTongTien(), $e->getIdPTTT()->getId(), $e->getNgayTao(), $e->getIdDVVC()->getId(), $e->getDiaChi(), $e->getTinh()->getId(), $e->getTrangThai()];
+        $args = [
+            $e->getEmail()->getEmail(),                  // TaiKhoan
+            $e->getIdNhanVien()->getId(),               // NguoiDung
+            $e->getTongTien(),
+            $e->getIdPTTT()->getId(),                   // PTTT
+            $e->getNgayTao()->format('Y-m-d H:i:s'),
+            $e->getDiaChi(),
+            $e->getTinh()->getId(),                     // Tinh
+            $e->getTrangThai()->value,
+        ];
+        
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $result = database_connection::executeUpdate($sql, ...$args);
 
         if ($result) {
             return database_connection::getLastInsertId();
+<<<<<<< HEAD
         } else {
             // 2. Nếu không thành công, hãy yêu cầu Database nói ra tại sao
             // Giả sử hàm của bạn có cách lấy lỗi, nếu không hãy dùng tạm dd này:
@@ -65,17 +83,29 @@ class HoaDon_DAO{
     }
 
     return 0;
+=======
+        }
+    
+        return 0;
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     }
 
     public function update($e): int
     {
+<<<<<<< HEAD
         $sql = "UPDATE hoadon SET TRANGTHAI = ?, TONGTIEN = ? , ORDERCODE = ?, IDPTTT = ?, LINKTT = ? WHERE id = ?";
+=======
+        $sql = "UPDATE hoadon SET TRANGTHAI = ?, TONGTIEN = ? , ORDERCODE = ?, IDPTTT = ? WHERE id = ?";
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $args = [
             $e->getTrangThai()->value,
             $e->getTongTien(),
             $e->getOrderCode(),
             $e->getIdPTTT()->getId(),
+<<<<<<< HEAD
             $e->getLinktt(),
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
             $e->getId()
         ];
         $result = database_connection::executeUpdate($sql, ...$args);
@@ -115,7 +145,10 @@ class HoaDon_DAO{
         $ngayTao = $rs['NGAYTAO'];
         $diaChi = $rs['DIACHI'];
         $tinh = app(Tinh_BUS::class)->getModelById($rs['IDTINH']);
+<<<<<<< HEAD
         $linktt = $rs['LINKTT'];
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $trangThai = strtoupper(trim($rs['TRANGTHAI'] ?? ''));
 
         if (!in_array($trangThai, ['PAID', 'PENDING', 'EXPIRED', 'CANCELLED', 'REFUNDED', 'DANGGIAO', 'DAGIAO', 'DADAT'])) {
@@ -134,8 +167,12 @@ class HoaDon_DAO{
             default: throw new \Exception("Trạng thái không hợp lệ");
         }
         $orderCode = $rs['ORDERCODE'];
+<<<<<<< HEAD
         $linktt = $rs['LINKTT'];
         return new HoaDon($id, $email, $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, $tinh, $trangThai, $orderCode, $linktt);
+=======
+        return new HoaDon($id, $email, $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, $tinh, $trangThai, $orderCode);
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     }
 
     public function getAll() : array {
@@ -287,6 +324,7 @@ class HoaDon_DAO{
     return $list;
 }
 
+<<<<<<< HEAD
     public function getUserEmailByOrderId($orderId)
     {
         $query = "SELECT EMAIL FROM hoadon WHERE ID = ?";
@@ -297,4 +335,8 @@ class HoaDon_DAO{
         }
         return null;
     }
+=======
+
+
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 }

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentTransaction extends Model
 {
     use HasFactory;
+<<<<<<< HEAD
 
     protected $table = 'payment_transactions';
 
@@ -37,3 +38,6 @@ class PaymentTransaction extends Model
         'net_amount' => 'decimal:2'
     ];
 }
+=======
+}
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163

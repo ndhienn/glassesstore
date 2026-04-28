@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DAO;
+namespace App\Dao;
 
 use App\Models\PaymentTransaction;
 

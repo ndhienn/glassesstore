@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\BUS\Payment_BUS;
-use App\BUS\HoaDon_BUS;
+use App\Bus\Payment_BUS;
+use App\Bus\HoaDon_BUS;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Log;
 

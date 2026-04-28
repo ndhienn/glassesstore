@@ -92,4 +92,15 @@ class CTSP_DAO{
         $rs = database_connection::executeUpdate($query, ...$args);
         return is_int($rs) ? $rs : 0;  
     }
+
+    public function countCTSPIsNotSoldByIDSP($idsp) {
+        // Chỉ đếm số dòng, không lấy toàn bộ data
+        $sql = "SELECT COUNT(ID) as total FROM CTSP WHERE IDSP = ? AND TRANGTHAIHD = 1";
+        $rs = database_connection::executeQuery($sql, $idsp);
+        
+        if ($row = $rs->fetch_assoc()) {
+            return (int)$row['total'];
+        }
+        return 0;
+    }
 }

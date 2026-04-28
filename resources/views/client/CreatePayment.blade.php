@@ -304,7 +304,7 @@
                                 $sanPham = app(SanPham_BUS::class)->getModelById($sp->idsp);
                                 $total = $sanPham->getDonGia() * $sp->quantity;
                                 $tongTien += $total;
-                                $soluong = count(app(CTSP_BUS::class)->getCTSPIsNotSoldByIDSP($key->idsp));
+                                $soluong = app(CTSP_BUS::class)->countCTSPIsNotSoldByIDSP($key->idsp);
                                 $flag = false;
                                 $tmp = false;
                                 if($soluong < $sp->quantity) {

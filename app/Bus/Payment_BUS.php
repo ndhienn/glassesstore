@@ -1,5 +1,5 @@
 <?php
-namespace App\BUS;
+namespace App\Bus;
 
 use App\DAO\PaymentAttempt_DAO;
 use App\BUS\HoaDon_BUS; 

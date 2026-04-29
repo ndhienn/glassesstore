@@ -103,4 +103,12 @@ class SanPham_BUS implements BUSInterface {
     // Gọi xuống lớp DAO để thực thi câu lệnh SQL
     return $this->sanPhamDAO->updateStockAndPrice($idSP, $soLuongThem, $giaBanMoi);
 }
+
+    public function getModelsByIds(array $ids)
+    {
+        if (empty($ids)) return [];
+        // Truy vấn 1 lần lấy tất cả sản phẩm có trong mảng $ids
+        return \App\Models\SanPham::whereIn('id', $ids)->get(); 
+        // Lưu ý đổi 'id' thành tên cột khóa chính của bảng SanPham nếu khác
+    }
 }

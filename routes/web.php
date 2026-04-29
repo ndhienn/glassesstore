@@ -502,7 +502,7 @@ Route::view('/createdPayment', 'client.MuaNgay');
 Route::get('/getCTHD', [HoaDonController::class, 'getCTHDByIDSPAndIDHD'])->name('payment.getCTHDByIDSPAndIDHD');
 Route::get('/muangay', [HoaDonController::class, 'muangay'])->name('payment.muangay');
 Route::get('/createdPayMent', [HoaDonController::class, 'createdPayment'])->name('payment.create');
-Route::view('/createPayment', 'client.CreatePayment');
+Route::get('/createPayment', [PaymentController::class, 'showPaymentPage'])->name('payment.show');
 Route::post('/login', function (\Illuminate\Http\Request $request) {
     // dd($request->all());
     $email = $request->input('email-login');

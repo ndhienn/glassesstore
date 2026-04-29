@@ -83,8 +83,8 @@ class PaymentController extends Controller
     public function processCOD(Request $request)
     {
         // (Lưu ý: biến $order ở đây đang chưa được định nghĩa trong hàm của bạn)
-        // $url = URL::signedRoute('order.success', ['orderId' => $order->id]);
-        // return redirect($url)->with('message', 'Đặt hàng thành công. Vui lòng thanh toán khi nhận hàng!');
+        $url = URL::signedRoute('order.success', ['orderId' => $order->id]);
+        return redirect($url)->with('message', 'Đặt hàng thành công. Vui lòng thanh toán khi nhận hàng!');
     }
 
     // Hàm này dùng chung cho TẤT CẢ phương thức thanh toán
@@ -117,5 +117,23 @@ class PaymentController extends Controller
 
         $vnp_Url = $order->getLinktt(); 
         return redirect()->away($vnp_Url);
+    }
+
+    // Bên trong Controller xử lý hiển thị giao diện CreatePayment
+    public function showPaymentPage() {
+        // 1. Lấy giỏ hàng từ session
+        $listSP = session('listSP', []);
+
+        // 2. Query trực tiếp dữ liệu tĩnh tại đây (không lấy từ session)
+        $listPTTT = app(PTTT_BUS::class)->getAllModels();
+        $listDVVC = app(DVVC_BUS::class)->getAllModels();
+        $listTinh = app(Tinh_BUS::class)->getAllModels();
+        
+        $email = app(Auth_BUS::class)->getEmailFromToken();
+        $user = app(TaiKhoan_BUS::class)->getModelById($email);
+        
+        // ... (xử lý logic tính tiền, gom ID truy vấn tồn kho ở đây) ...
+
+        return view('CreatePayment', compact('listSP', 'listPTTT', 'listDVVC', 'listTinh', 'user'));
     }
 }

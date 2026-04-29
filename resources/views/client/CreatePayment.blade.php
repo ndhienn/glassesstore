@@ -149,7 +149,7 @@
             <h1 class="text-dark fw-semibold">Thanh toán</h1>
             <!-- <form id="paymentForm" class="d-flex flex-column gap-3 p-3" method="get"> -->
                 <!-- <input type="hidden" name="listSP" id="listSPInput">     -->
-                <input type="hidden" name="tongtien" value="{{ $sum ?? 0 }}">
+                <input type="hidden" name="tongtien" value="{{ $tongTien ?? 0 }}">
 
 <div class="d-flex flex-column">
     <label class="text-dark fw-semibold" for="">Họ tên *</label>
@@ -261,7 +261,7 @@
                     
                     <div class="d-flex justify-content-between">
                         <p class="text-dark fw-semibold fs-4">Tổng tiền</p>
-                        <p class="text-danger fw-semibold fs-4" id="tongtien">{{ number_format($sum, 0, ',', '.') }}₫</p>
+                        <p class="text-danger fw-semibold fs-4" id="tongtien">{{ number_format($tongTien, 0, ',', '.') }}₫</p>
                     </div>
                 </div>
                 {{-- Kiểm tra nếu biến flag tồn tại và có giá trị true --}}

@@ -216,6 +216,7 @@ class PaymentController extends Controller
         }
 
         // 3. Trả về View cùng tất cả biến cần thiết
+        log::info("Hiển thị trang CreatePayment với tổng tiền: $tongTien và flag hết hàng: " . ($outOfStockFlag ? "true" : "false"));
         return view('client.CreatePayment', compact(
             'listSP', 'listPTTT', 'listDVVC', 'listTinh', 'user', 'isLogin', 'tongTien', 'outOfStockFlag', 'listDiaChi'
         ));

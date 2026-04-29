@@ -24,6 +24,8 @@ use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Bus\Payment_BUS;
+use Illuminate\Support\Facades\URL;
 
 class PaymentController extends Controller
 {
@@ -138,19 +140,71 @@ class PaymentController extends Controller
 
     // Bên trong Controller xử lý hiển thị giao diện CreatePayment
     public function showPaymentPage() {
-        // 1. Lấy giỏ hàng từ session
-        $listSP = session('listSP', []);
-
-        // 2. Query trực tiếp dữ liệu tĩnh tại đây (không lấy từ session)
+        // 1. Lấy dữ liệu tĩnh và thông tin User
         $listPTTT = app(PTTT_BUS::class)->getAllModels();
         $listDVVC = app(DVVC_BUS::class)->getAllModels();
         $listTinh = app(Tinh_BUS::class)->getAllModels();
         
         $email = app(Auth_BUS::class)->getEmailFromToken();
-        $user = app(TaiKhoan_BUS::class)->getModelById($email);
+        $user = null;
+        $isLogin = false;
         
-        // ... (xử lý logic tính tiền, gom ID truy vấn tồn kho ở đây) ...
+        if ($email) {
+            $user = app(TaiKhoan_BUS::class)->getModelById($email);
+            $isLogin = true;
+        }
 
-        return view('CreatePayment', compact('listSP', 'listPTTT', 'listDVVC', 'listTinh', 'user'));
+        // 2. Xử lý Giỏ hàng (Tối ưu hóa N+1 truy vấn)
+        $listSP_session = session('listSP', []);
+        $listSP = [];
+        $tongTien = 0;
+        $outOfStockFlag = false;
+
+        if (!empty($listSP_session)) {
+            // Gom tất cả ID sản phẩm lại
+            $productIds = array_column((array)$listSP_session, 'idsp');
+
+            // Gọi DB đúng 2 lần (Bạn cần đảm bảo đã tạo 2 hàm này trong BUS như tôi hướng dẫn trước đó)
+            $sanPhams = app(SanPham_BUS::class)->getModelsByIds($productIds);
+            $stockCounts = app(CTSP_BUS::class)->getStockCountsByIds($productIds);
+
+            // Tạo dictionary để tra cứu nhanh
+            $sanPhamDict = [];
+            foreach ($sanPhams as $sp) {
+                $sanPhamDict[$sp->getId()] = $sp; 
+            }
+
+            // Ghép dữ liệu tính tiền
+            foreach ($listSP_session as $item) {
+                $item = (object) $item; // Đảm bảo là object
+                if (isset($item->idsp) && isset($sanPhamDict[$item->idsp])) {
+                    $sanPham = $sanPhamDict[$item->idsp];
+                    $soLuongMua = $item->quantity ?? 1;
+                    $donGia = $sanPham->getDonGia();
+                    $thanhTien = $donGia * $soLuongMua;
+                    $tongTien += $thanhTien;
+
+                    $tonKho = $stockCounts[$item->idsp] ?? 0;
+                    $isOutOfStock = $tonKho < $soLuongMua;
+
+                    if ($isOutOfStock) {
+                        $outOfStockFlag = true;
+                    }
+
+                    $listSP[] = (object)[
+                        'idsp' => $item->idsp,
+                        'quantity' => $soLuongMua,
+                        'sanPham' => $sanPham,
+                        'thanhTien' => $thanhTien,
+                        'isOutOfStock' => $isOutOfStock
+                    ];
+                }
+            }
+        }
+
+        // 3. Trả về View cùng tất cả biến cần thiết
+        return view('client.CreatePayment', compact(
+            'listSP', 'listPTTT', 'listDVVC', 'listTinh', 'user', 'isLogin', 'tongTien', 'outOfStockFlag'
+        ));
     }
 }

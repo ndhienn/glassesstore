@@ -2,10 +2,27 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Bus\Payment_BUS;
+use App\Bus\Auth_BUS;
+use App\Bus\CPVC_BUS;
+use App\Bus\CTGH_BUS;
+use App\Bus\CTHD_BUS;
+use App\Bus\CTSP_BUS;
+use App\Bus\DVVC_BUS;
+use App\Bus\GioHang_BUS;
 use App\Bus\HoaDon_BUS;
-use Illuminate\Support\Facades\URL;
+use App\Bus\NguoiDung_BUS;
+use App\Bus\PTTT_BUS;
+use App\Bus\SanPham_BUS;
+use App\Bus\TaiKhoan_BUS;
+use App\Bus\Tinh_BUS;
+use App\Dao\CPVC_DAO;
+use App\Enum\HoaDonEnum;
+use App\Models\CTHD;
+use App\Models\HoaDon;
+use App\Models\TaiKhoan;
+use DateTime;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller

@@ -27,6 +27,26 @@ class HoaDon_DAO{
 
     public function insert($e): int
     {
+<<<<<<< HEAD
+        try {
+        $sql = "INSERT INTO hoadon (EMAIL, IDNHANVIEN, TONGTIEN, IDPTTT, NGAYTAO, DIACHI, IDTINH, TRANGTHAI)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+        $args = [
+            $e->getEmail()->getEmail(),
+            $e->getIdNhanVien()->getId(),
+            $e->getTongTien(),
+            $e->getIdPTTT()->getId(),
+            $e->getNgayTao()->format('Y-m-d H:i:s'),
+            $e->getDiaChi(),
+            $e->getTinh()->getId(),
+            $e->getTrangThai()->value,
+        ];
+
+        // 1. In thử mảng dữ liệu xem có cái nào bị NULL không
+        // dd($args); 
+
+=======
         $sql = "INSERT INTO hoadon (EMAIL, IDNHANVIEN, TONGTIEN, IDPTTT, NGAYTAO, DIACHI, IDTINH, TRANGTHAI)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         // $args = [$e->getEmail()->getEmail(), $e->getIdNhanVien()->getId(), $e->getTongTien(), $e->getIdPTTT()->getId(), $e->getNgayTao(), $e->getIdDVVC()->getId(), $e->getDiaChi(), $e->getTinh()->getId(), $e->getTrangThai()];
@@ -41,23 +61,51 @@ class HoaDon_DAO{
             $e->getTrangThai()->value,
         ];
         
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $result = database_connection::executeUpdate($sql, ...$args);
 
         if ($result) {
             return database_connection::getLastInsertId();
+<<<<<<< HEAD
+        } else {
+            // 2. Nếu không thành công, hãy yêu cầu Database nói ra tại sao
+            // Giả sử hàm của bạn có cách lấy lỗi, nếu không hãy dùng tạm dd này:
+            dd("Lỗi SQL: Lệnh executeUpdate trả về false. Hãy kiểm tra tên cột hoặc khóa ngoại.");
+        }
+
+    } catch (\Exception $ex) {
+        // 3. Bắt mọi lỗi crash (ví dụ format ngày tháng sai, gọi hàm trên null...)
+        dd([
+            'Thông báo lỗi' => $ex->getMessage(),
+            'Tại dòng' => $ex->getLine(),
+            'Dữ liệu truyền vào' => $args
+        ]);
+    }
+
+    return 0;
+=======
         }
     
         return 0;
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     }
 
     public function update($e): int
     {
+<<<<<<< HEAD
+        $sql = "UPDATE hoadon SET TRANGTHAI = ?, TONGTIEN = ? , ORDERCODE = ?, IDPTTT = ?, LINKTT = ? WHERE id = ?";
+=======
         $sql = "UPDATE hoadon SET TRANGTHAI = ?, TONGTIEN = ? , ORDERCODE = ?, IDPTTT = ? WHERE id = ?";
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $args = [
             $e->getTrangThai()->value,
             $e->getTongTien(),
             $e->getOrderCode(),
             $e->getIdPTTT()->getId(),
+<<<<<<< HEAD
+            $e->getLinktt(),
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
             $e->getId()
         ];
         $result = database_connection::executeUpdate($sql, ...$args);
@@ -97,6 +145,10 @@ class HoaDon_DAO{
         $ngayTao = $rs['NGAYTAO'];
         $diaChi = $rs['DIACHI'];
         $tinh = app(Tinh_BUS::class)->getModelById($rs['IDTINH']);
+<<<<<<< HEAD
+        $linktt = $rs['LINKTT'];
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $trangThai = strtoupper(trim($rs['TRANGTHAI'] ?? ''));
 
         if (!in_array($trangThai, ['PAID', 'PENDING', 'EXPIRED', 'CANCELLED', 'REFUNDED', 'DANGGIAO', 'DAGIAO', 'DADAT'])) {
@@ -115,7 +167,12 @@ class HoaDon_DAO{
             default: throw new \Exception("Trạng thái không hợp lệ");
         }
         $orderCode = $rs['ORDERCODE'];
+<<<<<<< HEAD
+        $linktt = $rs['LINKTT'];
+        return new HoaDon($id, $email, $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, $tinh, $trangThai, $orderCode, $linktt);
+=======
         return new HoaDon($id, $email, $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, $tinh, $trangThai, $orderCode);
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     }
 
     public function getAll() : array {
@@ -267,6 +324,19 @@ class HoaDon_DAO{
     return $list;
 }
 
+<<<<<<< HEAD
+    public function getUserEmailByOrderId($orderId)
+    {
+        $query = "SELECT EMAIL FROM hoadon WHERE ID = ?";
+        $rs = database_connection::executeQuery($query, $orderId);
+        if ($rs->num_rows > 0) {
+            $row = $rs->fetch_assoc();
+            return $row['EMAIL'];
+        }
+        return null;
+    }
+=======
 
 
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 }

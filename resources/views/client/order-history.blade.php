@@ -471,13 +471,21 @@
                                     <p><strong>Địa chỉ:</strong> {{ $orderData['diaChi'] ?? 'Không xác định' }}</p>
                                     <!-- <p>{{$hoaDon->getTrangThai()}}</p> -->
                                     @if($hoaDon->getIdPTTT()->getId()!=1 && $hoaDon->getTrangThai() === HoaDonEnum::DADAT)
+<<<<<<< HEAD
+                                    <!-- <form action="{{ route('payment.paid') }}" method="POST">
+=======
                                     <form action="{{ route('payment.paid') }}" method="POST">
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
                                         @csrf
                                         <input type="hidden" name="id" value="{{ $hoaDon->getId() }}">
                                         <input type="hidden" name="tongtien" value="{{ $hoaDon->getTongTien() }}">
                                         <input type="hidden" name="ordercode" value="{{ $hoaDon->getOrderCode() }}">
                                         <button type="submit" class="btn btn-info mb-3">Thanh toán với PayOS</button>
+<<<<<<< HEAD
+                                    </form> -->
+=======
                                     </form>
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
                                     @endif
                                     <h6>Danh sách sản phẩm:</h6>
                                     <table class="table table-striped">
@@ -506,6 +514,17 @@
                                     </table>
                                 </div>
                                 <div class="modal-footer">
+<<<<<<< HEAD
+                                    @if ($hoaDon->getTrangThai() === HoaDonEnum::PENDING)
+                                    <a href="{{ route('payment.retry', $hoaDon->getId()) }}" class="btn btn-success">
+                                        Thanh toán ngay
+                                    </a>
+                                    <button type="button" class="btn btn-danger btn-huy-don" data-id="{{ $hoaDon->getId() }}">Huỷ đơn hàng</button>
+                                    @elseif ($hoaDon->getTrangThai() === HoaDonEnum::DADAT)
+                                    <button type="button" class="btn btn-danger btn-huy-don" data-id="{{ $hoaDon->getId() }}">Huỷ đơn hàng</button>
+                                    @endif
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                                 </div>
                             </div>
@@ -524,6 +543,10 @@
         </div>
     </footer>
 
+<<<<<<< HEAD
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -664,6 +687,36 @@
     { value: "DANGGIAO", label: "Đang giao" },
     { value: "DAGIAO", label: "Đã giao" }
 ];
+<<<<<<< HEAD
+
+    $(document).ready(function() {
+        $('.btn-huy-don').on('click', function() {
+            const idHoaDon = $(this).data('id');
+            
+            if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này? Số lượng sản phẩm sẽ được hoàn lại kho.')) {
+                $.ajax({
+                    url: `/huy-don-hang/${idHoaDon}`,
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}' // Bắt buộc phải có CSRF Token trong Laravel
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            alert(response.message);
+                            location.reload(); // Load lại trang để cập nhật trạng thái mới
+                        } else {
+                            alert('Lỗi: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('Không thể kết nối đến máy chủ.');
+                    }
+                });
+            }
+        });
+    });
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     </script>
 </body>
 </html>

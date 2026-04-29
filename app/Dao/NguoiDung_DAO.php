@@ -173,5 +173,20 @@ class NguoiDung_DAO {
         return null;
     }
 
+<<<<<<< HEAD
+    public function getNguoiDungByEmail($email)
+    {
+        $query = "SELECT * FROM nguoidung WHERE ID IN (SELECT IDNGUOIDUNG FROM taikhoan WHERE EMAIL = ?)";
+        $result = database_connection::executeQuery($query, $email);
+        if($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            if($row) {
+                return $this->createNguoiDungModel($row);
+            }
+        }
+        return null;
+    }
+=======
+>>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 }
 ?>

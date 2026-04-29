@@ -99,7 +99,8 @@ class HoaDonController extends Controller {
             session()->forget('listSP');
         }
         session([
-            'listSP' => $request->input('listSP')
+            'listSP' => $request->input('listSP'),
+            'checkout_source' => 'cart'
         ]);
         $listPTTT = app(PTTT_BUS::class)->getAllModels();
         $listDVVC = app(DVVC_BUS::class)->getAllModels();
@@ -132,7 +133,8 @@ class HoaDonController extends Controller {
         $listSP = [['idsp' => $idsp,
                     'quantity' => $quantity]];
         session([
-            'listSP' => $listSP
+            'listSP' => $listSP,
+            'checkout_source' => 'buy_now'            
         ]);
         $listPTTT = app(PTTT_BUS::class)->getAllModels();
         $listDVVC = app(DVVC_BUS::class)->getAllModels();
@@ -196,9 +198,10 @@ class HoaDonController extends Controller {
             case 1: // THANH TOÁN TIỀN MẶT (COD)
                 // QUAN TRỌNG: Vì không qua VNPay, đơn hàng coi như chốt luôn. 
                 // Ta phải gọi hàm chốt đơn ngay tại đây để trừ kho và dọn giỏ hàng!
-                app(HoaDon_BUS::class)->chotDonHangSauThanhToan($hd->getId());
+                app(HoaDon_BUS::class)->chotDonHangSauThanhToan($request, $hd->getId(), "DADAT");
                 
-                return redirect('/success?vnp_TxnRef=' . $hd->getId())->with('success', 'Bạn đặt hàng thành công.');
+                $url = \URL::signedRoute('order.success', ['orderId' => $hd->getId()]);
+                return redirect($url)->with('message', 'Đặt hàng thành công. Vui lòng thanh toán khi nhận hàng!');
 
 
             case 2: // THANH TOÁN QUA PAYOS
@@ -291,6 +294,22 @@ class HoaDonController extends Controller {
                 ];
             }),
         ]);        
+    }
+            
+    public function handleHuyDon($id)
+    {
+        try {
+            // Gọi hàm xử lý logic (hàm này bạn đã đặt trong Service hoặc ngay tại Controller)
+            $result = $this->hoaDonBUS->huyDonHangVaHoanKho($id);
+
+            if ($result) {
+                return response()->json(['success' => true, 'message' => 'Hủy đơn hàng thành công, sản phẩm đã hoàn kho.']);
+            }
+
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy đơn hàng.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Có lỗi xảy ra: ' . $e->getMessage()], 500);
+        }
     }
 
 }

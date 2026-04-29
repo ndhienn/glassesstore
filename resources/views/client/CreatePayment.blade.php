@@ -3,80 +3,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="stylesheet" href="{{ asset('css/client/include/navbar.css') }}">
 <link rel="stylesheet" href="{{ asset('css/client/include/footer.css') }}">
-<?php
-    use App\Bus\SanPham_BUS;
-    use App\Bus\CTSP_BUS;
-    use App\Bus\DiaChi_BUS;
-    use App\Bus\NguoiDung_BUS;
-    use App\Bus\Auth_BUS;
-    use App\Bus\TaiKhoan_BUS;
-    use App\Models\DiaChi;
 
-    // --- XỬ LÝ DANH SÁCH SẢN PHẨM (listSP) ---
-    $listSP = session('listSP', []); // Mặc định là mảng rỗng nếu không có session
-
-    // Chuẩn hóa dữ liệu để luôn là Object/Array có thể foreach
-    if (is_string($listSP)) {
-        $listSP = json_decode($listSP); 
-    } elseif (is_array($listSP)) {
-        // Chuyển mảng lồng mảng thành mảng đối tượng để dùng được toán tử ->
-        $listSP = json_decode(json_encode($listSP)); 
-    }
-
-    // --- LẤY THÔNG TIN SESSION KHÁC ---
-    $listPTTT = session('listPTTT', []);
-    $listDVVC = session('listDVVC', []);
-    $listTinh = session('listTinh', []);
-    $user     = session('user');
-    $isLogin  = session('isLogin', false);
-
-    // ========================================================
-    // LỚP BẢO VỆ 1: CỨU HỘ USER (Tránh lỗi null khi quay lại)
-    // ========================================================
-    if (!$user) {
-        $email = app(Auth_BUS::class)->getEmailFromToken();
-        if ($email) {
-            $user = app(TaiKhoan_BUS::class)->getModelById($email);
-            if ($user) {
-                session(['user' => $user]); 
-            }
-        }
-    }
-
-    // ========================================================
-    // LỚP BẢO VỆ 2: LẤY ĐỊA CHỈ AN TOÀN
-    // ========================================================
-    $listDiaChi = [];
-    if ($user && method_exists($user, 'getIdNguoiDung') && $user->getIdNguoiDung()) {
-        $nguoiDung = $user->getIdNguoiDung();
-        if (method_exists($nguoiDung, 'getId')) {
-            $listDiaChi = app(DiaChi_BUS::class)->getByIdND($nguoiDung->getId());
-        }
-    }
-
-    // ========================================================
-    // LỚP BẢO VỆ 3: TÍNH TỔNG TIỀN (Chặn lỗi Foreach Null)
-    // ========================================================
-    $sum = 0;
-    $tongTien = 0; // Thêm biến này nếu bạn dùng ở dưới
-
-    if (!empty($listSP) && (is_array($listSP) || is_object($listSP))) {
-        foreach ($listSP as $key) {
-            // Kiểm tra thuộc tính idsp tồn tại để không sập code
-            if (isset($key->idsp)) {
-                $tmp = app(SanPham_BUS::class)->getModelById($key->idsp);
-                
-                if ($tmp) {
-                    $soLuong = $key->quantity ?? 1;
-                    $sum += $tmp->getDonGia() * $soLuong;
-                }
-            }
-        }
-    }
-    
-    // Gán lại cho tongTien nếu cần
-    $tongTien = $sum;
-?>
 @if(session('success'))
 <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
     {{ session('success') }}
@@ -297,43 +224,32 @@
                 </div>
                 <hr style="color: gray;">
                 <div id="divSP">
-                    @if(is_array($listSP) || is_object($listSP))
+                    @if(!empty($listSP))
                         @foreach($listSP as $sp)
-                            {{-- xử lý sản phẩm --}}
-                            @php
-                                $sanPham = app(SanPham_BUS::class)->getModelById($sp->idsp);
-                                $total = $sanPham->getDonGia() * $sp->quantity;
-                                $tongTien += $total;
-                                $soluong = count(app(CTSP_BUS::class)->getCTSPIsNotSoldByIDSP($key->idsp));
-                                $flag = false;
-                                $tmp = false;
-                                if($soluong < $sp->quantity) {
-                                    $flag = true;
-                                    $tmp = true;
-                                }
-                            @endphp
-                            @if($tmp==true)
+                            
+                            {{-- CHỈ CẦN GỌI BIẾN NÀY ĐỂ KIỂM TRA TỒN KHO --}}
+                            @if($sp->isOutOfStock)
                                 <div class="alert alert-danger" role="alert">
-                                    Số lượng tồn kho không đủ để tiếp tục mua hàng
+                                    Số lượng tồn kho của "{{ $sp->sanPham->getTenSanPham() }}" không đủ để tiếp tục mua hàng
                                 </div>
                             @endif
-                            <div data-idsp="{{$sp->idsp}}" data-quantity="{{$sp->quantity}}" class="d-flex justify-content-between gap-3">
+
+                            <div data-idsp="{{ $sp->idsp }}" data-quantity="{{ $sp->quantity }}" class="d-flex justify-content-between gap-3">
                                 <div class="d-flex flex-row gap-3">
                                     <img src="/productImg/{{ $sp->idsp }}.webp" style="height: 150px;width: 150px;" class="card-img-top object-fit-cover rounded-top-5" alt="Ảnh sản phẩm">
                                     <div class="d-flex flex-column gap-2">
-                                        <p class="text-dark fw-semibold fs-4">{{$sanPham->getTenSanPham()}}</p>
-                                        <p class="text-dark fw-semibold fs-6">x{{$sp->quantity}}</p>
+                                        {{-- Lấy tên và giá trực tiếp từ Object đã truyền qua --}}
+                                        <p class="text-dark fw-semibold fs-4">{{ $sp->sanPham->getTenSanPham() }}</p>
+                                        <p class="text-dark fw-semibold fs-6">x{{ $sp->quantity }}</p>
                                         <p class="text-dark fw-semibold fs-6">
-                                        {{ number_format($sanPham->getDonGia(), 0, ',', '.') }}₫
+                                            {{ number_format($sp->sanPham->getDonGia(), 0, ',', '.') }}₫
                                         </p>
                                     </div>
                                 </div>
-                                <p class="text-danger fw-semibold fs-4">{{ number_format($total, 0, ',', '.') }}₫</p>
+                                {{-- Lấy thành tiền đã tính sẵn trong Controller --}}
+                                <p class="text-danger fw-semibold fs-4">{{ number_format($sp->thanhTien, 0, ',', '.') }}₫</p>
                             </div>
                             <hr style="color: gray;">
-                            @php
-                                $tmp = false;
-                            @endphp
                         @endforeach
                     @else
                         <p>Không có sản phẩm nào trong giỏ hàng.</p>

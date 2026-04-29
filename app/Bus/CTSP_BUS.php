@@ -33,4 +33,23 @@ class CTSP_BUS {
     public function updateStatus($soseri, $active) {
         return $this->ctspDAO->updateStatus($soseri, $active);
     }
+    public function getStockCountsByIds(array $ids)
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        $counts = [];
+
+        foreach ($ids as $id) {
+            // Tận dụng lại hàm lấy danh sách chi tiết sản phẩm chưa bán của bạn
+            $danhSachChuaBan = $this->getCTSPIsNotSoldByIDSP($id);
+            
+            // Đếm số lượng phần tử trong mảng/collection trả về
+            // Nếu hàm getCTSPIsNotSoldByIDSP trả về mảng, count() sẽ hoạt động hoàn hảo
+            $counts[$id] = count($danhSachChuaBan);
+        }
+
+        return $counts;
+    }
 }

@@ -154,6 +154,17 @@ class PaymentController extends Controller
             $isLogin = true;
         }
 
+        // ========================================================
+        // LỚP BẢO VỆ 2: LẤY ĐỊA CHỈ AN TOÀN
+        // ========================================================
+        $listDiaChi = [];
+        if ($user && method_exists($user, 'getIdNguoiDung') && $user->getIdNguoiDung()) {
+            $nguoiDung = $user->getIdNguoiDung();
+            if (method_exists($nguoiDung, 'getId')) {
+                $listDiaChi = app(DiaChi_BUS::class)->getByIdND($nguoiDung->getId());
+            }
+        }
+
         // 2. Xử lý Giỏ hàng (Tối ưu hóa N+1 truy vấn)
         $listSP_session = session('listSP', []);
         $listSP = [];
@@ -204,7 +215,7 @@ class PaymentController extends Controller
 
         // 3. Trả về View cùng tất cả biến cần thiết
         return view('client.CreatePayment', compact(
-            'listSP', 'listPTTT', 'listDVVC', 'listTinh', 'user', 'isLogin', 'tongTien', 'outOfStockFlag'
+            'listSP', 'listPTTT', 'listDVVC', 'listTinh', 'user', 'isLogin', 'tongTien', 'outOfStockFlag', 'listDiaChi'
         ));
     }
 }

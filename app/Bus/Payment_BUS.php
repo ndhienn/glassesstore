@@ -62,7 +62,7 @@ class Payment_BUS
             "vnp_CurrCode"   => "VND",
             "vnp_IpAddr"     => $attempt->client_ip,
             "vnp_Locale"     => "vn",
-            "vnp_OrderInfo"  => "Thanh toan don hang " . $hd->getID(),
+            "vnp_OrderInfo"  => "Thanh_toan_don_hang_" . $hd->getID(),
             "vnp_OrderType"  => "billpayment",
             "vnp_ReturnUrl"  => $returnUrl,
             "vnp_TxnRef"     => $txnRef,
@@ -88,7 +88,7 @@ class Payment_BUS
         
         // Nối thêm SecureHash vào URL (Xử lý dấu & thừa ở cuối $query)
         $vnp_Url = $vnp_Url . "?" . $query . 'vnp_SecureHash=' . $vnpSecureHash;
-        dd($hashdata, $vnpSecureHash, $vnp_Url);
+
         // Lưu link thanh toán vào hóa đơn
         app(\App\BUS\HoaDon_BUS::class)->setLinkThanhToan($hd->getID(), $vnp_Url, $txnRef);
 

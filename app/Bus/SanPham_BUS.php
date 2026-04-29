@@ -107,8 +107,16 @@ class SanPham_BUS implements BUSInterface {
     public function getModelsByIds(array $ids)
     {
         if (empty($ids)) return [];
-        // Truy vấn 1 lần lấy tất cả sản phẩm có trong mảng $ids
-        return \App\Models\SanPham::whereIn('ID', $ids)->get(); 
-        // Lưu ý đổi 'id' thành tên cột khóa chính của bảng SanPham nếu khác
+        
+        $result = [];
+        foreach ($ids as $id) {
+            // Tận dụng lại hàm getModelById đã được viết sẵn và chuẩn hóa trong class này
+            $sp = $this->getModelById($id);
+            if ($sp) {
+                $result[] = $sp;
+            }
+        }
+        
+        return $result;
     }
 }

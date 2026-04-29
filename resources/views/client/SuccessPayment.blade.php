@@ -71,10 +71,10 @@
 <div class="bg-light rounded shadow p-4 d-flex flex-column gap-3 align-content-center" style="width: 80%;margin: auto; margin-top: 70px; margin-bottom: 70px;">
     <h1 class="" style="text-align: center;">Hóa đơn của bạn</h1>
     
-    <p>Họ tên người mua hàng: {{$user->getIdNguoiDung()->getHoTen()}}</p>
+    <p>Họ tên người mua hàng: {{ $user ? $user->getIdNguoiDung()->getHoTen() : 'Khách hàng' }}</p>
     <p>Ngày tạo: {{$hoaDon->getNgayTao()}}</p>
     <p>Địa chỉ: {{$hoaDon->getDiaChi()}} - Tỉnh: {{$hoaDon->getTinh()->getTenTinh()}}</p>
-    <p>Số điện thoại: {{$user->getIdNguoiDung()->getSoDienThoai()}}</p>
+    <p>Số điện thoại: {{ $user ? $user->getIdNguoiDung()->getSoDienThoai() : $hoaDon->getSoDienThoai() }}</p>
     <p>Thanh toán: {{$hoaDon->getIdPTTT()->getTenPTTT()}}</p>
     <p>Tổng tiền: {{ number_format($hoaDon->getTongTien(), 0, ',', '.') }}₫</p>
     @if($hoaDon->getIdPTTT()->getId()!=1 && $hoaDon->getTrangThai() == HoaDonEnum::DADAT)

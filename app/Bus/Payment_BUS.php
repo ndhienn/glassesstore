@@ -88,7 +88,7 @@ class Payment_BUS
         
         // Nối thêm SecureHash vào URL (Xử lý dấu & thừa ở cuối $query)
         $vnp_Url = $vnp_Url . "?" . $query . 'vnp_SecureHash=' . $vnpSecureHash;
-        dd($hashData, $vnpSecureHash, $vnp_Url);
+        dd($hashdata, $vnpSecureHash, $vnp_Url);
         // Lưu link thanh toán vào hóa đơn
         app(\App\BUS\HoaDon_BUS::class)->setLinkThanhToan($hd->getID(), $vnp_Url, $txnRef);
 

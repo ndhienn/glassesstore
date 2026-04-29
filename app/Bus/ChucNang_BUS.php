@@ -11,7 +11,7 @@ class ChucNang_BUS implements BUSInterface{
     private $ChucNangList = array();
     public function __construct()
     {
-        $this->refreshData();
+        
     }
     public function refreshData(): void
     {
@@ -19,6 +19,10 @@ class ChucNang_BUS implements BUSInterface{
     }
     public function getAllModels() : array
     {
+        if (empty($this->ChucNangList)) {
+            $this->refreshData();
+        }
+
         return $this->ChucNangList;
     }
     public function getModelById($id)

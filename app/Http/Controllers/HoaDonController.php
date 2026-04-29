@@ -117,36 +117,36 @@ class HoaDonController extends Controller {
 
     }
     public function muangay(Request $request) {
-    $idsp = $request->input('idsp2');
-    $quantity = $request->input('quantity');
-    
-    $sp = app(SanPham_BUS::class)->getModelById($idsp);
-    
-    if($sp->getSoLuong() <= 0) {
-        return redirect()->back()->with('error', 'Sản phẩm đã hết hàng!');
-    }
-    
-    // Xóa giỏ hàng cũ nếu có
-    if (session()->has('listSP')) {
-        session()->forget('listSP');
-    }
+        $idsp = $request->input('idsp2');
+        $quantity = $request->input('quantity');
+        
+        $sp = app(SanPham_BUS::class)->getModelById($idsp);
+        
+        if($sp->getSoLuong() <= 0) {
+            return redirect()->back()->with('error', 'Sản phẩm đã hết hàng!');
+        }
+        
+        // Xóa giỏ hàng cũ nếu có
+        if (session()->has('listSP')) {
+            session()->forget('listSP');
+        }
 
-    // CHỈ lưu mảng đơn giản của giỏ hàng vào Session
-    $listSP = [
-        [
-            'idsp' => $idsp,
-            'quantity' => $quantity
-        ]
-    ];
-    
-    session([
-        'listSP' => $listSP,
-        'checkout_source' => 'buy_now'            
-    ]);
+        // CHỈ lưu mảng đơn giản của giỏ hàng vào Session
+        $listSP = [
+            [
+                'idsp' => $idsp,
+                'quantity' => $quantity
+            ]
+        ];
+        
+        session([
+            'listSP' => $listSP,
+            'checkout_source' => 'buy_now'            
+        ]);
 
-    // Chuyển hướng luôn, không query rườm rà ở đây
-    return redirect('/createPayment');
-}
+        // Chuyển hướng luôn, không query rườm rà ở đây
+        return redirect('/createPayment');
+    }
 
     public function search(Request $request) {
         // dd($request->all());

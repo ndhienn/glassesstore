@@ -11,7 +11,6 @@ class GioHang_BUS  {
     public function __construct(GioHang_DAO $gio_hang_dao)
     {
         $this->dao = $gio_hang_dao;
-        $this->refreshData();
     }
     public function refreshData(): void
     {
@@ -19,6 +18,9 @@ class GioHang_BUS  {
     }
     public function getAllModels()
     {
+        if (empty($this->gioHangList)) {
+            $this->refreshData();
+        }
         return $this->gioHangList;
     }
     public function getModelById($id)

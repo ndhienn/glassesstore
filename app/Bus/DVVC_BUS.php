@@ -13,7 +13,7 @@ class DVVC_BUS implements BUSInterface {
 
     public function __construct(DVVC_DAO $dvvcDAO) {
         $this->dvvcDAO = $dvvcDAO;
-        $this->refreshData();
+        
     }
 
     public function refreshData(): void {
@@ -21,6 +21,10 @@ class DVVC_BUS implements BUSInterface {
     }
 
     public function getAllModels() {
+        if (empty($this->ChucNangDVVCList)) {
+            $this->refreshData();
+        }
+
         return $this->ChucNangDVVCList;
     }
 

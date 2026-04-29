@@ -17,7 +17,7 @@ class PhieuNhap_BUS implements BUSInterface
     public function __construct()
     {
         $this->dao = app(PhieuNhap_DAO::class);
-        $this->refreshData();
+
     }
 
     /**
@@ -33,6 +33,9 @@ class PhieuNhap_BUS implements BUSInterface
      */
     public function getAllModels(): array
     {
+        if (empty($this->phieuNhapList)) {
+            $this->refreshData();
+        }
         return $this->phieuNhapList;
     }
 

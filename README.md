@@ -33,3 +33,4 @@ khi chạy project tạo 3 terminal:
 - php artisan queue:work
 
 
+https://sandbox.vnpayment.vn/paymentv2/vpcpay.html?vnp_Amount=54050000&amp;vnp_Command=pay&amp;vnp_CreateDate=20260429001046&amp;vnp_CurrCode=VND&amp;vnp_ExpireDate=20260429002546&amp;vnp_IpAddr=%3A%3A1&amp;vnp_Locale=vn&amp;vnp_OrderInfo=Thanh+toan+don+hang+150338&amp;vnp_OrderType=billpayment&amp;vnp_ReturnUrl=https%3A%2F%2Fglassesstore.onrender.com%2Fvnpay-return&amp;vnp_TmnCode=OVHNO6QJ&amp;vnp_TxnRef=DH150338_20260429001046&amp;vnp_Version=2.1.0&amp;vnp_SecureHash=ed7afb935704075da28ce102fb86bc3a77ad799f96bed2310ea153ef89062239d4adcacd16c4a5182ee4b10a85fad476ddb5e4f8629f5911ac8a2f4e0f68cc26

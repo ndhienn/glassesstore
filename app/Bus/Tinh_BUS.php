@@ -12,7 +12,7 @@ class Tinh_BUS implements BUSInterface{
 
     public function __construct(Tinh_DAO $tinhDao) {
         $this->tinhDao = $tinhDao;
-        $this->refreshData();
+        // $this->refreshData();
     }
     public function refreshData(): void 
     {
@@ -20,6 +20,10 @@ class Tinh_BUS implements BUSInterface{
     }
     public function getAllModels() : array
     {
+        if (empty($this->tinhList)) {
+            $this->refreshData();
+        }
+
         return $this->tinhList;
     }
     public function getModelById($id)

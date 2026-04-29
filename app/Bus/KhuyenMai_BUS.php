@@ -27,6 +27,9 @@ class KhuyenMai_BUS
             $columns = ['DIEUKIEN', 'MOTA'];
             $results = $this->searchModel($keyword ?? '', $columns, $trangThai, $ngayBatDau, $ngayKetThuc);
         } else {
+            if (empty($this->khuyenMaiList)) {
+                $this->refreshData();
+            }
             $results = $this->khuyenMaiList;
         }
 
@@ -95,6 +98,7 @@ class KhuyenMai_BUS
 
     public function getActiveKhuyenMais(): array
     {
+        $this->refreshData();
         $results = array_filter($this->khuyenMaiList, function ($khuyenMai) {
             return $khuyenMai->gettrangThaiHD() == 1;
         });

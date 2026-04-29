@@ -14,7 +14,7 @@ class CTQ_BUS implements BUSInterface{
     public function __construct(CTQ_DAO $ctq_dao)
     {
         $this->ctqDAO = $ctq_dao;
-        $this->refreshData();
+        
     }
     public function refreshData(): void
     {
@@ -22,6 +22,7 @@ class CTQ_BUS implements BUSInterface{
     }
     public function getAllModels() : array
     {
+        $this->refreshData();
         return $this->CTQList;
     }
     public function getModelById($id)

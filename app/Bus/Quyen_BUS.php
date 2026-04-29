@@ -13,7 +13,7 @@ class Quyen_BUS implements BUSInterface{
     public function __construct(Quyen_DAO $quyen_dao)
     {
         $this->quyenDAO = $quyen_dao;
-        $this->refreshData();
+
     }
     public function refreshData(): void
     {
@@ -21,6 +21,9 @@ class Quyen_BUS implements BUSInterface{
     }
     public function getAllModels() : array
     {
+        if (empty($this->quyenList)) {
+            $this->refreshData();
+        }
         return $this->quyenList;
     }
     public function getModelById($id)

@@ -11,7 +11,7 @@ class LoaiSanPham_BUS implements BUSInterface {
     private $loaiSanPhamDAO;
     public function __construct(LoaiSanPham_DAO $loai_san_pham_dao) {
         $this->loaiSanPhamDAO = $loai_san_pham_dao;
-        $this->refreshData();
+
     }
 
     public function refreshData(): void {
@@ -19,6 +19,9 @@ class LoaiSanPham_BUS implements BUSInterface {
     }
 
     public function getAllModels(): array {
+        if (empty($this->LoaiSanPhamList)) {
+            $this->refreshData();
+        }
         return $this->LoaiSanPhamList;
     }
 

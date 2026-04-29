@@ -12,7 +12,7 @@ class TaiKhoan_BUS{
     public function __construct(TaiKhoan_DAO $tai_khoan_dao)
     {
         $this->taiKhoanDAO = $tai_khoan_dao;
-        $this->refreshData();
+
     }
     public function refreshData(): void
     {
@@ -20,6 +20,10 @@ class TaiKhoan_BUS{
     }
     public function getAllModels() : array
     {
+        if (empty($this->taiKhoanList)) {
+            $this->refreshData();
+        }
+
         return $this->taiKhoanList;
     }
     public function getModelById($id)
@@ -79,7 +83,10 @@ class TaiKhoan_BUS{
         return $this->taiKhoanDAO->logout();
     }
     public function checkExistingEmail(String $email) {
-        $this->refreshData();
+        if (empty($this->taiKhoanList)) {
+            $this->refreshData();
+        }
+
         foreach($this->taiKhoanList as $it) {
             if($email === $it->getEmail()) {
                 return true;
@@ -89,7 +96,10 @@ class TaiKhoan_BUS{
     }
     public function getModelByEmail($email)
     {
-        $this->refreshData();
+        if (empty($this->taiKhoanList)) {
+            $this->refreshData(); 
+        }
+
         foreach ($this->taiKhoanList as $tk) {
             if ($tk->getEmail() === $email) {
                 return $tk;
@@ -99,8 +109,9 @@ class TaiKhoan_BUS{
     }
     public function getModelByUsername($username)
     {
-    
-        $this->refreshData(); 
+        if (empty($this->taiKhoanList)) {
+            $this->refreshData(); 
+        }
         foreach ($this->taiKhoanList as $tk) {
             
             if ($tk->getTenTK() === $username) {

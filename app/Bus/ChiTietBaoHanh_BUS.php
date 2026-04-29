@@ -15,7 +15,6 @@ class ChiTietBaoHanh_BUS
     public function __construct()
     {
         $this->dao = app(ChiTietBaoHanh_DAO::class);
-        $this->refreshData();
     }
 
     public function refreshData(): void
@@ -25,6 +24,10 @@ class ChiTietBaoHanh_BUS
 
     public function getAllModels(): array
     {
+        if (empty($this->chiTietBaoHanhList)) {
+            $this->refreshData();
+        }
+
         return $this->chiTietBaoHanhList;
     }
 

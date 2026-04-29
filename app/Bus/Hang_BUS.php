@@ -28,6 +28,9 @@ class Hang_BUS implements BUSInterface
             $columns = ['tenhang'];
             $results = $this->searchModel($keyword ?? '', $columns, $trangThai);
         } else {
+            if (empty($this->hangList)) {
+                $this->refreshData();
+            }
             $results = $this->hangList;
         }
 
@@ -109,6 +112,7 @@ class Hang_BUS implements BUSInterface
 
     public function getActiveHangs(): array
     {
+        $this->refreshData();
         $results = array_filter($this->hangList, function ($hang) {
             return $hang->getTrangThaiHD() == 1;
         });

@@ -97,18 +97,15 @@ class TaiKhoan_BUS{
         }
         return null;
     }
-    public function getModelByUsername($username)
-    {
-    
-        $this->refreshData(); 
-        foreach ($this->taiKhoanList as $tk) {
-            
-            if ($tk->getTenTK() === $username) {
-                return $tk;
-            }
+    public function getModelByUsername($username) {
+    $this->refreshData(); 
+    foreach ($this->taiKhoanList as $tk) {
+        if (trim($tk->getTenTK()) === trim($username)) {
+            return $tk;
         }
-        return null; 
     }
+    return null; 
+}
     public function updatePasswordByUsername($username, $newPassword)
 {
     $account = $this->getModelByUsername($username);
@@ -119,5 +116,15 @@ class TaiKhoan_BUS{
     }
     return false;
 }
+    public function getModelByIdNguoiDung($idNguoiDung)
+    {
+        $this->refreshData();
+        foreach ($this->taiKhoanList as $tk) {
+            if ($tk->getIdNguoiDung() && $tk->getIdNguoiDung()->getId() == $idNguoiDung) {
+                return $tk;
+            }
+        }
+        return null;
+    }
 }
 ?>

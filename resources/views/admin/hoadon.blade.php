@@ -221,7 +221,7 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                     <th scope="col">Mã hóa đơn</th>
                     <th scope="col">Tài khoản</th>
                     <th scope="col">Số điện thoại</th>
-                    <th scope="col">Nhân viên</th>
+                    <!--<th scope="col">Nhân viên</th>-->
                     <th scope="col">Tổng tiền</th>
                     <th scope="col">PTTT</th>
                     <th scope="col">Ngày tạo</th>
@@ -237,7 +237,7 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                     <td>{{ $hoaDon->getId() }}</td>
                     <td>{{ $hoaDon->getEmail()->getEmail() }}</td>
                     <td>{{ $hoaDon->getEmail()->getIdNguoiDung()->getSoDienThoai() }}</td>
-                    <td>{{ $mapNguoiDung[$hoaDon->getIdNhanVien()->getId()] }}</td>
+                    <!--<td>{{ $mapNguoiDung[$hoaDon->getIdNhanVien()->getId()] }}</td>-->
                     <td>{{ $hoaDon->getTongTien() }}</td>
                     <td>{{ $mapPTTT[$hoaDon->getIdPTTT()->getId()] }}</td>
                     <td>{{ $hoaDon->getNgayTao() }}</td>
@@ -267,7 +267,7 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                         data-id="{{ $hoaDon->getId() }}"
                         data-email="{{ $hoaDon->getEmail()->getEmail() }}"
                         data-sdt="{{ $hoaDon->getEmail()->getIdNguoiDung()->getSoDienThoai() }}"
-                        data-nhanvien="{{ $mapNguoiDung[$hoaDon->getIdNhanVien()->getId()] }}"
+                        
                         data-tenkhachhang="{{ $mapHoTenByEmail[$hoaDon->getEmail()->getEmail()] }}"
                         data-ngaytao="{{ $hoaDon->getNgayTao() }}"
                         data-pttt="{{ $mapPTTT[$hoaDon->getIdPTTT()->getId()] }}"
@@ -384,7 +384,7 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                                                 <strong>Số điện thoại</strong> <span class="so-dien-thoai opacity-50 fw-medium"></span>
                                             </div>
                                             <div class="mt-2 mb-2 d-flex justify-content-between align-items-center small">
-                                                <strong>Nhân viên</strong>
+                                                <!--<strong>Nhân viên</strong>-->
                                                 <span class="nhan-vien opacity-50 fw-medium"></span>
                                             </div>
                                             <div class="mt-2 mb-2 small address-css">

@@ -98,7 +98,7 @@ if (searchForm) {
 <div class="p-3 bg-light flex">
     <form class="d-flex me-2 mb-3" method="get" role="search">
         <input class="form-control me-2 w-25" type="search" 
-       placeholder="Tìm kiếm theo SĐT..." 
+       placeholder="Tìm kiếm theo (Tên, SĐT)..." 
        aria-label="Search" id="keyword" name="keyword" 
        value="{{ request('keyword') }}">
 

@@ -40,7 +40,7 @@
                     <label for="password-login" class="form-label">Mật khẩu</label>
                     <input type="password" id="password-login" name="password-login" value="{{old('password-login')}}" class="form-control" aria-describedby="passwordHelpBlock" placeholder="Nhập mật khẩu" required>
                     <div id="passwordHelpBlock" class="form-text text-start">
-                        Mật khẩu của bạn phải dài từ 8-20 ký tự, chứa chữ và số và không chứa khoảng trắng, ký tự đặc biệt hoặc biểu tượng cảm xúc.
+                        Mật khẩu của bạn phải dài từ 6 ký tự.
                     </div>
                 </div>
                 <div class="form-check">

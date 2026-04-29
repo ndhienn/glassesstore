@@ -86,10 +86,14 @@ use App\Bus\SanPham_BUS;
         filter: brightness(1.1);
     }
       .left-alert {
-        left: 20px; 
-        top: 20px;  
-        z-index: 1050; 
-    }
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1060; 
+    width: 500px;
+    pointer-events: none; 
+}
+
 header {
     position: sticky;
     top: 0;
@@ -425,7 +429,22 @@ form[role="search"] i {
     width: 320px;
 }
     </style>
+<script>
+    let lastScrollTop = 0;
+  const navbar = document.getElementById("navbar-ctn");
 
+  window.addEventListener("scroll", function() {
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (scrollTop > lastScrollTop && scrollTop > 100) {
+      navbar.classList.add("nav-hidden");
+    } else {
+      navbar.classList.remove("nav-hidden");
+    }
+    
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+  }, false);
+</script>
 
   <script>
   function updatePriceLabel(value) {
@@ -946,7 +965,7 @@ if (filterKeywordInput) {
       </div>
       <div class="navbar text-white navbar-expand" id="navbar">
       <a href="/index" class="navbar-brand">
-        <img src="https://img.ws.mms.shopee.vn/vn-11134216-7r98o-lq2sgdy60w5uba" 
+        <img src="https://img.ws.mms.shopee.vn/vn-11134216-7r98o-lq2sgdy60w5uba"
             alt="Logo" 
             class="img-fluid rounded-5" 
             style="height: 40px;">
@@ -987,7 +1006,7 @@ if (filterKeywordInput) {
               <li class="nav-item fw-medium my-2" id="item-giohang">
                 <a href="{{ url('/yourcart?email=' . $user->getEmail()) }}" class="nav-link text-white">
                   Giỏ Hàng <i class="fa-solid fa-cart-shopping mt-3" style="position: relative;font-size: 16px; margin-left: 15px; vertical-align: middle;">
-                    <small style="padding: 5px;background:rgb(232, 164, 76);color: white;position: absolute;right: -15px;bottom: -15px;font-size: 12px;border-radius: 50%;">{{$totalSPinGH}}</small>
+                    <small style="padding: 5px;background:rgb(60, 192, 194);color: white;position: absolute;right: -15px;bottom: -15px;font-size: 12px;border-radius: 50%;">{{$totalSPinGH}}</small>
                   </i>
                 </a>
               </li>
@@ -1005,12 +1024,12 @@ if (filterKeywordInput) {
 
   </div>
   <div class="ctn-content">
-  <img src="{{ asset('/client/img/bannner.png') }}" class="img-fluid w-100">
+  <img src="{{ asset('/client/img/Cover-web-ban-PC-scaled.png') }}" class="img-fluid w-100">
 
     <div class="main justify-content-center d-flex">
       <div class="best-seller text-center">
         
-        <div class="row my-5" style="max-height: 380px;display: flex;">
+        <!--<div class="row my-5" style="max-height: 380px;display: flex;">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4 my-5 w-100">
               @foreach($top4Product as $sp)
                 @php
@@ -1047,7 +1066,7 @@ if (filterKeywordInput) {
                 </div>
             @endforeach
           </div>
-        </div>
+        </div>-->
 
       </div>
 
@@ -1079,7 +1098,7 @@ if (filterKeywordInput) {
       <div class="filter-item" style="flex: 1; min-width: 140px;">
         <label class="fw-bold mb-1 small">Loại mắt kính:</label>
         <select class="form-select" name="lsp">
-            <option value="0">Tất cả loại</option>
+            <option value="0">Tất cả</option>
             @foreach($listLSP as $lsp)
                 <option value="{{ $lsp->getId() }}" {{ request('lsp') == $lsp->getId() ? 'selected' : '' }}>{{ $lsp->getTenLSP() }}</option>
             @endforeach
@@ -1088,7 +1107,7 @@ if (filterKeywordInput) {
     <div class="filter-item" style="flex: 1; min-width: 130px;">
             <label class="fw-bold mb-1 small">Kiểu dáng:</label>
             <select class="form-select" name="kieudang">
-                <option value="0">Tất cả kiểu</option>
+                <option value="0">Tất cả</option>
                 @if(!empty($listKieuDang))
                     @foreach($listKieuDang as $kd)
                         @if($kd->getTenKieuDang() != 'Không xác định')
@@ -1101,7 +1120,7 @@ if (filterKeywordInput) {
     <div class="filter-item" style="flex: 1; min-width: 140px;">
         <label class="fw-bold mb-1 small">Hãng:</label>
         <select class="form-select" name="hang">
-            <option value="0">Tất cả hãng</option>
+            <option value="0">Tất cả</option>
             @foreach($listHang as $h)
                 <option value="{{ $h->getId() }}" {{ request('hang') == $h->getId() ? 'selected' : '' }}>{{ $h->getTenHang() }}</option>
             @endforeach
@@ -1271,9 +1290,9 @@ if (filterKeywordInput) {
     </a>
   </div>
   <div class="d-flex " style="padding: 0 5%;">
-    <div style="width: 40%;"><img src="/client/img/traidep.png" alt="" class="img-fluid w-100"></div>
+    <div style="width: 40%;"><img src="/client/img/Artboard-2-copy-5.png" alt="" class="img-fluid w-100"></div>
     <div style="padding-left: 50px;width: 60%;">
-      <h2 style="padding: 30px;background-color: #e4f4f4;border-top-left-radius: 30px;border-top-right-radius: 30px;border-bottom-right-radius: 30px;color: #55d5d2;font-weight: 800;">CHỌN KÍNH PHÙ HỢP VỚI BẠN</h2>
+      <h2 style="padding: 30px;background-color: #adf1f1;border-top-left-radius: 30px;border-top-right-radius: 30px;border-bottom-right-radius: 30px;color: #131414;font-weight: 800;">CHỌN KÍNH PHÙ HỢP VỚI BẠN</h2>
       <div class="choiceglasses" >
         <a href="#">
           <h3>CHỌN KÍNH THEO KHUÔN MẶT</h3>
@@ -1413,22 +1432,6 @@ if (filterKeywordInput) {
 @elseif(session('success'))
     <div class="alert alert-success successAlert">{{ session('success') }}</div>        
 @endif
-<script>
-    let lastScrollTop = 0;
-  const navbar = document.getElementById("navbar-ctn");
-
-  window.addEventListener("scroll", function() {
-    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    if (scrollTop > lastScrollTop && scrollTop > 100) {
-      navbar.classList.add("nav-hidden");
-    } else {
-      navbar.classList.remove("nav-hidden");
-    }
-    
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
-  }, false);
-</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const alerts = document.querySelectorAll('.alert-container-top-right .alert');

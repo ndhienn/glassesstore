@@ -84,14 +84,13 @@ public function update(Request $request)
         'unique' => ':attribute này đã bị trùng với tài khoản khác.',
         'email' => ':attribute không đúng định dạng.',
         'min' => ':attribute mới phải có ít nhất :min ký tự.',
-        'username.exists' => 'Tài khoản không tồn tại trong hệ thống.',
     ];
 
-    // Validation cho Update
+    // 1. Validation 
+    // Lưu ý: Loại bỏ 'exists' ở đây để chúng ta tự check bằng BUS và trim() cho chính xác
     $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
-        'username' => 'required|string|max:255|exists:taikhoan,tentk',
-        // Kiểm tra trùng email nhưng loại trừ email của chính tài khoản đang sửa
-        'email' => 'required|email|unique:taikhoan,email,' . $request->input('email') . ',email',
+        'username' => 'required|string',
+        'email' => 'required|email', 
         'idquyen' => 'required',
         'idnguoidung' => 'required',
         'password' => 'nullable|min:6', 
@@ -103,19 +102,34 @@ public function update(Request $request)
             ->withInput();
     }
 
-    $tenTK = $request->input('username');
-    $existingTK = $this->taiKhoanBUS->getModelById($tenTK); 
+    // 2. Lấy Username và dùng trim() để loại bỏ khoảng trắng dư thừa
+    $tenTK = trim($request->input('username'));
+    
+    // Sử dụng hàm getModelByUsername đã có trim() mà tôi hướng dẫn ở bước trước
+    $existingTK = $this->taiKhoanBUS->getModelByUsername($tenTK); 
 
     if (!$existingTK) {
-        return redirect()->back()->withErrors(['username' => 'Không tìm thấy tài khoản để cập nhật.'], 'updateAccount');
+        return redirect()->back()
+            ->withErrors(['username' => 'Không tìm thấy tài khoản "' . $tenTK . '" trong hệ thống.'], 'updateAccount')
+            ->withInput();
     }
 
-    // Cập nhật thông tin
-    $existingTK->setEmail($request->input('email'));
-    
+    // 3. Kiểm tra mật khẩu mới không được trùng với mật khẩu cũ (Yêu cầu bổ sung)
     if ($request->filled('password')) {
-        $existingTK->setPassword($request->input('password'));
+        $newPass = $request->input('password');
+        $oldPassHash = $existingTK->getPassword();
+
+        if (password_verify($newPass, $oldPassHash)) {
+            return redirect()->back()
+                ->withErrors(['password' => 'Mật khẩu mới không được trùng với mật khẩu hiện tại.'], 'updateAccount')
+                ->withInput();
+        }
+        // Nếu hợp lệ thì mới set mật khẩu (DAO sẽ tự hash)
+        $existingTK->setPassword($newPass);
     }
+
+    // 4. Cập nhật các thông tin khác
+    $existingTK->setEmail($request->input('email'));
 
     $nguoiDungObj = $this->nguoiDungBUS->getModelById($request->input('idnguoidung'));
     $quyenObj = $this->quyenBUS->getModelById($request->input('idquyen'));
@@ -123,9 +137,10 @@ public function update(Request $request)
     if ($nguoiDungObj) $existingTK->setIdNguoiDung($nguoiDungObj);
     if ($quyenObj) $existingTK->setIdQuyen($quyenObj);
 
+    // 5. Thực thi lưu
     $result = $this->taiKhoanBUS->updateModel($existingTK);
 
-    if ($result) {
+    if ($result !== false) {
         return redirect()->back()->with('success', 'Tài khoản đã được cập nhật thành công!');
     } else {
         return redirect()->back()->with('error', 'Cập nhật thất bại, vui lòng kiểm tra lại dữ liệu!');

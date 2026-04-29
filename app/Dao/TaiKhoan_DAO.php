@@ -80,43 +80,41 @@ class TaiKhoan_DAO{
         }
     }
    public function update($model): int {
-    if (!$model || !$model->getIdNguoiDung() || !$model->getIdQuyen()) {
-        return 0; // Tránh lỗi null object
-    }
+    if (!$model) return 0;
 
-    // 1. Lấy mật khẩu cũ từ DB
-    $queryOld = "SELECT password FROM TAIKHOAN WHERE tentk = ?";
-    $resultOld = database_connection::executeQuery($queryOld, $model->getTenTK());
+    $tenTK = $model->getTenTK();
 
-    if (!$resultOld || $resultOld->num_rows === 0) {
-        return 0;
-    }
+    // 1. Lấy dữ liệu hiện tại để lấy mật khẩu cũ (đối chiếu)
+    $sqlOld = "SELECT PASSWORD, EMAIL, IDNGUOIDUNG, IDQUYEN, TRANGTHAIHD FROM TAIKHOAN WHERE TENTK = ?";
+    $rs = database_connection::executeQuery($sqlOld, $tenTK);
+    $oldData = $rs->fetch_assoc();
+    
+    if (!$oldData) return 0;
 
-    $row = $resultOld->fetch_assoc();
-    $oldPasswordHash = $row['password'];
-
-    // 2. Xử lý mật khẩu
-    // Nếu pass mới trống hoặc giống pass cũ đã mã hóa thì giữ nguyên
-    if (empty($model->getPassword())) {
-        $hashedPassword = $oldPasswordHash;
+    // 2. Xử lý Hash mật khẩu
+    $newPass = $model->getPassword();
+    // Nếu trống hoặc trùng với Hash cũ thì không băm lại
+    if (empty($newPass) || $newPass === $oldData['PASSWORD']) {
+        $hashedPassword = $oldData['PASSWORD'];
     } else {
-        $hashedPassword = password_hash($model->getPassword(), PASSWORD_DEFAULT);
+        $hashedPassword = password_hash($newPass, PASSWORD_DEFAULT);
     }
 
-    // 3. Thực hiện cập nhật
-    $query = "UPDATE TAIKHOAN SET email = ?, password = ?, idnguoidung = ?, idquyen = ?, trangThaiHD = ? WHERE tentk = ?";
+    // 3. Thực thi câu lệnh UPDATE với tên cột viết hoa theo DB
+    $query = "UPDATE TAIKHOAN SET EMAIL = ?, PASSWORD = ?, IDNGUOIDUNG = ?, IDQUYEN = ?, TRANGTHAIHD = ? WHERE TENTK = ?";
     
     $args = [
-        $model->getEmail(),
+        $model->getEmail() ?: $oldData['EMAIL'],
         $hashedPassword,
-        $model->getIdNguoiDung()->getId(),
-        $model->getIdQuyen()->getId(),
-        $model->getTrangThaiHD(),
-        $model->getTenTK()
+        (is_object($model->getIdNguoiDung())) ? $model->getIdNguoiDung()->getId() : $oldData['IDNGUOIDUNG'],
+        (is_object($model->getIdQuyen())) ? $model->getIdQuyen()->getId() : $oldData['IDQUYEN'],
+        $model->getTrangThaiHD() ?? $oldData['TRANGTHAIHD'],
+        $tenTK
     ];
 
     $result = database_connection::executeUpdate($query, ...$args);
-    return is_int($result) ? $result : 0;  
+
+    return ($result !== false) ? 1 : 0;
 }
     public function controlDelete($email, $active): int
     {

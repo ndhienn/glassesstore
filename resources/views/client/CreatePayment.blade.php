@@ -217,7 +217,7 @@
           @endif
         </ul>
     </div>
-    <div class="d-flex justify-content-between gap-5 p-5 bg-gray-200 bg-light" style="">
+    <div class="d-flex justify-content-between gap-5 p-5 bg-gray-200 bg-light">
         <div class="d-flex flex-column gap-3 p-3" style="width: 50%;">
             <h1 class="text-dark fw-semibold">Thanh toán</h1>
             <!-- <form id="paymentForm" class="d-flex flex-column gap-3 p-3" method="get"> -->

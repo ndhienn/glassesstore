@@ -508,17 +508,27 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
     $password = $request->input('password-login');
 
     $user = app(TaiKhoan_BUS::class)->getModelById($email);
-    if($user!=null) {
-        
-        if($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
+    
+    if ($user != null) {
+        // 1. Kiểm tra Quyền (Không cho Admin/Staff đăng nhập ở đây)
+        if ($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
             return redirect()->back()->with('error', 'Vui lòng đăng nhập qua trang quản trị!');
-        } else if (app(Auth_BUS::class)->login($email, $password)) {
+        }
+
+        // 2. Kiểm tra Trạng thái tài khoản (Bị khóa hay không)
+        // Giả sử 0 là khóa, 1 là hoạt động (Bạn kiểm tra lại field TRANGTHAI trong DB của mình)
+        if ($user->getTrangThaiHD() == 0) {
+            return redirect()->back()->with('error', 'Tài khoản của bạn hiện đang bị khóa!');
+        }
+
+        // 3. Kiểm tra Mật khẩu
+        if (app(Auth_BUS::class)->login($email, $password)) {
             return redirect('/'); 
         } else {
-            return redirect()->back()->with('error','Tài khoản đã bị khóa hoặc bạn đã nhập sai mật khẩu!');
+            return redirect()->back()->with('error', 'Mật khẩu bạn nhập không chính xác!');
         }
     } else {
-        return redirect()->back()->with('error', 'Tài khoản không tồn tại!');
+        return redirect()->back()->with('error', 'Tài khoản không tồn tại trên hệ thống!');
     }
 })->name('login');
 Route::post('/payment/add-address', [NguoiDungController::class, 'addAddress'])->name('user.addAddress');
@@ -527,19 +537,26 @@ Route::post('/admin/login', function (\Illuminate\Http\Request $request) {
     $password = $request->input('password-login');
     
     $user = app(TaiKhoan_BUS::class)->getModelById($email);
-    if($user!=null) {
-        
+    
+    if ($user != null) {
+        // 1. Kiểm tra Trạng thái tài khoản trước
+        if ($user->getTrangThaiHD() == 0) {
+            return redirect()->back()->with('error', 'Tài khoản Admin này đã bị khóa!');
+        }
+
+        // 2. Kiểm tra Mật khẩu
         if (app(Auth_BUS::class)->login($email, $password)) {
-            if($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
+            // 3. Kiểm tra Quyền truy cập Admin
+            if ($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
                 return redirect('/admin'); 
             } else {
                 return redirect('/admin/login')->with('error', 'Bạn không có quyền truy cập trang quản trị!');
             }
         } else {
-            return redirect()->back()->with('error','Tài khoản đã bị khóa hoặc bạn đã nhập sai mật khẩu!');
+            return redirect()->back()->with('error', 'Mật khẩu không đúng, vui lòng thử lại!');
         }
     } else {
-        return redirect()->back()->with('error', 'Tài khoản không tồn tại!');
+        return redirect()->back()->with('error', 'Tài khoản Admin không tồn tại!');
     }
 })->name('admin.login.submit');
 

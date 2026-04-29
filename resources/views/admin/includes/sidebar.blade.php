@@ -101,7 +101,7 @@ use App\Bus\TaiKhoan_BUS;
       <li class="sidebar-item <?= ($currentModun == 'hoadon') ? 'active' : '' ?>" id="hoadon">
         <a href="/admin?modun=hoadon" class="sidebar-link">
           <i class='bx bx-cart'></i>
-          <span>Hóa đơn</span>
+          <span>Đơn hàng</span>
         </a>
       </li>
     @endif

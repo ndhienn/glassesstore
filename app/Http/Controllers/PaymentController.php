@@ -116,7 +116,7 @@ class PaymentController extends Controller
         }
 
         $order = app(HoaDon_BUS::class)->getModelById($orderId);
-        $email = app(Auth_BUS::class)->getEmailFromToken();
+        $email = $order->getEmail(); // Giả sử bạn có phương thức này để lấy email từ đơn hàng
         $user = null;
         if ($email) {
             $user = app(TaiKhoan_BUS::class)->getModelById($email);
@@ -131,7 +131,7 @@ class PaymentController extends Controller
         }
 
         $order = app(HoaDon_BUS::class)->getModelById($orderId);
-        $email = app(Auth_BUS::class)->getEmailFromToken();
+        $email = $order->getEmail();
         $user = null;
         if ($email) {
             $user = app(TaiKhoan_BUS::class)->getModelById($email);

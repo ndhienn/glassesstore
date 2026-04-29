@@ -108,7 +108,7 @@ class SanPham_BUS implements BUSInterface {
     {
         if (empty($ids)) return [];
         // Truy vấn 1 lần lấy tất cả sản phẩm có trong mảng $ids
-        return \App\Models\SanPham::whereIn('id', $ids)->get(); 
+        return \App\Models\SanPham::whereIn('ID', $ids)->get(); 
         // Lưu ý đổi 'id' thành tên cột khóa chính của bảng SanPham nếu khác
     }
 }

@@ -116,7 +116,12 @@ class PaymentController extends Controller
         }
 
         $order = app(HoaDon_BUS::class)->getModelById($orderId);
-        return view('client.SuccessPayment', ['hoaDon' => $order]);
+        $email = app(Auth_BUS::class)->getEmailFromToken();
+        $user = null;
+        if ($email) {
+            $user = app(TaiKhoan_BUS::class)->getModelById($email);
+        }
+        return view('client.SuccessPayment', ['hoaDon' => $order, 'user' => $user]);
     }
     
     public function showCancelledPage(Request $request, $orderId)
@@ -126,7 +131,12 @@ class PaymentController extends Controller
         }
 
         $order = app(HoaDon_BUS::class)->getModelById($orderId);
-        return view('client.paymentcancelled', ['hoaDon' => $order]);
+        $email = app(Auth_BUS::class)->getEmailFromToken();
+        $user = null;
+        if ($email) {
+            $user = app(TaiKhoan_BUS::class)->getModelById($email);
+        }
+        return view('client.paymentcancelled', ['hoaDon' => $order, 'user' => $user]);
     }
 
     public function retryPayment($order_id) {

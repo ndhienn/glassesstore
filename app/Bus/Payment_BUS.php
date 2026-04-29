@@ -62,7 +62,7 @@ class Payment_BUS
             "vnp_CurrCode"   => "VND",
             "vnp_IpAddr"     => $attempt->client_ip,
             "vnp_Locale"     => "vn",
-            "vnp_OrderInfo"  => "Thanh toan don hang " . $hd->getID(),
+            "vnp_OrderInfo"  => "Thanh_toan_don_hang_" . $hd->getID(),
             "vnp_OrderType"  => "billpayment",
             "vnp_ReturnUrl"  => $returnUrl,
             "vnp_TxnRef"     => $txnRef,

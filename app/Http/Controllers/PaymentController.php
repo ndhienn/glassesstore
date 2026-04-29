@@ -119,7 +119,7 @@ class PaymentController extends Controller
         $email = $order->getEmail(); // Giả sử bạn có phương thức này để lấy email từ đơn hàng
         $user = null;
         if ($email) {
-            $user = app(TaiKhoan_BUS::class)->getModelById($email);
+            $user = app(TaiKhoan_BUS::class)->getModelByEmail($email);
         }
         return view('client.SuccessPayment', ['hoaDon' => $order, 'user' => $user]);
     }
@@ -134,7 +134,7 @@ class PaymentController extends Controller
         $email = $order->getEmail();
         $user = null;
         if ($email) {
-            $user = app(TaiKhoan_BUS::class)->getModelById($email);
+            $user = app(TaiKhoan_BUS::class)->getModelByEmail($email);
         }
         return view('client.paymentcancelled', ['hoaDon' => $order, 'user' => $user]);
     }

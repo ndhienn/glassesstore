@@ -264,9 +264,10 @@ class Payment_BUS
             );
 
         } catch (\Throwable $e) { 
-            // SỬA QUAN TRỌNG: Dùng \Throwable thay vì \Exception 
-            // Throwable sẽ tóm được MỌI LOẠI LỖI (kể cả lỗi thiếu biến, sai cú pháp, v.v.)
-            \Illuminate\Support\Facades\Log::error('Lỗi ghi log PaymentGateway: ' . $e->getMessage());
+            return [
+            'RspCode' => '99',
+            'Message' => 'FATAL ERROR: ' . $e->getMessage() . ' | Line: ' . $e->getLine()
+        ];
         }
 
         // 2. KIỂM TRA CHỮ KÝ (HASH VALIDATION)

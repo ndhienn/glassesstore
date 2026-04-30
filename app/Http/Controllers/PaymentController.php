@@ -101,7 +101,7 @@ class PaymentController extends Controller
                         
                         if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
                             // FIX LỖI 2: Đem logic chốt đơn vào IPN
-                            app(HoaDon_BUS::class)->xuLyDatabaseIPN($orderId);
+                            app(Payment_BUS::class)->xuLyDatabaseIPN($orderId);
                         } else {
                             // Giao dịch lỗi/hủy
                             app(HoaDon_BUS::class)->huyThanhToanDonHang($orderId);
@@ -139,7 +139,7 @@ class PaymentController extends Controller
             if ($vnp_ResponseCode == '00' && isset($result['status']) && $result['status'] === 'success') {
                 
                 // Sử dụng chuẩn class đã import ở trên thay vì \App\Bus\...
-                app(HoaDon_BUS::class)->donDepSessionTrinhDuyet();
+                app(Payment_BUS::class)->donDepSessionTrinhDuyet();
 
                 $url = URL::signedRoute('order.success', ['orderId' => $orderId]);
                 return redirect($url)->with('message', 'Thanh toán VNPay thành công!');

@@ -177,4 +177,53 @@ class Payment_BUS
 
         return $this->updatePaymentAttemptStatus($txnRef, $responseCode);
     }
+
+    public function xuLyDatabaseIPN($idHoaDon) 
+    {
+        $cthdBus = app(CTHD_BUS::class);
+        $ctspBus = app(CTSP_BUS::class);
+        $spBus   = app(SanPham_BUS::class);
+        $ctghBus = app(CTGH_BUS::class); // Vẫn cần để xóa giỏ hàng nếu muốn
+
+        $hd = $this->getModelById($idHoaDon);
+        if (!$hd) return false;
+
+        // QUAN TRỌNG: Lấy email/thông tin khách hàng từ chính Database của Đơn Hàng
+        $email = $hd->getEmail()->getEmail(); // Lấy email từ đối tượng TaiKhoan liên kết với Hóa Đơn
+        // (Bạn không được dùng Auth_Bus ở đây)
+
+        $listCTHD = $cthdBus->getCTHTbyIDHD($idHoaDon);
+        if (empty($listCTHD)) return false;
+
+        foreach ($listCTHD as $cthd) {
+            if (!$cthd) continue;
+            $soSeri = $cthd->getSoSeri();
+            $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
+            
+            if ($ctsp) {
+                $sp = $ctsp->getIdSP(); 
+                if ($sp) {
+                    $ctspBus->updateStatus($soSeri, 0); // Đã bán
+                    $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
+                    $spBus->updateModel($sp);
+
+                    // Xóa giỏ hàng bằng cách query thẳng vào DB dựa trên email lấy từ Đơn Hàng
+                    if ($email) { 
+                        $gh = $ghBus->getByEmail($email);
+                        $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                    }
+                }
+            }
+        }
+
+        $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
+        $this->updateModel($hd);
+        return true;
+    }
+    public function donDepSessionTrinhDuyet()
+    {
+        // Hàm này chạy khi khách được VNPay chuyển hướng về web của bạn
+        session()->forget('checkout_source');
+        session()->forget('listSP');
+    }
 }

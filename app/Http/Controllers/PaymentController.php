@@ -64,6 +64,64 @@ class PaymentController extends Controller
         }
     }
 
+    public function vnpayIpn(Request $request)
+    {
+        $vnp_SecureHash = $request->vnp_SecureHash;
+        $inputData = array();
+        foreach ($request->all() as $key => $value) {
+            if (substr($key, 0, 4) == "vnp_") {
+                $inputData[$key] = $value;
+            }
+        }
+        unset($inputData['vnp_SecureHash']);
+        ksort($inputData);
+        $i = 0;
+        $hashData = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, env('VNP_HASH_SECRET'));
+
+        if ($secureHash == $vnp_SecureHash) {
+            $txnRef = $inputData['vnp_TxnRef'];
+            // FIX LỖI 1: Tách OrderID giống hệt cách làm ở Return
+            $orderId = (int) filter_var(explode('_', $txnRef)[0], FILTER_SANITIZE_NUMBER_INT);
+            
+            $order = app(HoaDon_BUS::class)->getModelById($orderId);
+
+            if ($order != NULL) {
+                if ($order->getTongTien() == ($inputData['vnp_Amount'] / 100)) { 
+                    if ($order->getTrangThai()->value() == 'PENDING') { 
+                        
+                        if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
+                            // FIX LỖI 2: Đem logic chốt đơn vào IPN
+                            app(HoaDon_BUS::class)->xuLyDatabaseIPN($orderId);
+                        } else {
+                            // Giao dịch lỗi/hủy
+                            app(HoaDon_BUS::class)->huyThanhToanDonHang($orderId);
+                        }
+
+                        return response()->json(['RspCode' => '00', 'Message' => 'Confirm Success']);
+                    } else {
+                        return response()->json(['RspCode' => '02', 'Message' => 'Order already confirmed']);
+                    }
+                } else {
+                    return response()->json(['RspCode' => '04', 'Message' => 'Invalid amount']);
+                }
+            } else {
+                return response()->json(['RspCode' => '01', 'Message' => 'Order not found']);
+            }
+        } else {
+            return response()->json(['RspCode' => '97', 'Message' => 'Invalid signature']);
+        }
+    }
+
     public function vnpayReturn(Request $request)
     {
         try {
@@ -81,7 +139,7 @@ class PaymentController extends Controller
             if ($vnp_ResponseCode == '00' && isset($result['status']) && $result['status'] === 'success') {
                 
                 // Sử dụng chuẩn class đã import ở trên thay vì \App\Bus\...
-                app(HoaDon_BUS::class)->chotDonHangSauThanhToan($request, $orderId, "PAID");
+                app(HoaDon_BUS::class)->donDepSessionTrinhDuyet();
 
                 $url = URL::signedRoute('order.success', ['orderId' => $orderId]);
                 return redirect($url)->with('message', 'Thanh toán VNPay thành công!');

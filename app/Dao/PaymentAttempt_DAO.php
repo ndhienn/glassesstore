@@ -31,7 +31,7 @@ class PaymentAttempt_DAO
     }
     public function getAttemptIdByOrderId($orderId)
     {
-        $attempt = PaymentAttempt::where('id', $orderId)->first();
+        $attempt = PaymentAttempt::where('order_id', $orderId)->first();
         return $attempt ? $attempt->id : null;
     }
 }

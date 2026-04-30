@@ -14,19 +14,31 @@ class PaymentGatewayLog_BUS
         $this->dao = new \App\DAO\PaymentGatewayLog_DAO();
     }
 
-    public function logIPN($orderId, $attemptId, $vnpayData, $isValid = true)
+    public function logIPNReceive($orderId, $vnpayData, $request)
+    {
+        return $this->dao->addModel([
+            'order_id'      => $orderId,
+            'provider'      => 'vnpay',
+            'log_type'      => 'ipn_receive', // Đánh dấu đây là log nhận về
+            'http_method'   => $request->method(), 
+            'endpoint'      => $request->fullUrl(), 
+            'payload_json'  => $vnpayData,
+            'note'          => 'Nhận webhook IPN từ VNPay'
+        ]);
+    }
+
+    // HÀM 2: GHI LOG CHIỀU GỬI ĐI (Bỏ vào hàm createPayment lúc tạo URL)
+    public function logCreateRequest($orderId, $attemptId, $vnpayUrl, $requestData)
     {
         return $this->dao->addModel([
             'payment_attempt_id' => $attemptId,
-            'order_id'           => $orderId,
-            'provider'           => 'vnpay',
-            'log_type'           => 'create_request', // Loại log: Nhận thông báo IPN
-            'http_method'        => 'GET',        // VNPay thường gọi qua GET hoặc POST
-            'endpoint'           => route('vnpay.ipn'), // URL nhận IPN của bạn
-            'response_code'      => $vnpayData['vnp_ResponseCode'] ?? null,
-            'is_signature_valid' => $isValid,
-            'payload_json'       => $vnpayData,   // Model sẽ tự encode sang JSON nhờ $casts
-            'note'               => 'Ghi log từ giả lập Command TestIPN'
+            'order_id'      => $orderId,
+            'provider'      => 'vnpay',
+            'log_type'      => 'create_request', // Đánh dấu đây là log gửi đi
+            'http_method'   => 'GET', 
+            'endpoint'      => $vnpayUrl, // Lưu lại cái URL VNPay mà bạn vừa tạo
+            'payload_json'  => $requestData, // Lưu lại mảng params bạn dùng để tạo URL
+            'note'          => 'Tạo URL redirect khách hàng sang VNPay'
         ]);
     }
 }

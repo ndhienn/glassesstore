@@ -3,6 +3,9 @@ namespace App\Bus;
 
 use App\Dao\PaymentAttempt_DAO;
 use App\Bus\HoaDon_BUS; 
+use App\Bus\PaymentGatewayLog_BUS;
+use App\Bus\PaymentStatusHistory_BUS;
+use App\Bus\PaymentTransaction_BUS;
 use Carbon\Carbon;
 
 class Payment_BUS
@@ -88,11 +91,18 @@ class Payment_BUS
         
         // Nối thêm SecureHash vào URL (Xử lý dấu & thừa ở cuối $query)
         $vnp_Url = $vnp_Url . "?" . $query . 'vnp_SecureHash=' . $vnpSecureHash;
-        $vnp_HashSecret = config('vnpay.hash_secret');
 
         // Lưu link thanh toán vào hóa đơn
         app(\App\BUS\HoaDon_BUS::class)->setLinkThanhToan($hd->getID(), $vnp_Url, $txnRef);
+        
 
+        //ghi vao gateway log
+        app(\App\Bus\PaymentGatewayLog_BUS::class)->logCreateRequest(
+            $hd->getID(),       // ID đơn hàng
+            $attempt->id,       // ID của bảng payment_attempts (để nối dữ liệu lại với nhau)
+            $vnp_Url,           // Link gửi đi
+            $inputData          // Mảng params gốc trước khi bị băm (Cực kỳ giá trị để debug)
+        );
         return $vnp_Url; 
     }
     //cập nhật trạng thái thanh toán theo mã phản hồi từ VNPay
@@ -186,6 +196,8 @@ class Payment_BUS
         $ctghBus = app(CTGH_BUS::class); // Vẫn cần để xóa giỏ hàng nếu muốn
 
         $hd = $this->getModelById($idHoaDon);
+        $attemptId = $this->paymentAttemptDAO->getAttemptIdByOrderId($idHoaDon);
+
         if (!$hd) return false;
 
         // QUAN TRỌNG: Lấy email/thông tin khách hàng từ chính Database của Đơn Hàng
@@ -218,6 +230,8 @@ class Payment_BUS
 
         $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
         $this->updateModel($hd);
+
+        $this->capNhatGiaoDichVaLichSu($txnRef, $vnpayTransactionNo, 'success', 'Thanh toán thành công (Mã 00)');
         return true;
     }
     public function donDepSessionTrinhDuyet()

@@ -100,8 +100,18 @@ class PaymentController extends Controller
                 // Sử dụng chuẩn class đã import ở trên thay vì \App\Bus\...
                 app(Payment_BUS::class)->donDepSessionTrinhDuyet();
 
-                $url = URL::signedRoute('order.success', ['orderId' => $orderId]);
-                return redirect($url)->with('message', 'Thanh toán VNPay thành công!');
+                // $url = URL::signedRoute('order.success', ['orderId' => $orderId]);
+                // return redirect($url)->with('message', 'Thanh toán VNPay thành công!');
+                $order = app(HoaDon_BUS::class)->getModelById($orderId);
+                $email = $order->getEmail(); // Giả sử bạn có phương thức này để lấy email từ đơn hàng
+                $user = null;
+                if ($email) {
+                    $user = app(TaiKhoan_BUS::class)->getModelByEmail($email->getEmail());
+                }
+                return view('client.SuccessPayment', [
+                    'hoaDon' => $order,
+                    'user' => $user
+                ]);
             }
 
             // Trường hợp người dùng hủy (Mã 24)

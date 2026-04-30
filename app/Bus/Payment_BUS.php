@@ -220,10 +220,10 @@ class Payment_BUS
                     $spBus->updateModel($sp);
 
                     // Xóa giỏ hàng bằng cách query thẳng vào DB dựa trên email lấy từ Đơn Hàng
-                    if ($email) { 
-                        $gh = $ghBus->getByEmail($email);
-                        $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
-                    }
+                    // if ($email) { 
+                    //     $gh = $ghBus->getByEmail($email);
+                    //     $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                    // }
                 }
             }
         }
@@ -301,7 +301,7 @@ class Payment_BUS
         }
 
         // Đơn hàng không còn ở trạng thái PENDING
-        if ($order->getTrangThai()->value() != 'PENDING') { 
+        if ($order->getTrangThai()->value != 'PENDING') { 
             return ['RspCode' => '02', 'Message' => 'Order already confirmed'];
         }
 

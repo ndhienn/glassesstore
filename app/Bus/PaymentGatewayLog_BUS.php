@@ -11,7 +11,7 @@ class PaymentGatewayLog_BUS
     public function __construct()
     {
         // Giả sử bạn đã có PaymentGatewayLog_DAO xử lý hàm addModel
-        $this->dao = new \App\DAO\PaymentGatewayLog_DAO();
+        $this->dao = new \App\Dao\PaymentGatewayLog_DAO();
     }
 
     public function logIPNReceive($orderId, $vnpayData, $request)

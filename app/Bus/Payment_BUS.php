@@ -98,7 +98,7 @@ class Payment_BUS
 
         //ghi vao gateway log
         app(\App\Bus\PaymentGatewayLog_BUS::class)->logCreateRequest(
-            $hd->getID(),       // ID đơn hàng
+            $orderId,       // ID đơn hàng
             $attempt->id,       // ID của bảng payment_attempts (để nối dữ liệu lại với nhau)
             $vnp_Url,           // Link gửi đi
             $inputData          // Mảng params gốc trước khi bị băm (Cực kỳ giá trị để debug)

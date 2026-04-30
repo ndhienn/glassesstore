@@ -20,7 +20,7 @@ class PaymentGatewayLog_BUS
             'payment_attempt_id' => $attemptId, // BỔ SUNG DÒNG NÀY ĐỂ LIÊN KẾT DỮ LIỆU
             'order_id'           => $orderId,
             'provider'           => 'vnpay',
-            'log_type'           => 'ipn_receive', 
+            'log_type'           => 'ipn_webhook', 
             'http_method'        => $request->method(), 
             'endpoint'           => $request->url(), // Đã dùng url() rất chuẩn!
             'payload_json'       => $vnpayData,

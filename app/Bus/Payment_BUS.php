@@ -240,4 +240,81 @@ class Payment_BUS
         session()->forget('checkout_source');
         session()->forget('listSP');
     }
+
+    public function processIpn($request)
+    {
+        // 1. GHI LOG RECEIVE (Đưa luôn vào BUS cho gọn)
+        try {
+            $vnp_TxnRef = $request->input('vnp_TxnRef');
+            $orderIdForLog = $vnp_TxnRef ? (int) filter_var(explode('_', $vnp_TxnRef)[0], FILTER_SANITIZE_NUMBER_INT) : null;
+
+            app(\App\Bus\PaymentGatewayLog_BUS::class)->logIPNReceive(
+                $orderIdForLog, 
+                $request->all(), 
+                $request         
+            );
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Lỗi ghi log PaymentGateway: ' . $e->getMessage());
+        }
+
+        // 2. KIỂM TRA CHỮ KÝ (HASH VALIDATION)
+        $vnp_SecureHash = $request->vnp_SecureHash;
+        $inputData = array();
+        foreach ($request->all() as $key => $value) {
+            if (substr($key, 0, 4) == "vnp_") {
+                $inputData[$key] = $value;
+            }
+        }
+        unset($inputData['vnp_SecureHash']);
+        ksort($inputData);
+        $i = 0;
+        $hashData = "";
+        foreach ($inputData as $key => $value) {
+            if ($i == 1) {
+                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
+            } else {
+                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
+                $i = 1;
+            }
+        }
+
+        $secureHash = hash_hmac('sha512', $hashData, config('vnpay.hash_secret'));
+
+        // Sai chữ ký -> Dừng luôn
+        if ($secureHash != $vnp_SecureHash) {
+            return ['RspCode' => '97', 'Message' => 'Invalid signature'];
+        }
+
+        // 3. XỬ LÝ NGHIỆP VỤ DATABASE
+        $txnRef = $inputData['vnp_TxnRef'];
+        $orderId = (int) filter_var(explode('_', $txnRef)[0], FILTER_SANITIZE_NUMBER_INT);
+        $order = app(\App\Bus\HoaDon_BUS::class)->getModelById($orderId);
+
+        // Không tìm thấy đơn hàng
+        if ($order == NULL) {
+            return ['RspCode' => '01', 'Message' => 'Order not found'];
+        }
+
+        // Sai số tiền
+        if ($order->getTongTien() != ($inputData['vnp_Amount'] / 100)) { 
+            return ['RspCode' => '04', 'Message' => 'Invalid amount'];
+        }
+
+        // Đơn hàng không còn ở trạng thái PENDING
+        if ($order->getTrangThai()->value() != 'PENDING') { 
+            return ['RspCode' => '02', 'Message' => 'Order already confirmed'];
+        }
+
+        // 4. CHỐT ĐƠN HOẶC HỦY ĐƠN
+        if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
+            // Giao dịch thành công (Vì hàm này đang nằm trong Payment_BUS nên ta gọi $this luôn)
+            $this->xuLyDatabaseIPN($orderId);
+        } else {
+            // Giao dịch lỗi/hủy
+            app(\App\Bus\HoaDon_BUS::class)->huyThanhToanDonHang($orderId);
+        }
+
+        // Mọi thứ thành công
+        return ['RspCode' => '00', 'Message' => 'Confirm Success'];
+    }
 }

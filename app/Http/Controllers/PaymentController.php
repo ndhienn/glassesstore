@@ -94,6 +94,12 @@ class PaymentController extends Controller
             $orderId = (int) filter_var(explode('_', $txnRef)[0], FILTER_SANITIZE_NUMBER_INT);
             $result = $this->paymentBUS->processVnpayReturn($request->all());
 
+            $order = app(HoaDon_BUS::class)->getModelById($orderId);
+            $email = $order->getEmail(); // Giả sử bạn có phương thức này để lấy email từ đơn hàng
+            $user = null;
+            if ($email) {
+                $user = app(TaiKhoan_BUS::class)->getModelByEmail($email->getEmail());
+            }
             // Xử lý khi thanh toán thành công (Mã 00)
             if ($vnp_ResponseCode == '00' && isset($result['status']) && $result['status'] === 'success') {
                 
@@ -102,12 +108,7 @@ class PaymentController extends Controller
 
                 // $url = URL::signedRoute('order.success', ['orderId' => $orderId]);
                 // return redirect($url)->with('message', 'Thanh toán VNPay thành công!');
-                $order = app(HoaDon_BUS::class)->getModelById($orderId);
-                $email = $order->getEmail(); // Giả sử bạn có phương thức này để lấy email từ đơn hàng
-                $user = null;
-                if ($email) {
-                    $user = app(TaiKhoan_BUS::class)->getModelByEmail($email->getEmail());
-                }
+                
                 return view('client.SuccessPayment', [
                     'hoaDon' => $order,
                     'user' => $user
@@ -118,8 +119,12 @@ class PaymentController extends Controller
             if ($vnp_ResponseCode == '24') {
                 app(HoaDon_BUS::class)->huyThanhToanDonHang($orderId);
                 
-                $url = URL::signedRoute('payment.cancelled', ['orderId' => $orderId]);
-                return redirect($url)->with('message', 'Bạn đã hủy thanh toán đơn hàng!');
+                // $url = URL::signedRoute('payment.cancelled', ['orderId' => $orderId]);
+                // return redirect($url)->with('message', 'Bạn đã hủy thanh toán đơn hàng!');
+                return view('client.paymentcancelled', [
+                    'hoaDon' => $order,
+                    'user' => $user
+                ]);
             }
 
         } catch (\Exception $e) {

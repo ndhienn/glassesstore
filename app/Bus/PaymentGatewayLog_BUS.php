@@ -8,10 +8,10 @@ class PaymentGatewayLog_BUS
 {
     protected $dao;
 
-    public function __construct()
+    // Laravel sẽ tự động tìm và nạp class DAO này vào mà không cần bạn phải dùng chữ 'new'
+    public function __construct(PaymentGatewayLog_DAO $dao)
     {
-        // Giả sử bạn đã có PaymentGatewayLog_DAO xử lý hàm addModel
-        $this->dao = new \App\Dao\PaymentGatewayLog_DAO();
+        $this->dao = $dao;
     }
 
     public function logIPNReceive($orderId, $vnpayData, $request)

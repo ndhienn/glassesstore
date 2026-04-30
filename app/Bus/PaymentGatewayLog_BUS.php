@@ -14,16 +14,17 @@ class PaymentGatewayLog_BUS
         $this->dao = $dao;
     }
 
-    public function logIPNReceive($orderId, $vnpayData, $request)
+    public function logIPNReceive($orderId, $attemptId, $vnpayData, $request)
     {
         return $this->dao->addModel([
-            'order_id'      => $orderId,
-            'provider'      => 'vnpay',
-            'log_type'      => 'ipn_receive', // Đánh dấu đây là log nhận về
-            'http_method'   => $request->method(), 
-            'endpoint'      => $request->url(),
-            'payload_json'  => $vnpayData,
-            'note'          => 'Nhận webhook IPN từ VNPay'
+            'payment_attempt_id' => $attemptId, // BỔ SUNG DÒNG NÀY ĐỂ LIÊN KẾT DỮ LIỆU
+            'order_id'           => $orderId,
+            'provider'           => 'vnpay',
+            'log_type'           => 'ipn_receive', 
+            'http_method'        => $request->method(), 
+            'endpoint'           => $request->url(), // Đã dùng url() rất chuẩn!
+            'payload_json'       => $vnpayData,
+            'note'               => 'Nhận webhook IPN từ VNPay'
         ]);
     }
 

@@ -190,6 +190,7 @@ class Payment_BUS
 
     public function xuLyDatabaseIPN($idHoaDon) 
     {
+        $ghBus = app(GioHang_BUS::class);
         $cthdBus = app(CTHD_BUS::class);
         $ctspBus = app(CTSP_BUS::class);
         $spBus   = app(SanPham_BUS::class);
@@ -220,10 +221,10 @@ class Payment_BUS
                     $spBus->updateModel($sp);
 
                     // Xóa giỏ hàng bằng cách query thẳng vào DB dựa trên email lấy từ Đơn Hàng
-                    // if ($email) { 
-                    //     $gh = $ghBus->getByEmail($email);
-                    //     $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
-                    // }
+                    if ($email) { 
+                        $gh = $ghBus->getByEmail($email);
+                        $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                    }
                 }
             }
         }
@@ -248,12 +249,23 @@ class Payment_BUS
             $vnp_TxnRef = $request->input('vnp_TxnRef');
             $orderIdForLog = $vnp_TxnRef ? (int) filter_var(explode('_', $vnp_TxnRef)[0], FILTER_SANITIZE_NUMBER_INT) : null;
 
+            // Lấy ID của lần thanh toán (attemptId) để truyền cho đủ 4 tham số
+            // (Sử dụng hàm đã có sẵn trong DAO của bạn)
+            $attemptId = null;
+            if ($orderIdForLog) {
+                $attemptId = $this->paymentAttemptDAO->getAttemptIdByOrderId($orderIdForLog);
+            }
+
             app(\App\Bus\PaymentGatewayLog_BUS::class)->logIPNReceive(
                 $orderIdForLog, 
+                $attemptId,      // <-- Bổ sung tham số bị thiếu ở đây
                 $request->all(), 
                 $request         
             );
-        } catch (\Exception $e) {
+
+        } catch (\Throwable $e) { 
+            // SỬA QUAN TRỌNG: Dùng \Throwable thay vì \Exception 
+            // Throwable sẽ tóm được MỌI LOẠI LỖI (kể cả lỗi thiếu biến, sai cú pháp, v.v.)
             \Illuminate\Support\Facades\Log::error('Lỗi ghi log PaymentGateway: ' . $e->getMessage());
         }
 

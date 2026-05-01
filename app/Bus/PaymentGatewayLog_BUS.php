@@ -14,7 +14,7 @@ class PaymentGatewayLog_BUS
         $this->dao = $dao;
     }
 
-    public function logIPNReceive($orderId, $attemptId, $vnpayData, $request)
+    public function logIPNReceive($orderId, $attemptId, $vnpayData, $request, $isValidSignature)
     {
         return $this->dao->addModel([
             'payment_attempt_id' => $attemptId, // BỔ SUNG DÒNG NÀY ĐỂ LIÊN KẾT DỮ LIỆU
@@ -24,7 +24,9 @@ class PaymentGatewayLog_BUS
             'http_method'        => $request->method(), 
             'endpoint'           => $request->url(), // Đã dùng url() rất chuẩn!
             'payload_json'       => $vnpayData,
-            'note'               => 'Nhận webhook IPN từ VNPay'
+            'note'               => 'Nhận webhook IPN từ VNPay',
+            'is_valid_signature' => $isValidSignature ? 1 : 0,
+            'response_code'      => $vnpayData['vnp_ResponseCode'] ?? null, // Lưu mã phản hồi nếu có
         ]);
     }
 

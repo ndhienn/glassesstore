@@ -272,7 +272,7 @@ class Payment_BUS
                 // Chốt đơn, trừ kho và xóa giỏ hàng
                 $this->xuLyDatabaseIPN($orderId);
                 //ghi vào payment transaction
-                app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($attemptId, $request->all());
+                app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($attemptId, $request->all(), $orderId);
             } else {
                 // Giao dịch lỗi từ phía ngân hàng/khách hàng hủy
                 $this->hoaDonBUS->huyThanhToanDonHang($orderId);

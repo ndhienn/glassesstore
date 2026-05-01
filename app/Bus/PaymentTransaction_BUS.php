@@ -17,10 +17,8 @@ class PaymentTransaction_BUS
     /**
      * Lưu giao dịch thành công từ VNPay
      */
-    public function saveVnpaySuccess($attemptId, $vnpayData)
+    public function saveVnpaySuccess($attemptId, $vnpayData, $orderId)
     {
-        $rawOrderId = explode('_', $vnpayData['vnp_TxnRef'])[0]; // Kết quả: "DH239"
-        $orderId = (int) filter_var($rawOrderId, FILTER_SANITIZE_NUMBER_INT); // Kết quả: 239
         // 1. Kiểm tra trùng lặp (Idempotency)
         $existing = $this->dao->findByBankTransactionNo($vnpayData['vnp_TransactionNo']);
         if ($existing) {
@@ -36,8 +34,8 @@ class PaymentTransaction_BUS
         $data = [
             'order_id'                => $orderId, // Sử dụng ID đơn hàng đã trích xuất
             'payment_attempt_id'      => $attemptId, // Quan trọng cho khóa ngoại
-            'provider'                => 'VNPAY',
-            'transaction_type'        => 'PAYMENT',
+            'provider'                => 'vnpay',
+            'transaction_type'        => 'payment',
             'provider_transaction_id' => $vnpayData['vnp_TransactionNo'],
             'provider_reference_no'   => $vnpayData['vnp_TxnRef'],
             'bank_code'               => $vnpayData['vnp_BankCode'] ?? null,

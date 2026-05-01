@@ -7,6 +7,7 @@ use App\Bus\PaymentGatewayLog_BUS;
 use App\Bus\PaymentStatusHistory_BUS;
 use App\Bus\PaymentTransaction_BUS;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class Payment_BUS
 {
@@ -268,6 +269,7 @@ class Payment_BUS
             $this->updatePaymentAttemptStatus($vnp_TxnRef, $inputData['vnp_ResponseCode'] ?? null);
 
             // 5. XỬ LÝ CHỐT ĐƠN HOẶC HỦY ĐƠN
+            Log::info('Xử lý IPN cho đơn hàng: ' . $inputData['vnp_ResponseCode'] . ' - ' . $inputData['vnp_TxnRef']);
             if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
                 //ghi vào payment transaction
                 app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($attemptId, $request->all(), $orderId);

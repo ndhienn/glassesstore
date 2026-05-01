@@ -22,10 +22,10 @@ class PaymentTransaction_BUS
      */
     public function saveVnpaySuccess($attemptId, $vnpayData, $orderId)
     {
-        // $existing = $this->dao->findByBankTransactionNo($vnpayData['vnp_TransactionNo']);
-        // if ($existing) {
-        //     return $existing;
-        // }
+        $existing = $this->dao->findByBankTransactionNo($vnpayData['vnp_TransactionNo']);
+        if ($existing) {
+            return $existing;
+        }
 
         $paidAt = isset($vnpayData['vnp_PayDate']) 
             ? \Carbon\Carbon::createFromFormat('YmdHis', $vnpayData['vnp_PayDate'])->format('Y-m-d H:i:s')

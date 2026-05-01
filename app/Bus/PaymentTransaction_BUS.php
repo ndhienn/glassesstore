@@ -33,7 +33,6 @@ class PaymentTransaction_BUS
         // 3. Mapping dữ liệu vào cấu trúc Model mới
         $data = [
             'order_id'                => $orderId, // Sử dụng ID đơn hàng đã trích xuất
-            'payment_attempt_id'      => $attemptId, // Quan trọng cho khóa ngoại
             'provider'                => 'vnpay',
             'transaction_type'        => 'payment',
             'provider_transaction_id' => $vnpayData['vnp_TransactionNo'],

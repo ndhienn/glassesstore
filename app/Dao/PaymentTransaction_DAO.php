@@ -16,7 +16,7 @@ class PaymentTransaction_DAO
      */
     public function findByBankTransactionNo($bankTransNo)
     {
-        return PaymentTransaction::where('provider_transaction_id', $vnpayTransNo)->first();
+        return PaymentTransaction::where('provider_transaction_id', $bankTransNo)->first();
     }
 
     /**

@@ -22,60 +22,39 @@ class PaymentTransaction_BUS
      */
     public function saveVnpaySuccess($attemptId, $vnpayData, $orderId)
     {
-        // 1. Kiểm tra trùng lặp (Idempotency) dựa trên mã giao dịch của VNPAY
-        // Lưu ý: Đảm bảo DAO của bạn gọi đúng cột (vd: provider_transaction_id)
         $existing = $this->dao->findByBankTransactionNo($vnpayData['vnp_TransactionNo']);
         if ($existing) {
             return $existing;
         }
 
-        // 2. Xử lý thời gian thanh toán (vnp_PayDate có định dạng YYYYMMDDHHMMSS)
-        // Format lại thành chuẩn chuỗi DATETIME của MySQL (Y-m-d H:i:s) cho an toàn
         $paidAt = isset($vnpayData['vnp_PayDate']) 
             ? \Carbon\Carbon::createFromFormat('YmdHis', $vnpayData['vnp_PayDate'])->format('Y-m-d H:i:s')
             : now()->format('Y-m-d H:i:s');
 
-        // 3. Tính toán số tiền (VNPAY gửi đơn vị xu, phải chia 100)
         $amount = $vnpayData['vnp_Amount'] / 100;
 
-        // 4. Mapping dữ liệu chuẩn xác 100% với cấu trúc Database
         $data = [
-            // Khóa ngoại (Đảm bảo 2 cột này ĐÃ CÓ trong $fillable của Model)
             'order_id'                => $orderId, 
-            'payment_attempt_id'      => $attemptId, 
-
-            // Cột hệ thống (ENUM)
             'provider'                => 'vnpay',
             'transaction_type'        => 'payment',
-
-            // Nhóm mã giao dịch đối soát
-            'provider_transaction_id' => $vnpayData['vnp_TransactionNo'],         // Mã GD trên hệ thống VNPAY
-            'provider_reference_no'   => $vnpayData['vnp_TxnRef'],                // Mã đơn hàng gốc của bạn (vd: DH4203)
-            'bank_code'               => $vnpayData['vnp_BankCode'] ?? null,      // Ngân hàng (vd: NCB)
-            'bank_transaction_no'     => $vnpayData['vnp_BankTranNo'] ?? null,    // Mã GD của chính Ngân hàng đó (VNPAY có trả về)
-
-            // Nhóm tài chính (DECIMAL)
+            'provider_transaction_id' => $vnpayData['vnp_TransactionNo'],
+            'provider_reference_no'   => $vnpayData['vnp_TxnRef'],
+            'bank_code'               => $vnpayData['vnp_BankCode'] ?? null,
+            'bank_transaction_no'     => $vnpayData['vnp_BankTranNo'] ?? null,
             'amount'                  => $amount,
             'currency_code'           => 'VND',
-            'gateway_fee'             => 0.00,        // Phí cổng thanh toán (Để 0.00 theo default schema)
-            'net_amount'              => $amount,     // Số tiền thực thu
-
-            // Nhóm kết quả
+            'gateway_fee'             => 0.00,
+            'net_amount'              => $amount,
             'result_code'             => $vnpayData['vnp_ResponseCode'],
             'result_message'          => $this->getVnpayMessage($vnpayData['vnp_ResponseCode']),
-
-            // Nhóm kiểm duyệt Kế toán (Tuân thủ triệt để comment trong DB)
-            'is_verified'             => 0,           // 0: Kế toán chưa đối soát
-            'verified_at'             => null,        // Bỏ trống thời gian đối soát
-
-            // Nhóm thời gian & Bảo mật
+            'is_verified'             => 1,
+            'verified_at'             => null,
             'paid_at'                 => $paidAt,
             'raw_signature'           => $vnpayData['vnp_SecureHash'] ?? null,
         ];
 
         return $this->dao->addModel($data);
     }
-
     /**
      * Giải mã thông báo từ mã phản hồi VNPay
      */

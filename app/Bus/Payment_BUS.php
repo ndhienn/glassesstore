@@ -269,11 +269,10 @@ class Payment_BUS
 
             // 5. XỬ LÝ CHỐT ĐƠN HOẶC HỦY ĐƠN
             if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
-                dd($inputData);
-                // Chốt đơn, trừ kho và xóa giỏ hàng
-                $this->xuLyDatabaseIPN($orderId);
                 //ghi vào payment transaction
                 app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($attemptId, $request->all(), $orderId);
+                // Chốt đơn, trừ kho và xóa giỏ hàng
+                $this->xuLyDatabaseIPN($orderId);
             } else {
                 // Giao dịch lỗi từ phía ngân hàng/khách hàng hủy
                 $this->hoaDonBUS->huyThanhToanDonHang($orderId);

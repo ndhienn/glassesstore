@@ -19,9 +19,7 @@ class Payment_BUS
         $this->hoaDonBUS = $hoaDonBUS;
     }
 
-    // =========================================================
     // HÀM 1: TẠO LINK THANH TOÁN (Chạy khi khách bấm nút Đặt Hàng)
-    // =========================================================
     public function processVnpayPayment($orderId, $clientIp, $returnUrl)
     {
         // 1. Lấy hóa đơn
@@ -144,50 +142,6 @@ class Payment_BUS
         }
     }
 
-    //XỬ LÝ KẾT QUẢ (Chạy khi VNPay trả khách về lại web)
-    public function processVnpayReturn($inputData)
-    {
-        $vnp_HashSecret = config('vnpay.hash_secret');
-        
-        if (!isset($inputData['vnp_SecureHash'])) {
-            throw new \Exception('Dữ liệu trả về không hợp lệ (Thiếu chữ ký).');
-        }
-        $vnp_SecureHash = $inputData['vnp_SecureHash'];
-
-        // FIX: Chỉ lấy các tham số bắt đầu bằng vnp_ và loại bỏ SecureHash
-        $vnpayData = [];
-        foreach ($inputData as $key => $value) {
-            if (substr($key, 0, 4) == "vnp_" && $key != "vnp_SecureHash" && $key != "vnp_SecureHashType") {
-                $vnpayData[$key] = $value;
-            }
-        }
-
-        ksort($vnpayData);
-        $i = 0;
-        $hashData = "";
-        foreach ($vnpayData as $key => $value) {
-            if ($i == 1) {
-                $hashData = $hashData . '&' . urlencode($key) . "=" . urlencode($value);
-            } else {
-                $hashData = $hashData . urlencode($key) . "=" . urlencode($value);
-                $i = 1;
-            }
-        }
-
-        // 3. Tạo chữ ký mới từ dữ liệu để đối chiếu
-        $secureHash = hash_hmac('sha512', $hashData, $vnp_HashSecret);
-
-        if ($secureHash !== $vnp_SecureHash) {
-            throw new \Exception('Chữ ký không hợp lệ! Phát hiện nghi ngờ gian lận.');
-        }
-
-        // 4. KIỂM TRA TRẠNG THÁI GIAO DỊCH
-        $txnRef = $inputData['vnp_TxnRef'] ?? null; 
-        $responseCode = $inputData['vnp_ResponseCode'] ?? null; 
-
-        return $this->updatePaymentAttemptStatus($txnRef, $responseCode);
-    }
-
     public function xuLyDatabaseIPN($idHoaDon) 
     {
         $ghBus = app(GioHang_BUS::class);
@@ -278,8 +232,7 @@ class Payment_BUS
             $secureHash = hash_hmac('sha512', $hashData, config('vnpay.hash_secret'));
             $isValidSignature = ($secureHash === $vnp_SecureHash);
 
-            // 3. GHI LOG RECEIVE (IPN WEBHOOK)
-            // Đảm bảo truyền đủ 5 tham số theo cấu trúc mới nhất của bạn
+            // GHI LOG RECEIVE (IPN WEBHOOK)
             app(\App\Bus\PaymentGatewayLog_BUS::class)->logIPNReceive(
                 $orderId, 
                 $attemptId, 
@@ -311,10 +264,15 @@ class Payment_BUS
                 return ['RspCode' => '02', 'Message' => 'Order already confirmed'];
             }
 
+            // cập nhật trạng thái thanh toán trong bảng payment_attempts dựa trên vnp_TxnRef
+            $this->updatePaymentAttemptStatus($vnp_TxnRef, $inputData['vnp_ResponseCode'] ?? null);
+
             // 5. XỬ LÝ CHỐT ĐƠN HOẶC HỦY ĐƠN
             if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
                 // Chốt đơn, trừ kho và xóa giỏ hàng
                 $this->xuLyDatabaseIPN($orderId);
+                //ghi vào payment transaction
+                app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($attemptId, $request->all());
             } else {
                 // Giao dịch lỗi từ phía ngân hàng/khách hàng hủy
                 $this->hoaDonBUS->huyThanhToanDonHang($orderId);

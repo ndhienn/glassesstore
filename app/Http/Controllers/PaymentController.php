@@ -92,7 +92,6 @@ class PaymentController extends Controller
             }
 
             $orderId = (int) filter_var(explode('_', $txnRef)[0], FILTER_SANITIZE_NUMBER_INT);
-            $result = $this->paymentBUS->processVnpayReturn($request->all());
 
             $order = app(HoaDon_BUS::class)->getModelById($orderId);
             $email = $order->getEmail(); // Giả sử bạn có phương thức này để lấy email từ đơn hàng
@@ -101,7 +100,7 @@ class PaymentController extends Controller
                 $user = app(TaiKhoan_BUS::class)->getModelByEmail($email->getEmail());
             }
             // Xử lý khi thanh toán thành công (Mã 00)
-            if ($vnp_ResponseCode == '00' && isset($result['status']) && $result['status'] === 'success') {
+            if ($vnp_ResponseCode == '00') {
                 
                 // Sử dụng chuẩn class đã import ở trên thay vì \App\Bus\...
                 app(Payment_BUS::class)->donDepSessionTrinhDuyet();

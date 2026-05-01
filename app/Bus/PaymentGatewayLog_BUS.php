@@ -25,7 +25,7 @@ class PaymentGatewayLog_BUS
             'endpoint'           => $request->url(), // Đã dùng url() rất chuẩn!
             'payload_json'       => $vnpayData,
             'note'               => 'Nhận webhook IPN từ VNPay',
-            'is_valid_signature' => $isValidSignature ? 1 : 0,
+            'is_signature_valid' => $isValidSignature ? 1 : 0,
             'response_code'      => $vnpayData['vnp_ResponseCode'] ?? null, // Lưu mã phản hồi nếu có
         ]);
     }

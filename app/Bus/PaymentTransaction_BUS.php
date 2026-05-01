@@ -52,7 +52,7 @@ class PaymentTransaction_BUS
             'paid_at'                 => $paidAt,
             'raw_signature'           => $vnpayData['vnp_SecureHash'] ?? null,
         ];
-
+        dd("goi thanh cong");
         return $this->dao->addModel($data);
     }
     /**

@@ -22,10 +22,10 @@ class PaymentTransaction_BUS
      */
     public function saveVnpaySuccess($attemptId, $vnpayData, $orderId)
     {
-        $existing = $this->dao->findByBankTransactionNo($vnpayData['vnp_TransactionNo']);
-        if ($existing) {
-            return $existing;
-        }
+        // $existing = $this->dao->findByBankTransactionNo($vnpayData['vnp_TransactionNo']);
+        // if ($existing) {
+        //     return $existing;
+        // }
 
         $paidAt = isset($vnpayData['vnp_PayDate']) 
             ? \Carbon\Carbon::createFromFormat('YmdHis', $vnpayData['vnp_PayDate'])->format('Y-m-d H:i:s')
@@ -48,11 +48,10 @@ class PaymentTransaction_BUS
             'result_code'             => $vnpayData['vnp_ResponseCode'],
             'result_message'          => $this->getVnpayMessage($vnpayData['vnp_ResponseCode']),
             'is_verified'             => 1,
-            'verified_at'             => null,
+            'verified_at'             => now(),
             'paid_at'                 => $paidAt,
             'raw_signature'           => $vnpayData['vnp_SecureHash'] ?? null,
         ];
-        dd("goi thanh cong");
         return $this->dao->addModel($data);
     }
     /**

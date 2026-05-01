@@ -269,6 +269,7 @@ class Payment_BUS
 
             // 5. XỬ LÝ CHỐT ĐƠN HOẶC HỦY ĐƠN
             if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
+                dd($inputData);
                 // Chốt đơn, trừ kho và xóa giỏ hàng
                 $this->xuLyDatabaseIPN($orderId);
                 //ghi vào payment transaction

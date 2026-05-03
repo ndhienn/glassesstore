@@ -243,7 +243,7 @@ class HoaDon_BUS{
         $hd->setOrderCode($ref);
         $this->updateModel($hd);
         if ($hd->getIdPTTT()->getId() == 3) {
-            CheckVnpayPaymentStatus::dispatch($hd->getId())->delay(now()->addMinutes(15));
+            CheckVnpayPaymentStatus::dispatch($hd->getId())->delay(now()->addMinutes(2));
         }
         return true;
     }

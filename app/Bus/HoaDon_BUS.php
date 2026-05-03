@@ -127,6 +127,8 @@ class HoaDon_BUS{
 
         $tinh = app(Tinh_BUS::class)->getModelById($request->input('tinh'));
         $pttt = app(PTTT_BUS::class)->getModelById($request->input('pttt'));
+        $ctspBus = app(CTSP_BUS::class);
+        $spBus = app(SanPham_BUS::class);
         // $dvvc = app(DVVC_BUS::class)->getModelById($request->input('dvvc'));
         $diachi = $request->input('diachi');
         
@@ -169,8 +171,17 @@ class HoaDon_BUS{
             $listCTSP = app(CTSP_BUS::class)->getCTSPIsNotSoldByIDSP($key->idsp);
 
             for($i = 0 ; $i < $key->quantity ; $i++) {
+                $soSeri = $listCTSP[$i]->getSoSeri();
                 $cthd = new \App\Models\CTHD($hd->getId(), $sp->getDonGia(), $listCTSP[$i]->getSoSeri(), 1);
                 app(CTHD_BUS::class)->addModel($cthd);
+
+                //trừ kho tạm thời (để tránh trùng seri khi khách khác mua cùng sản phẩm). Sau khi thanh toán thành công thì mới chính thức trừ kho và cập nhật trạng thái đã bán cho chi tiết sản phẩm này.
+                $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
+                $sp = $ctsp->getIdSP(); 
+                if ($sp) {
+                    $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
+                    $spBus->updateModel($sp);
+                }
                 
                 // MẸO: Tạm thời khóa cái Seri này lại (chuyển sang trạng thái 2: Đang giữ chỗ) 
                 // để thằng khác mua không bị trùng seri. Nếu bạn chưa có trạng thái 2 thì tạm thời comment dòng dưới.
@@ -203,31 +214,6 @@ class HoaDon_BUS{
         $email = $authBus->getEmailFromToken();
         $gh = $ghBus->getByEmail($email);
 
-        foreach ($listCTHD as $cthd) {
-            if (!$cthd) continue;
-
-            $soSeri = $cthd->getSoSeri();
-            $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
-            
-            if ($ctsp) {
-                $sp = $ctsp->getIdSP(); 
-                if ($sp) {
-                    $ctspBus->updateStatus($soSeri, 0); // Đã bán
-                    $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
-                    $spBus->updateModel($sp);
-
-                    if ($gh) {
-                        if ($source === 'cart') {
-                            $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
-                        } 
-                        // else ($source = 'buy_now') {
-                            
-                        // }
-                    }
-                }
-            }
-        }
-
         if ($status === "PAID") {
             $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
         }
@@ -242,6 +228,7 @@ class HoaDon_BUS{
 
         $hd->setTrangThai(\App\Enum\HoaDonEnum::CANCELLED);
         $this->updateModel($hd);
+        $this->hoanKho($idHoaDon);
         return true;
     }
     public function searchByEmailOrSDT(string $keyword): array
@@ -255,9 +242,9 @@ class HoaDon_BUS{
         $hd->setLinktt($link);
         $hd->setOrderCode($ref);
         $this->updateModel($hd);
-        // if ($hd->getIdPTTT()->getId() == 3) {
-        //     CheckVnpayPaymentStatus::dispatch($hd->getId())->delay(now()->addMinutes(15));
-        // }
+        if ($hd->getIdPTTT()->getId() == 3) {
+            CheckVnpayPaymentStatus::dispatch($hd->getId())->delay(now()->addMinutes(15));
+        }
         return true;
     }
     public function hoanKho($idHoaDon) {

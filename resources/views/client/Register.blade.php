@@ -6,7 +6,15 @@
         
     });
 </script>
-
+ @if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
+        {{ session('success') }}
+    </div>
+    @elseif(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert" id="successAlert">
+        {{ session('error') }}
+    </div>
+    @endif
 <div class="w-100 align-items-center bg-body-secondary"  >
     <div class="bg-white shadow rounded p-3 d-flex flex-column mb-3 align-items-center gap-4" style="width: 70%; margin: auto;">
         <h2>Thông tin đăng kí</h2>
@@ -131,13 +139,4 @@
         </form>
         <!-- thông tin tài khoản -->  
     </div>
-    @if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show" role="alert" id="successAlert">
-        {{ session('success') }}
-    </div>
-    @elseif(session('error'))
-    <div class="alert alert-danger alert-dismissible fade show" role="alert" id="successAlert">
-        {{ session('error') }}
-    </div>
-    @endif
 </div>

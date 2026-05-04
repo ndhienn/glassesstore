@@ -1,7 +1,6 @@
 <?php
 namespace App\Dao;
 
-use App\Bus\DVVC_BUS;
 use App\Bus\NguoiDung_BUS;
 use App\Bus\PTTT_BUS;
 use App\Bus\TaiKhoan_BUS;
@@ -26,86 +25,48 @@ class HoaDon_DAO{
     }
 
     public function insert($e): int
-    {
-<<<<<<< HEAD
-        try {
-        $sql = "INSERT INTO hoadon (EMAIL, IDNHANVIEN, TONGTIEN, IDPTTT, NGAYTAO, DIACHI, IDTINH, TRANGTHAI)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+{
+    try {
+        // Thêm cột HOTEN và SDT vào câu lệnh SQL
+        $sql = "INSERT INTO hoadon (EMAIL, IDNHANVIEN, TONGTIEN, IDPTTT, NGAYTAO, DIACHI, HOTEN, SODIENTHOAI, IDTINH, TRANGTHAI)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $args = [
             $e->getEmail()->getEmail(),
             $e->getIdNhanVien()->getId(),
             $e->getTongTien(),
             $e->getIdPTTT()->getId(),
-            $e->getNgayTao()->format('Y-m-d H:i:s'),
+            $e->getNgayTao()->format('Y-m-d H:i'),
             $e->getDiaChi(),
+            $e->getHoTen(),     
+            $e->getSoDienThoai(),
             $e->getTinh()->getId(),
             $e->getTrangThai()->value,
         ];
 
-        // 1. In thử mảng dữ liệu xem có cái nào bị NULL không
-        // dd($args); 
-
-=======
-        $sql = "INSERT INTO hoadon (EMAIL, IDNHANVIEN, TONGTIEN, IDPTTT, NGAYTAO, DIACHI, IDTINH, TRANGTHAI)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
-        // $args = [$e->getEmail()->getEmail(), $e->getIdNhanVien()->getId(), $e->getTongTien(), $e->getIdPTTT()->getId(), $e->getNgayTao(), $e->getIdDVVC()->getId(), $e->getDiaChi(), $e->getTinh()->getId(), $e->getTrangThai()];
-        $args = [
-            $e->getEmail()->getEmail(),                  // TaiKhoan
-            $e->getIdNhanVien()->getId(),               // NguoiDung
-            $e->getTongTien(),
-            $e->getIdPTTT()->getId(),                   // PTTT
-            $e->getNgayTao()->format('Y-m-d H:i:s'),
-            $e->getDiaChi(),
-            $e->getTinh()->getId(),                     // Tinh
-            $e->getTrangThai()->value,
-        ];
-        
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $result = database_connection::executeUpdate($sql, ...$args);
 
         if ($result) {
             return database_connection::getLastInsertId();
-<<<<<<< HEAD
-        } else {
-            // 2. Nếu không thành công, hãy yêu cầu Database nói ra tại sao
-            // Giả sử hàm của bạn có cách lấy lỗi, nếu không hãy dùng tạm dd này:
-            dd("Lỗi SQL: Lệnh executeUpdate trả về false. Hãy kiểm tra tên cột hoặc khóa ngoại.");
         }
-
     } catch (\Exception $ex) {
-        // 3. Bắt mọi lỗi crash (ví dụ format ngày tháng sai, gọi hàm trên null...)
         dd([
-            'Thông báo lỗi' => $ex->getMessage(),
-            'Tại dòng' => $ex->getLine(),
-            'Dữ liệu truyền vào' => $args
+            'Lỗi' => $ex->getMessage(),
+            'Dữ liệu' => $args
         ]);
     }
-
     return 0;
-=======
-        }
-    
-        return 0;
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
-    }
+}
 
     public function update($e): int
     {
-<<<<<<< HEAD
         $sql = "UPDATE hoadon SET TRANGTHAI = ?, TONGTIEN = ? , ORDERCODE = ?, IDPTTT = ?, LINKTT = ? WHERE id = ?";
-=======
-        $sql = "UPDATE hoadon SET TRANGTHAI = ?, TONGTIEN = ? , ORDERCODE = ?, IDPTTT = ? WHERE id = ?";
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
         $args = [
             $e->getTrangThai()->value,
             $e->getTongTien(),
             $e->getOrderCode(),
             $e->getIdPTTT()->getId(),
-<<<<<<< HEAD
             $e->getLinktt(),
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
             $e->getId()
         ];
         $result = database_connection::executeUpdate($sql, ...$args);
@@ -131,49 +92,68 @@ class HoaDon_DAO{
 
 
     public function createHoaDonModel($rs) {
-        $id = $rs['ID'];
-        $email = app(TaiKhoan_BUS::class)->getModelByEmail($rs['EMAIL']);
-        if (!$email) {
-            throw new \Exception("Không tìm thấy tài khoản với email: " . $rs['EMAIL']);
-        }
-        $idNhanVien = $rs['IDNHANVIEN'] ? app(NguoiDung_BUS::class)->getModelById($rs['IDNHANVIEN']) : null;
-        $tongTien = $rs['TONGTIEN'];
-        $idPTTT = app(PTTT_BUS::class)->getModelById($rs['IDPTTT']);
-        if (!$idPTTT) {
-            throw new \Exception("Không tìm thấy phương thức thanh toán với ID: " . $rs['IDPTTT']);
-        }
-        $ngayTao = $rs['NGAYTAO'];
-        $diaChi = $rs['DIACHI'];
-        $tinh = app(Tinh_BUS::class)->getModelById($rs['IDTINH']);
-<<<<<<< HEAD
-        $linktt = $rs['LINKTT'];
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
-        $trangThai = strtoupper(trim($rs['TRANGTHAI'] ?? ''));
-
-        if (!in_array($trangThai, ['PAID', 'PENDING', 'EXPIRED', 'CANCELLED', 'REFUNDED', 'DANGGIAO', 'DAGIAO', 'DADAT'])) {
-            throw new \Exception("Trạng thái không hợp lệ (ID={$rs['ID']}): '$trangThai'");
-        }
-
-        switch($trangThai) {
-            case 'PAID': $trangThai = HoaDonEnum::PAID; break;
-            case 'PENDING': $trangThai = HoaDonEnum::PENDING; break;
-            case 'EXPIRED': $trangThai = HoaDonEnum::EXPIRED; break;
-            case 'CANCELLED': $trangThai = HoaDonEnum::CANCELLED; break;
-            case 'REFUNDED': $trangThai = HoaDonEnum::REFUNDED; break;
-            case 'DADAT' : $trangThai = HoaDonEnum::DADAT; break;
-            case 'DANGGIAO': $trangThai = HoaDonEnum::DANGGIAO; break;
-            case 'DAGIAO': $trangThai = HoaDonEnum::DAGIAO; break;
-            default: throw new \Exception("Trạng thái không hợp lệ");
-        }
-        $orderCode = $rs['ORDERCODE'];
-<<<<<<< HEAD
-        $linktt = $rs['LINKTT'];
-        return new HoaDon($id, $email, $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, $tinh, $trangThai, $orderCode, $linktt);
-=======
-        return new HoaDon($id, $email, $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, $tinh, $trangThai, $orderCode);
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
+    $id = $rs['ID'];
+    $email = app(TaiKhoan_BUS::class)->getModelByEmail($rs['EMAIL']);
+    if (!$email) {
+        throw new \Exception("Không tìm thấy tài khoản với email: " . $rs['EMAIL']);
     }
+    
+    $idNhanVien = $rs['IDNHANVIEN'] ? app(NguoiDung_BUS::class)->getModelById($rs['IDNHANVIEN']) : app(NguoiDung_BUS::class)->getModelById(1);
+    $tongTien = $rs['TONGTIEN'];
+    $idPTTT = app(PTTT_BUS::class)->getModelById($rs['IDPTTT']);
+    
+    if (!$idPTTT) {
+        throw new \Exception("Không tìm thấy phương thức thanh toán với ID: " . $rs['IDPTTT']);
+    }
+
+    $ngayTao = $rs['NGAYTAO'] ? new \DateTime($rs['NGAYTAO']) : new \DateTime();
+    $diaChi = $rs['DIACHI'];
+    
+    // --- LẤY THÊM DỮ LIỆU MỚI TỪ DATABASE ---
+    $hoTen = $rs['HOTEN'] ?? ''; // Cột mới thêm vào DB
+    $sdt = $rs['SODIENTHOAI'] ?? '';     // Cột mới thêm vào DB
+
+    // Xử lý lỗi Argument #10 ($tinh) must be of type Tinh, null given
+    $tinh = app(Tinh_BUS::class)->getModelById($rs['IDTINH']);
+    if (!$tinh) {
+        // Nếu DB lỗi thiếu IDTINH, tạm thời lấy tỉnh đầu tiên để không bị crash trang
+        $tinh = app(Tinh_BUS::class)->getModelById(1); 
+    }
+
+    $trangThaiRaw = strtoupper(trim($rs['TRANGTHAI'] ?? ''));
+    
+    // Ánh xạ Enum
+    $trangThai = match($trangThaiRaw) {
+        'PAID' => HoaDonEnum::PAID,
+        'PENDING' => HoaDonEnum::PENDING,
+        'EXPIRED' => HoaDonEnum::EXPIRED,
+        'CANCELLED' => HoaDonEnum::CANCELLED,
+        'REFUNDED' => HoaDonEnum::REFUNDED,
+        'DADAT' => HoaDonEnum::DADAT,
+        'DANGGIAO' => HoaDonEnum::DANGGIAO,
+        'DAGIAO' => HoaDonEnum::DAGIAO,
+        default => HoaDonEnum::PENDING,
+    };
+
+    $orderCode = $rs['ORDERCODE'];
+    $linktt = $rs['LINKTT'];
+
+    return new HoaDon(
+        $id,           
+        $email,        
+        $idNhanVien,   
+        $tongTien,    
+        $idPTTT,        
+        $ngayTao,      
+        $diaChi,      
+        $hoTen,      
+        $sdt,          
+        $tinh,         
+        $trangThai,    
+        $orderCode,     
+        $linktt        
+    );
+}
 
     public function getAll() : array {
         $list = [];
@@ -324,7 +304,6 @@ class HoaDon_DAO{
     return $list;
 }
 
-<<<<<<< HEAD
     public function getUserEmailByOrderId($orderId)
     {
         $query = "SELECT EMAIL FROM hoadon WHERE ID = ?";
@@ -335,8 +314,4 @@ class HoaDon_DAO{
         }
         return null;
     }
-=======
-
-
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 }

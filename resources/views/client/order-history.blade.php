@@ -353,20 +353,9 @@
                         <input type="hidden" name="page" value="{{ request('page', 1) }}">
                     </form>
                 </div>
-                <div class="sort-filter">
-                    <form action="{{ route('order.history') }}" method="get" id="sort-form">
-                        <label for="sort-order">Sắp xếp:</label>
-                        <select  class="rounded p-1 shadow border border-0" id="sort-order" name="sort_order" onchange="document.getElementById('sort-form').submit()">
-                            <option value="desc" {{ $sort_order === 'desc' ? 'selected' : '' }}>Ngày giảm dần</option>
-                            <option value="asc" {{ $sort_order === 'asc' ? 'selected' : '' }}>Ngày tăng dần</option>
-                        </select>
-                        <input type="hidden" name="keyword" value="{{ request('keyword') }}">
-                        <input type="hidden" name="filter_date" value="{{ request('filter_date') }}">
-                        <input type="hidden" name="page" value="{{ request('page', 1) }}">
-                    </form>
-                </div>
+                
                 <div class="refresh-btn">
-                    <a href="{{ route('order.history') }}" class="btn-refresh">Refresh</a>
+                    <a href="{{ route('order.history') }}" class="btn-refresh">Làm mới</a>
                 </div>
             </div>
 
@@ -450,6 +439,7 @@
                                         'soSeri' => $cthd['soSeri'],
                                         'giaLucDat' => $cthd['giaLucDat'] ?? 0,
                                         'trangThaiHD' => isset($cthd['trangThaiHD']) && $cthd['trangThaiHD'],
+                                        'thoiGianBaoHanh' => $cthd['thoiGianBaoHanh'] ?? 0,
                                     ];
                                 }
                             }
@@ -466,26 +456,20 @@
                                 <div class="modal-body">
                                     <!--<p><strong>Phương thức thanh toán:</strong> {{ $orderData['phuongThucThanhToan'] ?? 'Không xác định' }}</p>-->
                                     <!-- <p><strong>Đơn vị vận chuyển:</strong> {{ $orderData['donViVanChuyen'] ?? 'Không xác định' }}</p> -->
-                                    <p><strong>Email khách hàng:</strong> {{ $orderData['emailKhachHang'] ?? 'Không xác định' }}</p>
+                                    <p><strong>Họ tên người nhận:</strong> {{ $orderData['hoten'] ?? 'Không xác định' }}</p>
+                                    <p><strong>Số điện thoại người nhận:</strong> {{ $orderData['sodienthoai'] ?? 'Không xác định' }}</p>
+                                    <p><strong>Email:</strong> {{ $orderData['emailKhachHang'] ?? 'Không xác định' }}</p>
                                     <p><strong>Tỉnh:</strong> {{ $orderData['tinh'] ?? 'Không xác định' }}</p>
                                     <p><strong>Địa chỉ:</strong> {{ $orderData['diaChi'] ?? 'Không xác định' }}</p>
                                     <!-- <p>{{$hoaDon->getTrangThai()}}</p> -->
                                     @if($hoaDon->getIdPTTT()->getId()!=1 && $hoaDon->getTrangThai() === HoaDonEnum::DADAT)
-<<<<<<< HEAD
                                     <!-- <form action="{{ route('payment.paid') }}" method="POST">
-=======
-                                    <form action="{{ route('payment.paid') }}" method="POST">
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
                                         @csrf
                                         <input type="hidden" name="id" value="{{ $hoaDon->getId() }}">
                                         <input type="hidden" name="tongtien" value="{{ $hoaDon->getTongTien() }}">
                                         <input type="hidden" name="ordercode" value="{{ $hoaDon->getOrderCode() }}">
                                         <button type="submit" class="btn btn-info mb-3">Thanh toán với PayOS</button>
-<<<<<<< HEAD
                                     </form> -->
-=======
-                                    </form>
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
                                     @endif
                                     <h6>Danh sách sản phẩm:</h6>
                                     <table class="table table-striped">
@@ -494,7 +478,7 @@
                                                 <th>Tên sản phẩm</th>
                                                 <th>Số Seri</th>
                                                 <th>Giá lúc đặt</th>
-                                                <th>Trạng thái bảo hành</th>
+                                                <th>Bảo hành (Tháng)</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -504,8 +488,10 @@
                                                         <td>{{ $product['tenSanPham'] }}</td>
                                                         <td>{{ $product['soSeri'] }}</td>
                                                         <td>{{ number_format($product['giaLucDat'], 0, ',', '.') }} VNĐ</td>
-                                                        <td>{{ $product['trangThaiHD'] ? 'Còn bảo hành' : 'Hết bảo hành' }}</td>
-                                                    </tr>
+                                                        <td>
+                                                            {{-- Hiển thị số tháng bảo hành lấy từ bảng sản phẩm --}}
+                                                            {{ $product['thoiGianBaoHanh'] ?? 0 }} tháng
+                                                        </td>
                                                 @endforeach
                                             @else
                                                 <tr><td colspan="4" class="text-center">Không có chi tiết hóa đơn</td></tr>
@@ -514,7 +500,6 @@
                                     </table>
                                 </div>
                                 <div class="modal-footer">
-<<<<<<< HEAD
                                     @if ($hoaDon->getTrangThai() === HoaDonEnum::PENDING)
                                     <a href="{{ route('payment.retry', $hoaDon->getId()) }}" class="btn btn-success">
                                         Thanh toán ngay
@@ -523,8 +508,6 @@
                                     @elseif ($hoaDon->getTrangThai() === HoaDonEnum::DADAT)
                                     <button type="button" class="btn btn-danger btn-huy-don" data-id="{{ $hoaDon->getId() }}">Huỷ đơn hàng</button>
                                     @endif
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
                                 </div>
                             </div>
@@ -543,10 +526,7 @@
         </div>
     </footer>
 
-<<<<<<< HEAD
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
@@ -687,7 +667,6 @@
     { value: "DANGGIAO", label: "Đang giao" },
     { value: "DAGIAO", label: "Đã giao" }
 ];
-<<<<<<< HEAD
 
     $(document).ready(function() {
         $('.btn-huy-don').on('click', function() {
@@ -715,8 +694,6 @@
             }
         });
     });
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
     </script>
 </body>
 </html>

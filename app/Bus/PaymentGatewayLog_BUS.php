@@ -2,7 +2,7 @@
 
 namespace App\Bus;
 
-use App\DAO\PaymentGatewayLog_DAO;
+use App\Dao\PaymentGateWayLog_DAO;
 
 class PaymentGatewayLog_BUS
 {

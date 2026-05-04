@@ -77,14 +77,14 @@ class AppServiceProvider extends ServiceProvider
         'CTSP' => [CTSP_DAO::class, CTSP_BUS::class],
         'HoaDon' => [HoaDon_DAO::class, HoaDon_BUS::class], 
         'CTHD' => [CTHD_DAO::class, CTHD_BUS::class],
-        'ChiTietBaoHanh' => [ChiTietBaoHanh_DAO::class, ChiTietBaoHanh_BUS::class],
-        'CPVC' => [CPVC_DAO::class, CPVC_BUS::class],
+        
+        
         'CTPN' => [CTSP_DAO::class, CTSP_BUS::class],
         'PhieuNhap' => [PhieuNhap_DAO::class, PhieuNhap_BUS::class],
-        'DVVC' => [DVVC_DAO::class, DVVC_BUS::class],
+        
         'GioHang' => [GioHang_DAO::class, GioHang_BUS::class],
         'Hang' => [Hang_DAO::class, Hang_BUS::class],
-        'KhuyenMai' => [KhuyenMai_DAO::class, KhuyenMai_BUS::class],
+        
         'LoaiSanPham' => [LoaiSanPham_DAO::class, LoaiSanPham_BUS::class],
         'NCC' => [NCC_DAO::class, NCC_BUS::class],
         'PTTT' => [PTTT_DAO::class, PTTT_BUS::class],

@@ -101,7 +101,7 @@ use App\Bus\TaiKhoan_BUS;
       <li class="sidebar-item <?= ($currentModun == 'hoadon') ? 'active' : '' ?>" id="hoadon">
         <a href="/admin?modun=hoadon" class="sidebar-link">
           <i class='bx bx-cart'></i>
-          <span>Hóa đơn</span>
+          <span>Đơn hàng</span>
         </a>
       </li>
     @endif
@@ -131,18 +131,10 @@ use App\Bus\TaiKhoan_BUS;
     </li>
     @endif
 
-    <!--@if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 16))
-    <li class="sidebar-item <?= ($currentModun == 'baohanh') ? 'active' : '' ?>" id="baohanh">
-      <a href="/admin?modun=baohanh" class="sidebar-link"  >
-        <i class='bx bx-shield-plus'></i>
-        <span>Bảo hành</span>
-      </a>
-    </li>
-    @endif!-->
 
     @if(app(CTQ_BUS::class)->checkChucNangExistInListCTQ($ctq, 7))
     <li class="sidebar-item <?= ($currentModun == 'thongke') ? 'active' : '' ?>" id="thongke">
-      <a href="/admin?modun=thongke" class="sidebar-link"  >
+      <a href="/admin?modun=thongke" class="sidebar-link">
         <i class='bx bx-bar-chart'></i>
         <span>Thống kê</span>
       </a>

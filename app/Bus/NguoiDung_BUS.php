@@ -80,12 +80,9 @@ class NguoiDung_BUS{
         return $this->nguoiDungDAO->getNguoiDungBySoseri($soSeri);
     }
     
-<<<<<<< HEAD
     public function getNguoiDungByEmail($email) {
-        return $this->nguoiDungDAO->getByEmail($email);
+        return $this->nguoiDungDAO->getNguoiDungByEmail($email);
     }
+    
 }
-=======
- }
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 ?>

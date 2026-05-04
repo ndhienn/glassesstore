@@ -1,7 +1,7 @@
 <?php
 namespace App\Bus;
 
-use App\DAO\PaymentStatusHistory_DAO;
+use App\Dao\PaymentStatusHistory_DAO;
 
 class PaymentStatusHistory_BUS {
     protected $dao;

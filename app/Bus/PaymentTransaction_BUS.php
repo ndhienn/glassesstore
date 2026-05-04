@@ -2,7 +2,7 @@
 
 namespace App\Bus;
 
-use App\DAO\PaymentTransaction_DAO;
+use App\Dao\PaymentTransaction_DAO;
 use Carbon\Carbon;
 
 class PaymentTransaction_BUS

@@ -86,14 +86,19 @@ use App\Bus\SanPham_BUS;
         filter: brightness(1.1);
     }
       .left-alert {
-        left: 20px; 
-        top: 20px;  
-        z-index: 1050; 
-    }
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 1060; 
+    width: 500px;
+    pointer-events: none; 
+}
+
 header {
-    position: sticky;
+    position: fixed;
     top: 0;
-    transition: transform 0.3s ease;
+    width: 100%; /* Đảm bảo header chiếm hết chiều ngang */
+    transition: transform 0.3s ease-in-out; /* Chuyển động mượt */
     z-index: 1002;
     background-color: #dddd;
     border-radius: 0 0 20px 20px;
@@ -424,15 +429,125 @@ form[role="search"] i {
     z-index: 9999;
     width: 320px;
 }
+.nav-hidden {
+    transform: translateY(-100%) !important;
+}
+/* Hiển thị Mega Menu khi hover */
+#item-sanpham:hover #sanpham-mega-menu {
+    display: block !important;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+#sanpham-mega-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background-color: #fff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+    z-index: 1050;
+}
+
+.menu-column h6 {
+    font-size: 14px;
+    border-bottom: 2px solid #55d5d2;
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.header-filter-node {
+    line-height: 1.2; /* Giảm độ cao dòng */
+}
+
+.header-filter-node a {
+    display: block;
+    padding: 2px 0; 
+    font-size: 14px;
+}
+
+.header-filter-node a:hover {
+    color: #55d5d2 !important;
+    padding-left: 5px;
+}
+
+.mega-filter-link {
+    display: inline-block;
+    width: 100%;
+    padding: 5px 0;
+    transition: all 0.3s ease-in-out !important; 
+    position: relative;
+}
+
+.mega-filter-link:hover {
+    color: #55d5d2 !important;
+    font-weight: 600;
+}
+/* Style tổng thể cho ô Select */
+.filter-item .form-select {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    color: #495057;
+    background-color: #fff;
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+
+.filter-item .form-select:hover {
+    border-color: #55d5d2;
+}
+
+.filter-item .form-select:focus {
+    border-color: #55d5d2;
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(85, 213, 210, 0.25); 
+}
+
+.filter-item label {
+    color: #333;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+
+.form-select::-webkit-scrollbar {
+    width: 6px;
+}
+.form-select::-webkit-scrollbar-thumb {
+    background-color: #55d5d2;
+    border-radius: 10px;
+}
     </style>
-
-
   <script>
   function updatePriceLabel(value) {
     const formatted = new Intl.NumberFormat('vi-VN').format(value) + 'đ';
     document.getElementById('priceLabel').textContent = formatted;
 }
 document.addEventListener('DOMContentLoaded', () => {
+    let lastScrollTop = 0;
+  const navbar = document.getElementById("navbar-ctn");
+
+  window.addEventListener("scroll", function() {
+    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    if (scrollTop > lastScrollTop && scrollTop > 100) {
+      navbar.classList.add("nav-hidden");
+    } else {
+      navbar.classList.remove("nav-hidden");
+    }
+    
+    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+  }, false);
     let isLoading = false;
     let debounceTimeout = null;
 // 1. XỬ LÝ DROPDOWN USER 
@@ -734,174 +849,169 @@ const handleProductClick = function () {
         }
     };
 
-    // Lọc nâng cao
-    setupDropdown('filter-toggle', 'filter-dropdown', 'apply-filter', () => {
-    const filterKeyword = document.getElementById('filter-keyword').value.trim();
-    const filterHang = document.getElementById('filter-hang').value;
-    const filterLsp = document.getElementById('filter-lsp').value;
-    const filterKieuDang = document.getElementById('filter-kieudang').value;
-    const filterPriceFrom = document.getElementById('filter-price-from').value;
-    const filterPriceTo = document.getElementById('filter-price-to').value;
+   /**
+ * HỆ THỐNG LỌC TỰ ĐỘNG (CLICK-TO-FILTER)
+ * Áp dụng cho: Mega Menu và Bộ lọc tại trang danh mục
+ */
 
-    if ((filterPriceFrom && !filterPriceTo) || (!filterPriceFrom && filterPriceTo)) {
-        alert('Vui lòng nhập cả giá "từ" và "đến"');
-        return;
-    }
-    if (filterPriceFrom && filterPriceTo) {
-        const fromValue = parseFloat(filterPriceFrom);
-        const toValue = parseFloat(filterPriceTo);
-        if (fromValue >= toValue) {
-            alert('Giá "từ" phải nhỏ hơn giá "đến"');
-            return;
+    // 1. Cấu hình các element chính
+    const filterElements = {
+        lsp: document.getElementById('filter-lsp'),
+        kieudang: document.getElementById('filter-kieudang'),
+        keyword: document.getElementById('filter-keyword'),
+        hang: document.getElementById('filter-hang'),
+        priceFrom: document.getElementById('filter-price-from'),
+        priceTo: document.getElementById('filter-price-to')
+    };
+
+    /**
+     * Hàm lõi: Thu thập tất cả params và thực hiện AJAX
+     */
+    const performAutoFilter = () => {
+        const params = new URLSearchParams();
+
+        // Thu thập giá trị từ các ô input/select hiện có
+        if (filterElements.keyword && filterElements.keyword.value.trim()) {
+            params.set('keyword', filterElements.keyword.value.trim());
         }
-    }
+        if (filterElements.lsp && filterElements.lsp.value !== '0') {
+            params.set('lsp', filterElements.lsp.value);
+        }
+        if (filterElements.kieudang && filterElements.kieudang.value !== '0') {
+            params.set('kieudang', filterElements.kieudang.value);
+        }
+        if (filterElements.hang && filterElements.hang.value !== '0') {
+            params.set('hang', filterElements.hang.value);
+        }
 
-    const params = new URLSearchParams();
-    if (filterKeyword) params.set('keyword', filterKeyword);
-    if (filterHang && filterHang !== '0') params.set('hang', filterHang);
-    if (filterLsp && filterLsp !== '0') params.set('lsp', filterLsp);
-    if (filterKieuDang && filterKieuDang !== '0') params.set('kieudang', filterKieuDang);
-    if (filterPriceFrom && filterPriceTo) params.set('khoanggia', `[${filterPriceFrom}-${filterPriceTo}]`);
+        // Xử lý lọc giá (Chỉ lọc nếu nhập đủ cả 2)
+        const pFrom = filterElements.priceFrom?.value;
+        const pTo = filterElements.priceTo?.value;
+        if (pFrom && pTo && parseFloat(pFrom) < parseFloat(pTo)) {
+            params.set('khoanggia', `[${pFrom}-${pTo}]`);
+        }
 
-    window.history.pushState({}, '', `/index?${params.toString()}`);
-    debounce(loadProducts, 300)('?' + params.toString(), true);
-    sessionStorage.setItem('filterKeyword', filterKeyword);
-    sessionStorage.setItem('keywordSource', 'filter');
-});
+        params.delete('page'); // Reset về trang 1
 
-// Khôi phục keyword khi trang tải
-const keywordSource = sessionStorage.getItem('keywordSource');
-if (keywordSource === 'search') {
-    const searchKeyword = sessionStorage.getItem('searchKeyword') || '';
-    document.querySelectorAll('input[name="keyword"]').forEach(input => {
-        input.value = searchKeyword;
-    });
-    document.getElementById('filter-keyword').value = '';
-} else if (keywordSource === 'filter') {
-    const filterKeyword = sessionStorage.getItem('filterKeyword') || '';
-    document.getElementById('filter-keyword').value = filterKeyword;
-    document.querySelectorAll('input[name="keyword"]').forEach(input => {
-        input.value = '';
-    });
-} else {
-    document.querySelectorAll('input[name="keyword"]').forEach(input => {
-        input.value = '';
-    });
-    document.getElementById('filter-keyword').value = '';
-}
+        const queryString = params.toString() ? '?' + params.toString() : '';
+        const newUrl = window.location.pathname + queryString;
 
-// Lưu keyword khi nhập vào ô lọc nâng cao
-const filterKeywordInput = document.getElementById('filter-keyword');
-if (filterKeywordInput) {
-    filterKeywordInput.addEventListener('input', () => {
-        sessionStorage.setItem('filterKeyword', filterKeywordInput.value);
-        sessionStorage.setItem('keywordSource', 'filter');
-    });
-}
+        // Cập nhật URL thanh địa chỉ
+        window.history.pushState({}, '', newUrl);
 
-    // Lọc theo loại (lsp)
-    setupDropdown('lsp-toggle', 'lsp-dropdown', 'apply-lsp-filter', () => {
-        const lspSelect = document.getElementById('lsp').value;
-        const hangSelect = document.getElementById('hang') ? document.getElementById('hang').value : '';
-
-        const params = new URLSearchParams();
-        if (lspSelect && lspSelect !== '0') params.set('lsp', lspSelect);
-        if (hangSelect && hangSelect !== '0') params.set('hang', hangSelect);
-
-        window.history.pushState({}, '', `/index?${params.toString()}`);
-        debounce(loadProducts, 300)('?' + params.toString(), true);
-    });
-
-    // Lọc theo hãng (hang)
-    setupDropdown('hang-toggle', 'hang-dropdown', 'apply-hang-filter', () => {
-        const lspSelect = document.getElementById('lsp') ? document.getElementById('lsp').value : '';
-        const hangSelect = document.getElementById('hang').value;
-
-        const params = new URLSearchParams();
-        if (lspSelect && lspSelect !== '0') params.set('lsp', lspSelect);
-        if (hangSelect && hangSelect !== '0') params.set('hang', hangSelect);
-
-        window.history.pushState({}, '', `/index?${params.toString()}`);
-        debounce(loadProducts, 300)('?' + params.toString(), true);
-    });
-
-    // Xử lý nút đóng modal
-    const closeModalBtn = document.querySelector('.btn-close');
-    if (closeModalBtn) {
-        closeModalBtn.removeEventListener('click', handleCloseModalClick);
-        closeModalBtn.addEventListener('click', handleCloseModalClick);
-
-        function handleCloseModalClick() {
-            const modal = document.getElementById('productDetailModal');
-            if (modal) {
-                bootstrap.Modal.getInstance(modal).hide();
-                setTimeout(() => {
-                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                    document.body.classList.remove('modal-open');
-                    document.body.style = '';
-                }, 300);
+        // Gọi AJAX tải sản phẩm với Debounce để tránh spam request
+        if (typeof loadProducts === 'function') {
+            console.log("Đang tự động tải sản phẩm:", queryString);
+            // Sử dụng debounce nếu có, hoặc gọi trực tiếp
+            if (typeof debounce === 'function') {
+                debounce(() => loadProducts(queryString || '?', true), 300)();
+            } else {
+                loadProducts(queryString || '?', true);
             }
         }
-    }
+    };
 
-    // Xử lý thông báo tự động ẩn
-    const successAlert = document.querySelector('.successAlert');
-    if (successAlert) {
-        setTimeout(() => {
-            successAlert.classList.remove('show');
-            successAlert.classList.add('fade');
-            successAlert.style.opacity = 0;
-        }, 3000);
-        setTimeout(() => successAlert.remove(), 4000);
-    }
-
-   
-
-    // Xử lý dropdown "Sản phẩm" bằng AJAX
-    const setupSanPhamDropdown = () => {
-        const sanPhamDropdown = document.getElementById('sanpham-dropdown');
-        const sanPhamItems = sanPhamDropdown.querySelectorAll('.dropdown-item');
-        const submenuItems = sanPhamDropdown.querySelectorAll('.submenu li');
-
-        sanPhamItems.forEach(item => {
-            item.addEventListener('click', (e) => {
+    /**
+     * 2. Xử lý Mega Menu (Click Link là lọc luôn)
+     */
+    const setupMegaMenu = () => {
+        const megaLinks = document.querySelectorAll('.mega-filter-link');
+        
+        megaLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const lspId = item.getAttribute('data-lsp-id');
-                const params = new URLSearchParams();
-                if (lspId && lspId !== '0') params.set('lsp', lspId);
-                window.history.pushState({}, '', `/index?${params.toString()}`);
-                debounce(loadProducts, 300)(`?${params.toString()}`, true);
+
+                const lspId = this.getAttribute('data-lsp-id');
+                const kdId = this.getAttribute('data-kieudang-id');
+
+                // Đồng bộ giá trị vào các ô Select ở trang danh mục (nếu có)[cite: 3]
+                if (lspId !== null && filterElements.lsp) filterElements.lsp.value = lspId;
+                if (kdId !== null && filterElements.kieudang) filterElements.kieudang.value = kdId;
+
+                performAutoFilter();
+
+                // Cuộn nhẹ xuống danh sách sản phẩm
+                const listAnchor = document.getElementById('list-product');
+                if (listAnchor) listAnchor.scrollIntoView({ behavior: 'smooth' });
             });
         });
+    };
 
-        submenuItems.forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const lspId = item.getAttribute('data-lsp-id');
-                const kieuDangId = item.getAttribute('data-kieudang-id');
-                const params = new URLSearchParams();
-                if (lspId && lspId !== '0') params.set('lsp', lspId);
-                if (kieuDangId && kieuDangId !== '0') params.set('kieudang', kieuDangId);
-                window.history.pushState({}, '', `/index?${params.toString()}`);
-                debounce(loadProducts, 300)(`?${params.toString()}`, true);
-            });
+    /**
+     * 3. Xử lý các ô Select/Input (Thay đổi là lọc luôn)
+     */
+    const setupInputListeners = () => {
+        // Đối với các ô Select: Lọc ngay khi chọn xong
+        [filterElements.lsp, filterElements.kieudang, filterElements.hang].forEach(el => {
+            if (el) el.addEventListener('change', performAutoFilter);
         });
 
-        document.addEventListener('click', (e) => {
-            if (!sanPhamDropdown.contains(e.target) && !e.target.closest('#item-sanpham')) {
-                sanPhamDropdown.classList.remove('show');
+        // Đối với ô nhập text (Keyword/Giá): Lọc khi dừng gõ (Debounce)
+        [filterElements.keyword, filterElements.priceFrom, filterElements.priceTo].forEach(el => {
+            if (el) {
+                el.addEventListener('input', () => {
+                    // Lưu vào session như yêu cầu cũ của bạn
+                    if (el === filterElements.keyword) {
+                        sessionStorage.setItem('filterKeyword', el.value);
+                        sessionStorage.setItem('keywordSource', 'filter');
+                    }
+                    
+                    // Chỉ tự động lọc keyword nếu bạn muốn, 
+                    // hoặc đợi user gõ xong (Debounce được xử lý trong performAutoFilter)
+                    performAutoFilter();
+                });
             }
         });
     };
 
-    setupSanPhamDropdown();
+    /**
+     * 4. Các tiện ích phụ (Modal, Alert, Khôi phục Keyword)
+     */
+    const setupUtilities = () => {
+        // Khôi phục Keyword từ Session
+        const source = sessionStorage.getItem('keywordSource');
+        const searchKw = sessionStorage.getItem('searchKeyword') || '';
+        const filterKw = sessionStorage.getItem('filterKeyword') || '';
+
+        if (source === 'search' && filterElements.keyword) {
+            document.querySelectorAll('input[name="keyword"]').forEach(i => i.value = searchKw);
+            filterElements.keyword.value = '';
+        } else if (source === 'filter' && filterElements.keyword) {
+            filterElements.keyword.value = filterKw;
+        }
+
+        // Tự động ẩn Alert
+        const alert = document.querySelector('.successAlert');
+        if (alert) {
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                setTimeout(() => alert.remove(), 1000);
+            }, 3000);
+        }
+
+        // Đóng Modal mượt mà
+        const closeBtn = document.querySelector('.btn-close');
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                const modalEl = document.getElementById('productDetailModal');
+                if (modalEl && typeof bootstrap !== 'undefined') {
+                    const inst = bootstrap.Modal.getInstance(modalEl);
+                    if (inst) inst.hide();
+                }
+            };
+        }
+    };
+
+    // Khởi chạy toàn bộ
+    setupMegaMenu();
+    setupInputListeners();
+    setupUtilities();
 });
 </script>
 
     <!-- Nội dung trang chính ở đây -->
-     <header >
+     <header id="header">
         <div class="alert-container-top-right">
     @if(session('success'))
         <div class="alert alert-success custom-alert-flat alert-dismissible fade show" role="alert">
@@ -946,32 +1056,53 @@ if (filterKeywordInput) {
       </div>
       <div class="navbar text-white navbar-expand" id="navbar">
       <a href="/index" class="navbar-brand">
-        <img src="https://img.ws.mms.shopee.vn/vn-11134216-7r98o-lq2sgdy60w5uba" 
+        <img src="https://img.ws.mms.shopee.vn/vn-11134216-7r98o-lq2sgdy60w5uba"
             alt="Logo" 
             class="img-fluid rounded-5" 
             style="height: 40px;">
       </a>
         <form action="" method="get" role="search" class="w-100">
           <ul class="d-flex justify-content-center gap-5 w-100 pt-4" >
-               <li class="nav-item fw-medium my-2 mx-2" id="item-sanpham">
-    <a href="#list-product" class="nav-link text-white">Sản Phẩm</a>
-    <ul class="dropdown-menu" id="sanpham-dropdown">
-        @foreach ($listLSP as $lsp)
-            <li class="dropdown-item" data-lsp-id="{{ $lsp->getId() }}">
-                <a href="javascript:void(0)">{{ $lsp->getTenLSP() }}</a>
-                <ul class="submenu">
-                    @foreach ($listKieuDang as $kd)
-                        <li data-kieudang-id="{{ $kd->getId() }}" data-lsp-id="{{ $lsp->getId() }}">
-                            <a href="javascript:void(0)">{{ $kd->getTenKieuDang() }}</a>
+   <li class="nav-item fw-medium my-2 mx-2" id="item-sanpham" style="position: relative;">
+    <a href="#list-product" class="nav-link text-white">Danh mục sản phẩm</a>
+    
+    <div class="dropdown-menu p-4" id="sanpham-mega-menu" style="min-width: 450px;">
+        <div class="d-flex">
+            <!-- Cột 1: Loại kính -->
+            <div class="menu-column flex-fill">
+                <h6 class="fw-bold text-uppercase mb-3" style="color: #333; border-bottom: 2px solid #55d5d2; display: inline-block; padding-bottom: 4px;">Loại kính</h6>
+                <ul class="list-unstyled d-flex flex-column">
+                    
+                    @foreach ($listLSP as $lsp)
+                        <li class="mb-2">
+                            <a href="javascript:void(0)" class="text-decoration-none text-muted mega-filter-link" 
+                               data-lsp-id="{{ $lsp->getId() }}">
+                               {{ $lsp->getTenLSP() }}
+                            </a>
                         </li>
                     @endforeach
-                    @if (empty($listKieuDang))
-                        <li><a href="javascript:void(0)">Không có kiểu dáng</a></li>
-                    @endif
                 </ul>
-            </li>
-        @endforeach
-    </ul>
+            </div>
+
+            <!-- Cột 2: Hình dáng -->
+            <div class="menu-column flex-fill ps-4 border-start">
+                <h6 class="fw-bold text-uppercase mb-3" style="color: #333; border-bottom: 2px solid #55d5d2; display: inline-block; padding-bottom: 4px;">Hình dáng</h6>
+                <ul class="list-unstyled d-flex flex-column">
+                    
+                    @foreach ($listKieuDang as $kd)
+                        @if($kd->getTenKieuDang() != 'Không xác định')
+                            <li class="mb-2">
+                                <a href="javascript:void(0)" class="text-decoration-none text-muted mega-filter-link" 
+                                   data-kieudang-id="{{ $kd->getId() }}">
+                                    {{ $kd->getTenKieuDang() }}
+                                </a>
+                            </li>
+                        @endif
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    </div>
 </li>
            <!-- <li class="nav-item fw-medium my-2 mx-2" id="item-sanpham"><a href="javascript:void(0)" class="nav-link text-white">Sản Phẩm </a></li> -->
             <li class="nav-item fw-medium" style="position: relative;">
@@ -987,7 +1118,7 @@ if (filterKeywordInput) {
               <li class="nav-item fw-medium my-2" id="item-giohang">
                 <a href="{{ url('/yourcart?email=' . $user->getEmail()) }}" class="nav-link text-white">
                   Giỏ Hàng <i class="fa-solid fa-cart-shopping mt-3" style="position: relative;font-size: 16px; margin-left: 15px; vertical-align: middle;">
-                    <small style="padding: 5px;background:rgb(232, 164, 76);color: white;position: absolute;right: -15px;bottom: -15px;font-size: 12px;border-radius: 50%;">{{$totalSPinGH}}</small>
+                    <small style="padding: 5px;background:rgb(60, 192, 194);color: white;position: absolute;right: -15px;bottom: -15px;font-size: 12px;border-radius: 50%;">{{$totalSPinGH}}</small>
                   </i>
                 </a>
               </li>
@@ -1005,12 +1136,12 @@ if (filterKeywordInput) {
 
   </div>
   <div class="ctn-content">
-  <img src="{{ asset('/client/img/bannner.png') }}" class="img-fluid w-100">
+  <img src="{{ asset('/client/img/Cover-web-ban-PC-scaled.png') }}" class="img-fluid w-100">
 
     <div class="main justify-content-center d-flex">
       <div class="best-seller text-center">
         
-        <div class="row my-5" style="max-height: 380px;display: flex;">
+        <!--<div class="row my-5" style="max-height: 380px;display: flex;">
         <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4 my-5 w-100">
               @foreach($top4Product as $sp)
                 @php
@@ -1047,7 +1178,7 @@ if (filterKeywordInput) {
                 </div>
             @endforeach
           </div>
-        </div>
+        </div>-->
 
       </div>
 
@@ -1059,7 +1190,7 @@ if (filterKeywordInput) {
    
 <div class="ctn-danhmucsanpham" style="background-color: #f6f2f2; padding-bottom: 30px;">
   <div class="d-flex justify-content-between p-5">
-    <h1 style="font-family: Sigmar; font-weight: 800; color: #555; width: 40%;">BỘ SƯU TẬP MỚI NHẤT</h1>
+    <h1 style="font-family: Sigmar; font-weight: 800; color: #555; width: 40%;">SẢN PHẨM MỚI</h1>
     <form method="get" role="search" class="d-flex justify-content-between gap-3 align-items-center" style="width: 70%;">
       
     <!-- Lọc nâng cao -->
@@ -1079,7 +1210,7 @@ if (filterKeywordInput) {
       <div class="filter-item" style="flex: 1; min-width: 140px;">
         <label class="fw-bold mb-1 small">Loại mắt kính:</label>
         <select class="form-select" name="lsp">
-            <option value="0">Tất cả loại</option>
+            <option value="0">Tất cả</option>
             @foreach($listLSP as $lsp)
                 <option value="{{ $lsp->getId() }}" {{ request('lsp') == $lsp->getId() ? 'selected' : '' }}>{{ $lsp->getTenLSP() }}</option>
             @endforeach
@@ -1088,7 +1219,7 @@ if (filterKeywordInput) {
     <div class="filter-item" style="flex: 1; min-width: 130px;">
             <label class="fw-bold mb-1 small">Kiểu dáng:</label>
             <select class="form-select" name="kieudang">
-                <option value="0">Tất cả kiểu</option>
+                <option value="0">Tất cả</option>
                 @if(!empty($listKieuDang))
                     @foreach($listKieuDang as $kd)
                         @if($kd->getTenKieuDang() != 'Không xác định')
@@ -1101,7 +1232,7 @@ if (filterKeywordInput) {
     <div class="filter-item" style="flex: 1; min-width: 140px;">
         <label class="fw-bold mb-1 small">Hãng:</label>
         <select class="form-select" name="hang">
-            <option value="0">Tất cả hãng</option>
+            <option value="0">Tất cả</option>
             @foreach($listHang as $h)
                 <option value="{{ $h->getId() }}" {{ request('hang') == $h->getId() ? 'selected' : '' }}>{{ $h->getTenHang() }}</option>
             @endforeach
@@ -1170,6 +1301,10 @@ if (filterKeywordInput) {
             </ul>
           </div>
         </div>
+        <div id="filter-state-storage">
+    <input type="hidden" id="filter-lsp" value="{{ request('lsp') }}">
+    <input type="hidden" id="filter-kieudang" value="{{ request('kieudang') }}">
+</div>
         <div class="dmsp w-100" id="list-product">
           <div class="container-rows" style="width: 100%;display: block;" id="product-list">
     @if(empty($listSP))
@@ -1271,9 +1406,9 @@ if (filterKeywordInput) {
     </a>
   </div>
   <div class="d-flex " style="padding: 0 5%;">
-    <div style="width: 40%;"><img src="/client/img/traidep.png" alt="" class="img-fluid w-100"></div>
+    <div style="width: 40%;"><img src="/client/img/Artboard-2-copy-5.png" alt="" class="img-fluid w-100"></div>
     <div style="padding-left: 50px;width: 60%;">
-      <h2 style="padding: 30px;background-color: #e4f4f4;border-top-left-radius: 30px;border-top-right-radius: 30px;border-bottom-right-radius: 30px;color: #55d5d2;font-weight: 800;">CHỌN KÍNH PHÙ HỢP VỚI BẠN</h2>
+      <h2 style="padding: 30px;background-color: #adf1f1;border-top-left-radius: 30px;border-top-right-radius: 30px;border-bottom-right-radius: 30px;color: #131414;font-weight: 800;">CHỌN KÍNH PHÙ HỢP VỚI BẠN</h2>
       <div class="choiceglasses" >
         <a href="#">
           <h3>CHỌN KÍNH THEO KHUÔN MẶT</h3>
@@ -1337,17 +1472,19 @@ if (filterKeywordInput) {
         <div class="purchase-policy">
           <label for="">Chính sách mua hàng</label>
           <ul>
-            <li><a href="#">Hình thức thanh toán</a></li>
-            <li><a href="#">Chính sách giao hàng</a></li>
-            <li><a href="#">Chính sách bảo hành</a></li>
+            <li><a>Hình thức thanh toán</a></li>
+            <li><a>Chính sách giao hàng</a></li>
+
           </ul>
         </div>
       </div>
       <div class="footer-right">
         <div class="contact-info">
           <label for="" style="font-size: 22px;color:#e6f4f3;">Thông tin liên hệ</label>
-          <p>19000359</p>
-          <p>marketing@kinhmatanna.com</p>
+          <ul>
+            <li>19000359</li>
+            <li>marketing@kinhmatanna.com</li>
+          </ul>
         </div>
         <div class="business-info">
           <p>MST: 0108195925</p>
@@ -1413,22 +1550,7 @@ if (filterKeywordInput) {
 @elseif(session('success'))
     <div class="alert alert-success successAlert">{{ session('success') }}</div>        
 @endif
-<script>
-    let lastScrollTop = 0;
-  const navbar = document.getElementById("navbar-ctn");
 
-  window.addEventListener("scroll", function() {
-    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    if (scrollTop > lastScrollTop && scrollTop > 100) {
-      navbar.classList.add("nav-hidden");
-    } else {
-      navbar.classList.remove("nav-hidden");
-    }
-    
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
-  }, false);
-</script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const alerts = document.querySelectorAll('.alert-container-top-right .alert');

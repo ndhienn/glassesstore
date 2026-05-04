@@ -156,17 +156,16 @@
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
                           </div>
-                          <!--div class="mb-3">
+                          <!--<div class="mb-3">
                             <label for="current_password" class="form-label">Mật khẩu hiện tại</label>
                             <input type="password" class="form-control" id="current_password" name="current_password">
                             @error('current_password')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
-                          </div>
+                          </div>!-->
                           <div class="mb-3">
-                            <label for="password" class="form-label">Mật khẩu mới</label>
+                            <label for="password" class="form-label">Mật khẩu mới (để trống nếu không đổi)</label>
                             <input type="password" class="form-control" id="password" name="password">
-                            <small class="text-muted">Mật khẩu phải có ít nhất 6 ký tự</small>
                             @error('password')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
@@ -177,7 +176,7 @@
                             @error('password_confirmation')
                                 <span class="text-danger">{{ $message }}</span>
                             @enderror
-                          </div>!-->
+                          </div>
                           <div class="mb-3">
                             <label for="hoTen" class="form-label">Họ và tên</label>
                             <input type="text" class="form-control" id="hoTen" name="hoTen" value="{{ $user->getIdNguoiDung()->getHoTen() }}">
@@ -237,20 +236,21 @@
             <li><a href="#">Kính râm trẻ em</a></li>
           </ul>
         </div>
-        <div class="purchase-policy">
-          <label for="">Chính sách mua hàng</label>
+        <label for="">Chính sách mua hàng</label>
           <ul>
-            <li><a href="#">Hình thức thanh toán</a></li>
-            <li><a href="#">Chính sách giao hàng</a></li>
-            <li><a href="#">Chính sách bảo hành</a></li>
+            <li><a>Hình thức thanh toán</a></li>
+            <li><a>Chính sách giao hàng</a></li>
+
           </ul>
         </div>
       </div>
       <div class="footer-right">
         <div class="contact-info">
           <label for="" style="font-size: 22px;color:#e6f4f3;">Thông tin liên hệ</label>
-          <p>19000359</p>
-          <p>marketing@kinhmatanna.com</p>
+          <ul>
+            <li>19000359</li>
+            <li>marketing@kinhmatanna.com</li>
+          </ul>
         </div>
         <div class="business-info">
           <p>MST: 0108195925</p>

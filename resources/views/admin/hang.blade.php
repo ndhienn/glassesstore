@@ -205,7 +205,7 @@
 </div>
 
 <!-- Add Brand Modal -->
-<<div class="modal fade" id="brandAddModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="brandAddModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">

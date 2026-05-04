@@ -13,9 +13,27 @@ use App\Bus\TaiKhoan_BUS;
 use App\Bus\SanPham_BUS;
     $sanPham = app(SanPham_BUS::class);
     ?>
+<style>
+ .nav-hidden {
+    transform: translateY(-100%) !important;
+}
+</style>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+  let lastScrollTop = 0;
+    const navbar = document.getElementById("navbar-ctn");
 
+    window.addEventListener("scroll", function() {
+      let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      
+      if (scrollTop > lastScrollTop && scrollTop > 100) {
+        navbar.classList.add("nav-hidden");
+      } else {
+        navbar.classList.remove("nav-hidden");
+      }
+      
+      lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+    }, false);
    let isLoading = false;
     let debounceTimeout = null;
 // 1. XỬ LÝ DROPDOWN USER 
@@ -273,7 +291,7 @@ use App\Bus\SanPham_BUS;
 
   </div>
   <div class="ctn-content">
-  <img src="{{ asset('/client/img/bannner.png') }}" class="img-fluid w-100">
+  <img src="{{ asset('/client/img/Cover-web-ban-PC-scaled.png') }}" class="img-fluid w-100">
 
     <div class="main justify-content-center d-flex">
       <div class="best-seller text-center">
@@ -514,7 +532,7 @@ use App\Bus\SanPham_BUS;
     </a>
   </div>
   <div class="d-flex " style="padding: 0 5%;">
-    <div style="width: 40%;"><img src="/client/img/traidep.png" alt="" class="img-fluid w-100"></div>
+    <div style="width: 40%;"><img src="/client/img/Artboard-2-copy-5.png" alt="" class="img-fluid w-100"></div>
     <div style="padding-left: 50px;width: 60%;">
       <h2 style="padding: 30px;background-color: #e4f4f4;border-top-left-radius: 30px;border-top-right-radius: 30px;border-bottom-right-radius: 30px;color: #55d5d2;font-weight: 800;">CHỌN KÍNH PHÙ HỢP VỚI BẠN</h2>
       <div class="choiceglasses" >
@@ -579,19 +597,21 @@ use App\Bus\SanPham_BUS;
           </ul>
         </div>
         <div class="purchase-policy">
-          <label for="">Chính sách mua hàng</label>
+         <label for="">Chính sách mua hàng</label>
           <ul>
-            <li><a href="#">Hình thức thanh toán</a></li>
-            <li><a href="#">Chính sách giao hàng</a></li>
-            <li><a href="#">Chính sách bảo hành</a></li>
+            <li><a>Hình thức thanh toán</a></li>
+            <li><a>Chính sách giao hàng</a></li>
+
           </ul>
         </div>
       </div>
       <div class="footer-right">
         <div class="contact-info">
           <label for="" style="font-size: 22px;color:#e6f4f3;">Thông tin liên hệ</label>
-          <p>19000359</p>
-          <p>marketing@kinhmatanna.com</p>
+          <ul>
+            <li>19000359</li>
+            <li>marketing@kinhmatanna.com</li>
+          </ul>
         </div>
         <div class="business-info">
           <p>MST: 0108195925</p>
@@ -656,20 +676,4 @@ use App\Bus\SanPham_BUS;
 @elseif(session('success'))
     <div class="alert alert-success successAlert">{{ session('success') }}</div>        
 @endif
-<script>
-    let lastScrollTop = 0;
-  const navbar = document.getElementById("navbar-ctn");
-
-  window.addEventListener("scroll", function() {
-    let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-    
-    if (scrollTop > lastScrollTop && scrollTop > 100) {
-      navbar.classList.add("nav-hidden");
-    } else {
-      navbar.classList.remove("nav-hidden");
-    }
-    
-    lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
-  }, false);
-</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

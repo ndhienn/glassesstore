@@ -31,16 +31,17 @@
                 use App\Bus\KhuyenMai_BUS;
                 use App\Bus\ThongKe_BUS;
                 use App\Bus\Auth_BUS;
-use App\Bus\ChiTietBaoHanh_BUS;
-use App\Bus\CPVC_BUS;
-use App\Bus\CTPN_BUS;
-use App\Bus\CTQ_BUS;
-use App\Bus\KieuDang_BUS;
-use App\Bus\NCC_BUS;
-use App\Bus\PhieuNhap_BUS;
-use App\Bus\Tinh_BUS;
-use App\Models\DVVC;
-use Illuminate\Support\Facades\View as FacadesView;
+                use App\Bus\ChiTietBaoHanh_BUS;
+                use App\Bus\CPVC_BUS;
+                use App\Bus\CTPN_BUS;
+                use App\Bus\CTQ_BUS;
+                use App\Bus\KieuDang_BUS;
+                use App\Bus\NCC_BUS;
+                use App\Bus\PhieuNhap_BUS;
+                use App\Bus\Tinh_BUS;
+                use App\Bus\CTSP_BUS;
+                use App\Models\DVVC;
+                use Illuminate\Support\Facades\View as FacadesView;
 
                 $page = $_GET['modun'] ?? 'nguoidung';
                 switch ($page) {
@@ -167,109 +168,7 @@ use Illuminate\Support\Facades\View as FacadesView;
                                 'keywordTrangThai' => $trangThai
                             ])->render();
                             break;
-                            case 'khuyenmai':
-                                $khuyenMaiBUS = app(KhuyenMai_BUS::class);
-                                $sanPhamBUS = app(SanPham_BUS::class);
                             
-                                $keyword = isset($_GET['keyword']) && !empty(trim($_GET['keyword'])) ? trim($_GET['keyword']) : null;
-                                $trangThai = isset($_GET['keywordTrangThai']) && $_GET['keywordTrangThai'] !== '' ? (int)$_GET['keywordTrangThai'] : null;
-                                $ngayBatDau = isset($_GET['ngayBatDau']) && !empty(trim($_GET['ngayBatDau'])) ? trim($_GET['ngayBatDau']) : null;
-                                $ngayKetThuc = isset($_GET['ngayKetThuc']) && !empty(trim($_GET['ngayKetThuc'])) ? trim($_GET['ngayKetThuc']) : null;
-                            
-                                $listtrangthai = collect([
-                                    (object) ['id' => 1, 'trangThaiHD' => 'Đang hoạt động'],
-                                    (object) ['id' => 3, 'trangThaiHD' => 'Ngừng hoạt động'],
-                                ]);
-                            
-                                // Lấy danh sách khuyến mãi
-                                $listKhuyenMai = $khuyenMaiBUS->getAllModels($keyword, $trangThai, $ngayBatDau, $ngayKetThuc);
-                            
-                                // Lấy danh sách sản phẩm đang hoạt động
-                                $listSanPhamActive = $sanPhamBUS->getAllModelsActive();
-                            
-                                $current_page = request()->query('page', 1);
-                                $limit = 8;
-                                $total_record = count($listKhuyenMai ?? []);
-                                $total_page = ceil($total_record / $limit);
-                                $current_page = max(1, min($current_page, $total_page));
-                                $start = ($current_page - 1) * $limit;
-                            
-                                if (empty($listKhuyenMai)) {
-                                    $tmp = [];
-                                } else {
-                                    $tmp = array_slice($listKhuyenMai, $start, $limit);
-                                }
-                            
-                                echo \Illuminate\Support\Facades\View::make('admin.khuyenmai', [
-                                    'tmp' => $tmp,
-                                    'listtrangthai' => $listtrangthai,
-                                    'listSanPhamActive' => $listSanPhamActive,
-                                    'current_page' => $current_page,
-                                    'total_page' => $total_page,
-                                    'keyword' => $keyword,
-                                    'keywordTrangThai' => $trangThai,
-                                    'ngayBatDau' => $ngayBatDau,
-                                    'ngayKetThuc' => $ngayKetThuc
-                                ])->render();
-                                break;
-                                case 'lichsu':
-                                    $hoaDonBUS = app(HoaDon_BUS::class);
-                                    $chiTietHoaDonBUS = app(CTHD_BUS::class);
-                                
-                                    $orders = [];
-                                    $error = null;
-                                    $current_page = request()->query('page', 1);
-                                    $total_page = 1;
-                                
-                                    try {
-                                        // Lấy tất cả hóa đơn (bỏ lọc theo email)
-                                        $hoaDons = $hoaDonBUS->getAllHoaDons(); // Giả định phương thức mới trong HoaDon_BUS
-                                
-                                        if (empty($hoaDons)) {
-                                            $error = "Không tìm thấy đơn hàng nào trong hệ thống.";
-                                        } else {
-                                            foreach ($hoaDons as $hoaDon) {
-                                                $chiTietHoaDonsRaw = $chiTietHoaDonBUS->getCTHTbyIDHD($hoaDon->getId());
-                                                $chiTietHoaDons = [];
-                                                foreach ($chiTietHoaDonsRaw as $cthd) {
-                                                    $chiTietHoaDons[] = [
-                                                        'soSeri' => $cthd->getSoSeri() ?? 'N/A',
-                                                        'giaLucDat' => $cthd->getGiaLucDat() ?? 0,
-                                                        'trangThaiHD' => $cthd->getTrangThaiHD() ?? false,
-                                                    ];
-                                                }
-                                
-                                                $orders[] = [
-                                                    'id' => $hoaDon->getId() ?? 'N/A',
-                                                    'tongTien' => $hoaDon->getTongTien() ?? 0,
-                                                    'ngayTao' => $hoaDon->getNgayTao() ?? null,
-                                                    'trangThai' => $hoaDon->getTrangThai()->name ?? 'Không xác định',
-                                                    'phuongThucThanhToan' => $hoaDon->getIdPTTT()->getTen() ?? 'Không xác định',
-                                                    'donViVanChuyen' => $hoaDon->getIdDVVC()->getTenDV() ?? 'Không xác định',
-                                                    'emailKhachHang' => $hoaDon->getEmail()->getEmail() ?? 'Không xác định',
-                                                    'chiTietHoaDons' => $chiTietHoaDons,
-                                                ];
-                                            }
-                                
-                                            $limit = 8;
-                                            $total_record = count($orders);
-                                            $total_page = ceil($total_record / $limit);
-                                            $current_page = max(1, min($current_page, $total_page));
-                                            $start = ($current_page - 1) * $limit;
-                                
-                                            $tmp = array_slice($orders, $start, $limit);
-                                        }
-                                    } catch (\Exception $e) {
-                                        $error = 'Không thể tải lịch sử đơn hàng. Vui lòng thử lại sau.';
-                                    }
-                                
-                                    return view('client.order-history', [
-                                        'orders' => $tmp ?? [],
-                                        'error' => $error,
-                                        'current_page' => $current_page,
-                                        'total_page' => $total_page,
-                                    ]);
-                                    break;  
                     case 'quyen':
                         $quyenBUS = app(Quyen_BUS::class);
                         $listQuyen = $quyenBUS->getAllModels();
@@ -414,182 +313,124 @@ use Illuminate\Support\Facades\View as FacadesView;
                     break;
                     
                     case 'hoadon':
-                        $cthdBUS = app(CTHD_BUS::class);
-                        $hoaDonBUS = app(HoaDon_BUS::class);
-                        $listHoaDon = $hoaDonBUS->getAllModels();
+    // 1. Khởi tạo các BUS cần thiết
+    $cthdBUS = app(CTHD_BUS::class);
+    $hoaDonBUS = app(HoaDon_BUS::class);
+    $ctspBUS = app(CTSP_BUS::class);
+    $tinhBUS = app(Tinh_BUS::class);
+    $nguoiDungBUS = app(NguoiDung_BUS::class);
+    $pttBUS = app(PTTT_BUS::class);
+   
+    $taiKhoanBUS = app(TaiKhoan_BUS::class);
 
-                        $mapCTHD = [];
-                        foreach ($listHoaDon as $hoaDon) {
-                            $mapCTHD[$hoaDon->getId()] = $cthdBUS->getCTHTbyIDHD($hoaDon->getId());
-                            $cthdData = $cthdBUS->getCTHTbyIDHD($hoaDon->getId());
-                        }
+    // 2. Lấy danh sách hóa đơn gốc
+    $listHoaDon = $hoaDonBUS->getAllModels();
 
-                        $tinhBUS = app(Tinh_BUS::class);
-                        $listTinh = $tinhBUS->getAllModels();
-                        $nguoiDungBUS = app(NguoiDung_BUS::class);
-                        $listNguoiDung = $nguoiDungBUS->getAllModels();
-                        $pttBUS = app(PTTT_BUS::class);
-                        $listpttt = $pttBUS->getAllModels();
-                        $dvvcBUS = app(DVVC_BUS::class);
-                        $listdvvc = $dvvcBUS->getAllModels();
-                        $taiKhoanBUS = app(TaiKhoan_BUS::class);
-                        $listtaiKhoan = $taiKhoanBUS->getAllModels();
+    // 3. Xử lý các bộ lọc tìm kiếm (Search Filters)
+    if (!empty($_GET['keywordTinh'])) {
+        $listHoaDon = $hoaDonBUS->searchByTinh($_GET['keywordTinh']);
+    }
 
-                        $sanPhamBUS = app(SanPham_BUS::class);
-                        $listSanPham = $sanPhamBUS->getAllModels();
-                        
-                        $mapSanPham = [];
-                        foreach ($listSanPham as $sanpham){
-                            $mapSanPham[$sanpham->getId()] = $sanpham->getTenSanPham();
-                        }
+    if (!empty($_GET['trangthai'])) {
+        $listHoaDon = $hoaDonBUS->getHoaDonsByTrangThai($_GET['trangthai']);
+    }
 
-                        $mapNguoiDung = [];
-                        foreach ($listNguoiDung as $nguoiDung){
-                            $mapNguoiDung[$nguoiDung->getId()] = $nguoiDung->getHoTen();
-                        }
+    if (!empty($_GET['ngaybatdau']) && !empty($_GET['ngayketthuc'])) {
+        $listHoaDon = $hoaDonBUS->getHoaDonsByNgay($_GET['ngaybatdau'], $_GET['ngayketthuc']);
+    } 
 
-                        $mapHoTenByEmail = [];
-                        foreach ($listtaiKhoan as $taiKhoan) {
-                            $nguoiDung = $taiKhoan->getIdNguoiDung(); // Trả về đối tượng NguoiDung
-                            $email = $taiKhoan->getEmail();
-                        
-                            $mapHoTenByEmail[$email] = $nguoiDung->getHoTen(); // Lấy trực tiếp
-                        }
+    if (!empty($_GET['keywordSoSeri'])) {
+        $listHoaDon = $hoaDonBUS->getHoaDonsBySoseri($_GET['keywordSoSeri']);
+    }
 
-                        $mapTinh = [];
-                        foreach ($listTinh as $tinh) {
-                            $mapTinh[$tinh->getId()] = $tinh->getTenTinh();
-                        }
+    if (!empty($_GET['keyword']) && !empty(trim($_GET['keyword']))) {
+        $listHoaDon = $hoaDonBUS->searchByEmailOrSDT(trim($_GET['keyword']));
+    }
 
-                        $mapPTTT = [];
-                        foreach ($listpttt as $pttt) {
-                            $mapPTTT[$pttt->getId()] = $pttt->gettenPTTT();
-                        }
+    // 4. Sắp xếp danh sách hóa đơn theo ngày
+    $sortDate = $_GET['sortDate'] ?? 'desc';
+    if (!empty($listHoaDon)) {
+        usort($listHoaDon, function($a, $b) use ($sortDate) {
+            $t1 = $a->getNgayTao()->getTimestamp();
+            $t2 = $b->getNgayTao()->getTimestamp();
+            return ($sortDate === 'asc') ? ($t1 - $t2) : ($t2 - $t1);
+        });
+    }
 
-                        $mapDVVC = [];
-                        foreach ($listdvvc as $dvvc) {
-                            $mapDVVC[$dvvc->getIdDVVC()] = $dvvc->getTenDV();
-                        }
+    // 5. Chuẩn bị dữ liệu Map để hiển thị thông tin liên kết
+    $mapCTHD = [];
+    foreach ($listHoaDon as $hoaDon) {
+        $details = $cthdBUS->getCTHTbyIDHD($hoaDon->getId());
+        $enrichedDetails = [];
 
-                
-                        if (isset($_GET['keywordTinh']) || !empty($_GET['keywordTinh'])) {
-                            $keywordTinh = $_GET['keywordTinh'];
-                            $listHoaDon = $hoaDonBUS->searchByTinh($keywordTinh);
-                        }
+        if (!empty($details)) {
+            $counts = [];
+            $tempDetails = [];
+            foreach ($details as $cthd) {
+                // Tra cứu thông tin sản phẩm từ số seri[cite: 5]
+                $sp = $ctspBUS->getSPBySoSeri($cthd->getSoSeri());
+                $tenSP = $sp ? $sp->getTenSanPham() : 'N/A';
+                $counts[$tenSP] = ($counts[$tenSP] ?? 0) + 1;
+                $enrichedDetails[] = [
+                    'SOSERI' => $cthd->getSoSeri(),
+                    'GIALUCDAT' => $cthd->getGiaLucDat(),
+                    'TENSANPHAM' => $sp ? $sp->getTenSanPham() : 'Sản phẩm không tồn tại'
+                ];
+            }
+            foreach ($tempDetails as $item) {
+                $item['SOLUONG'] = $counts[$item['TENSANPHAM']];
+                $enrichedDetails[] = $item;
+            }
+        }
+        $mapCTHD[$hoaDon->getId()] = $enrichedDetails;
+    }
 
-                        if (isset($_GET['trangthai']) || !empty($_GET['trangthai'])) {
-                            $trangThai = $_GET['trangthai'];
-                            $listHoaDon = $hoaDonBUS->getHoaDonsByTrangThai($trangThai);
-                        }
+    // Map tên người dùng theo Email
+    $listtaiKhoan = $taiKhoanBUS->getAllModels();
+    $mapHoTenByEmail = [];
+    foreach ($listtaiKhoan as $taiKhoan) {
+        $nguoiDung = $taiKhoan->getIdNguoiDung();
+        $mapHoTenByEmail[$taiKhoan->getEmail()] = $nguoiDung->getHoTen();
+    }
 
-                        if (isset($_GET['ngaybatdau']) && !empty($_GET['ngaybatdau']) && isset($_GET['ngayketthuc']) && !empty($_GET['ngayketthuc'])) {
-                            $ngayBatDau = $_GET['ngaybatdau'];
-                            $ngayKetThuc = $_GET['ngayketthuc'];
-                        
-                            $listHoaDon = $hoaDonBUS->getHoaDonsByNgay($ngayBatDau, $ngayKetThuc);
-                        } 
-                        
-                        if (isset($_GET['keywordSoSeri']) || !empty($_GET['keywordSoSeri'])) {
-                            $soSeri = $_GET['keywordSoSeri'];
-                            $listHoaDon = $hoaDonBUS->getHoaDonsBySoseri($soSeri);
-                        }
-                        if (isset($_GET['keyword']) && !empty(trim($_GET['keyword']))) {
-                            $keyword = trim($_GET['keyword']);
-                            $listHoaDon = $hoaDonBUS->searchByEmailOrSDT($keyword);
-                        }
+    // Map các danh mục khác
+    $mapTinh = [];
+    foreach ($tinhBUS->getAllModels() as $tinh) {
+        $mapTinh[$tinh->getId()] = $tinh->getTenTinh();
+    }
 
-                        // Sau khi lọc các điều kiện keyword, trạng thái...
-                        $sortDate = isset($_GET['sortDate']) ? $_GET['sortDate'] : 'desc';
-                        if (!empty($listHoaDon)) {
-                            usort($listHoaDon, function($a, $b) use ($sortDate) {
-                                $t1 = strtotime($a->getNgayTao());
-                                $t2 = strtotime($b->getNgayTao());
-                                return ($sortDate === 'asc') ? ($t1 - $t2) : ($t2 - $t1);
-                         });
-                            }
+    $mapPTTT = [];
+    foreach ($pttBUS->getAllModels() as $pttt) {
+        $mapPTTT[$pttt->getId()] = $pttt->gettenPTTT();
+    }
 
-                        $current_page = request()->query('page', 1);
-                        $limit = 8;
-                        $total_record = count($listHoaDon ?? []);
-                        $total_page = ceil($total_record / $limit);
-                        $current_page = max(1, min($current_page, $total_page));
-                        $start = ($current_page - 1) * $limit;
-                        if(empty($listHoaDon)) {
-                            $tmp = [];
-                        } else {
-                            $tmp = array_slice($listHoaDon, $start, $limit);            
-                        }
-                        
-                        
-                        echo FacadesView::make('admin.hoadon', [
-                            'listHoaDon' => $tmp,
-                            'mapCTHD' => $mapCTHD,
-                            'mapHoTenByEmail' => $mapHoTenByEmail,
-                            'mapNguoiDung' => $mapNguoiDung, 
-                            'mapPTTT' => $mapPTTT,
-                            'mapDVVC' => $mapDVVC,
-                            'mapTinh' => $mapTinh,
-                            'listTinh' => $listTinh,
-                            'current_page' => $current_page,
-                            'total_page' => $total_page,
-                            'hoaDonStatuses' => HoaDonEnum::cases(),
-                        ])->render();
-                        break;
-                    case 'baohanh':
-                        $baoHanhBUS = app(ChiTietBaoHanh_BUS::class);
-                  
-
-                        $keyword = trim(request('keyword'));
-                        if ($keyword === '') {
-                            $listBaoHanh = $baoHanhBUS->getAllModels();
-                        } else {
-                            $result = $baoHanhBUS->getBySeri($keyword);
-                            $listBaoHanh = $result ? [$result] : [];
-                        }
-
-                        $current_page = request()->query('page', 1);
-                        $limit = 8;
-                        $total_record = count($listBaoHanh ?? []);
-                        $total_page = ceil($total_record / $limit);
-                        $current_page = max(1, min($current_page, $total_page));
-                        $start = ($current_page - 1) * $limit;
-                        if(empty($listBaoHanh)) {
-                            $tmp = [];
-                        } else {
-                            $tmp = array_slice($listBaoHanh, $start, $limit);            
-                        }
-                        echo FacadesView::make('admin.baohanh', [
-                            'listBaoHanh' => $tmp,
-                            'current_page' => $current_page,
-                            'total_page' => $total_page,
-                        ])->render();
-                        break;
-                    case 'donvivanchuyen':
-                        $donviBUS = app(DVVC_BUS::class);
-                        $listDVVC = $donviBUS->getAllModels();
-                        if (isset($_GET['keyword']) || !empty($_GET['keyword'])) {
-                            $keyword = $_GET['keyword'];
-                            $listDVVC = $donviBUS->searchModel($keyword, []);
-                        }
     
-                        $current_page = request()->query('page', 1);
-                        $limit = 8;
-                        $total_record = count($listDVVC ?? []);
-                        $total_page = ceil($total_record / $limit);
-                        $current_page = max(1, min($current_page, $total_page));
-                        $start = ($current_page - 1) * $limit;
-                        if (empty($listDVVC)) {
-                            $tmp = [];
-                        } else {
-                            $tmp = array_slice($listDVVC, $start, $limit);
-                        }
+
+    // 6. Phân trang dữ liệu
+    $current_page = request()->query('page', 1);
+    $limit = 8;
+    $total_record = count($listHoaDon ?? []);
+    $total_page = ceil($total_record / $limit);
+    $current_page = max(1, min($current_page, $total_page));
+    $start = ($current_page - 1) * $limit;
     
-                        echo FacadesView::make('admin.donvivanchuyen', [
-                            'listDVVC' => $tmp,
-                            'current_page' => $current_page,
-                            'total_page' => $total_page
-                        ])->render();
-                        break;
+    $paginatedList = empty($listHoaDon) ? [] : array_slice($listHoaDon, $start, $limit);
+
+    // 7. Trả về View
+    echo FacadesView::make('admin.hoadon', [
+        'listHoaDon' => $paginatedList,
+        'mapCTHD' => $mapCTHD,
+        'mapHoTenByEmail' => $mapHoTenByEmail,
+        'mapPTTT' => $mapPTTT,
+       
+        'mapTinh' => $mapTinh,
+        'listTinh' => $tinhBUS->getAllModels(),
+        'current_page' => $current_page,
+        'total_page' => $total_page,
+        'hoaDonStatuses' => HoaDonEnum::cases(),
+    ])->render();
+    break;
+                   
                     case 'kho':
                         $phieuNhapBUS = app(PhieuNhap_BUS::class);
                         $nccBUS = app(NCC_BUS::class);
@@ -649,32 +490,7 @@ use Illuminate\Support\Facades\View as FacadesView;
                             'total_page' => $total_page
                         ])->render();
                         break;
-                    case 'chiphivanchuyen':
-                        $cpvcBUS = app(CPVC_BUS::class);
-                        $listCPVC = $cpvcBUS->getAllModels();
-                        if (isset($_GET['keyword']) || !empty($_GET['keyword'])) {
-                            $keyword = $_GET['keyword'];
-                            $listCPVC = $cpvcBUS->searchModel($keyword, []);
-                        }
-    
-                        $current_page = request()->query('page', 1);
-                        $limit = 8;
-                        $total_record = count($listCPVC ?? []);
-                        $total_page = ceil($total_record / $limit);
-                        $current_page = max(1, min($current_page, $total_page));
-                        $start = ($current_page - 1) * $limit;
-                        if (empty($listCPVC)) {
-                            $tmp = [];
-                        } else {
-                            $tmp = array_slice($listCPVC, $start, $limit);
-                        }
-    
-                        echo FacadesView::make('admin.chiphivanchuyen', [
-                            'listCPVC' => $tmp,
-                            'current_page' => $current_page,
-                            'total_page' => $total_page
-                        ])->render();
-                        break;
+                   
                 case 'thanhpho':
                     $tinhBUS = app(Tinh_BUS::class);
                     $listTinh = $tinhBUS->getAllModels();

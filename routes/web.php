@@ -129,7 +129,7 @@ Route::get('/index', function (Request $request) {
     if ($idKieuDang || $startPrice !== null || $endPrice !== null || $keyword) {
         $filteredSP = $sanPham->searchByCriteria($idHang, $idLSP, $idKieuDang, $startPrice, $endPrice, $keyword);
     }
-// Phân trang
+    // Phân trang
     $current_page = $request->query('page', 1);
     $limit = 8;
     $total_record = count($filteredSP ?? []);
@@ -408,9 +408,7 @@ Route::post('/admin/nguoidung/store', [NguoiDungController::class, 'store'])->na
 Route::post('/admin/nguoidung/update', [NguoiDungController::class, 'update'])->name('admin.nguoidung.update');
 Route::post('/admin/nguoidung/controldelete', [NguoiDungController::class, 'controlDelete'])->name('admin.nguoidung.controlDelete');
 
-Route::post('/admin/donvivanchuyen/store', [DonViVanChuyenController::class, 'store'])->name('admin.donvivanchuyen.store');
-Route::post('/admin/donvivanchuyen/update', [DonViVanChuyenController::class, 'update'])->name('admin.donvivanchuyen.update');
-Route::post('/admin/donvivanchuyen/controldelete', [DonViVanChuyenController::class, 'controlDelete'])->name('admin.donvivanchuyen.controlDelete');
+
 
 Route::prefix('admin')->group(function () {
     Route::get('/phieunhap', [PhieuNhapController::class, 'index'])->name('admin.phieunhap.index');
@@ -425,9 +423,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/nhacungcap/search', [NccController::class, 'search'])->name('admin.nhacungcap.search');
 });
 
-Route::post('/admin/chiphivanchuyen/store', [CPVCController::class, 'store'])->name('admin.chiphivanchuyen.store');
-Route::post('/admin/chiphivanchuyen/update', [CPVCController::class, 'update'])->name('admin.chiphivanchuyen.update');
-Route::post('/admin/chiphivanchuyen/controldelete', [CPVCController::class, 'controlDelete'])->name('admin.chiphivanchuyen.controlDelete');
+
 
 use App\Http\Controllers\HangController;
 use App\Http\Controllers\KhuyenMaiController;
@@ -497,10 +493,7 @@ Route::get('/success', function(Request $request) {
         'hoaDon' => $hoaDon
     ]);
 });
-<<<<<<< HEAD
 Route::get('/thanh-toan-thanh-cong/{orderId}', [PaymentController::class, 'showSuccessPage'])->name('order.success');
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 Route::view('/createdPayment', 'client.MuaNgay');
 Route::get('/getCTHD', [HoaDonController::class, 'getCTHDByIDSPAndIDHD'])->name('payment.getCTHDByIDSPAndIDHD');
 Route::get('/muangay', [HoaDonController::class, 'muangay'])->name('payment.muangay');
@@ -512,38 +505,56 @@ Route::post('/login', function (\Illuminate\Http\Request $request) {
     $password = $request->input('password-login');
 
     $user = app(TaiKhoan_BUS::class)->getModelById($email);
-    if($user!=null) {
-        
-        if($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
+    
+    if ($user != null) {
+        // 1. Kiểm tra Quyền (Không cho Admin/Staff đăng nhập ở đây)
+        if ($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
             return redirect()->back()->with('error', 'Vui lòng đăng nhập qua trang quản trị!');
-        } else if (app(Auth_BUS::class)->login($email, $password)) {
+        }
+
+        // 2. Kiểm tra Trạng thái tài khoản (Bị khóa hay không)
+        // Giả sử 0 là khóa, 1 là hoạt động (Bạn kiểm tra lại field TRANGTHAI trong DB của mình)
+        if ($user->getTrangThaiHD() == 0) {
+            return redirect()->back()->with('error', 'Tài khoản của bạn hiện đang bị khóa!');
+        }
+
+        // 3. Kiểm tra Mật khẩu
+        if (app(Auth_BUS::class)->login($email, $password)) {
             return redirect('/'); 
         } else {
-            return redirect()->back()->with('error','Tài khoản đã bị khóa hoặc bạn đã nhập sai mật khẩu!');
+            return redirect()->back()->with('error', 'Mật khẩu bạn nhập không chính xác!');
         }
     } else {
-        return redirect()->back()->with('error', 'Tài khoản không tồn tại!');
+        return redirect()->back()->with('error', 'Tài khoản không tồn tại trên hệ thống!');
     }
 })->name('login');
-Route::post('/payment/add-address', [NguoiDungController::class, 'addAddress'])->name('user.addAddress');
+Route::post('/payment/add-shipping-info', [NguoiDungController::class, 'addAddress'])->name('user.addAddress');  
+Route::post('/payment/delete-address', [NguoiDungController::class, 'deleteAddress'])->name('user.deleteAddress');
 Route::post('/admin/login', function (\Illuminate\Http\Request $request) {
     $email = $request->input('email-login');
     $password = $request->input('password-login');
     
     $user = app(TaiKhoan_BUS::class)->getModelById($email);
-    if($user!=null) {
-        
+    
+    if ($user != null) {
+        // 1. Kiểm tra Trạng thái tài khoản trước
+        if ($user->getTrangThaiHD() == 0) {
+            return redirect()->back()->with('error', 'Tài khoản Admin này đã bị khóa!');
+        }
+
+        // 2. Kiểm tra Mật khẩu
         if (app(Auth_BUS::class)->login($email, $password)) {
-            if($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
+            // 3. Kiểm tra Quyền truy cập Admin
+            if ($user->getIdQuyen()->getId() == 1 || $user->getIdQuyen()->getId() == 2) {
                 return redirect('/admin'); 
             } else {
                 return redirect('/admin/login')->with('error', 'Bạn không có quyền truy cập trang quản trị!');
             }
         } else {
-            return redirect()->back()->with('error','Tài khoản đã bị khóa hoặc bạn đã nhập sai mật khẩu!');
+            return redirect()->back()->with('error', 'Mật khẩu không đúng, vui lòng thử lại!');
         }
     } else {
-        return redirect()->back()->with('error', 'Tài khoản không tồn tại!');
+        return redirect()->back()->with('error', 'Tài khoản Admin không tồn tại!');
     }
 })->name('admin.login.submit');
 
@@ -571,7 +582,7 @@ Route::post('/admin/thongke/top', [ThongKeController::class, 'getTopCustomers'])
 Route::post('/admin/thongke/orders', [ThongKeController::class, 'getCustomerOrders'])->name('admin.thongke.orders');
 Route::get('/admin/thongke/details/{orderId}', [ThongKeController::class, 'getOrderDetails'])->name('admin.thongke.details');
 
-Route::post('admin.baohanh.store', [BaoHanhController::class, 'store'])->name('admin.baohanh.store');
+
 
 // Route xử lý tạo thanh toán (Gửi sang VNPay)
 Route::get('/vnpay-create/{hd}', [PaymentController::class, 'createPayment'])->name('vnpay.create');
@@ -579,13 +590,10 @@ Route::get('/vnpay-create/{hd}', [PaymentController::class, 'createPayment'])->n
 // Route nhận kết quả trả về từ VNPay
 Route::get('/vnpay-return', [PaymentController::class, 'vnpayReturn'])->name('vnpay.return');
 Route::get('/vnpay-ipn', [\App\Http\Controllers\PaymentController::class, 'vnpayIpn'])->name('vnpay.ipn');
-<<<<<<< HEAD
 Route::get('/paymentcancelled/{orderId}', [PaymentController::class, 'showCancelledPage'])->name('payment.cancelled');
 
 //route dẫn đến thanh toán phòng khi người dùng tắt nhầm trang thanh toán
 Route::get('/payment/retry/{order_id}', [PaymentController::class, 'retryPayment'])->name('payment.retry');
 //route huỷ đơn hàng và hoàn kho khi người dùng đã thanh toán
 Route::post('/huy-don-hang/{id}', [HoaDonController::class, 'handleHuyDon'])->name('hoa-don.huy');
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 ?>

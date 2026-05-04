@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Events;
+namespace App\Event;
 
 use App\Models\NguoiDung;
 use Illuminate\Broadcasting\Channel;

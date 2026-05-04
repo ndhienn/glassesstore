@@ -90,7 +90,6 @@
 @endif
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // 
     document.addEventListener("DOMContentLoaded", function() {
         const ptttSelect = document.getElementById("pttt");
         const btnDatHang = document.getElementById("saveHoaDon");
@@ -116,7 +115,21 @@
     function formatCurrency(amount) {
         return amount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".") + "₫";
     }
-    
+    $(document).on('change', '.form-check-input', function() {
+    let val = $(this).val();
+    let name = $(this).attr('name');
+
+    if(name === 'radioHoTen') {
+        $('#hienThiHoTen').text(val);
+        $('#hoten_data').val(val);
+    } else if(name === 'radioSDT') {
+        $('#hienThiSDT').text(val);
+        $('#sodienthoai_data').val(val);
+    } else if(name === 'radioDefault') {
+        $('#btn-diachi div').text(val);
+        $('#diachidata').val(val);
+    }
+});
     $(document).on('change', 'input[name="radioDefault"]', function () {
         let diaChi = $(this).val();
         
@@ -134,61 +147,117 @@
         let pttt = $(this).val();
         $('#idpttt').val(pttt);
     });
+    // --- 1. Khi chọn Radio HỌ TÊN ---
+$(document).on('change', 'input[name="radioHoTen"]', function() {
+    let selectedValue = $(this).val(); // Lấy giá trị từ radio được chọn
+    $('#hienThiHoTen').text(selectedValue); // Cập nhật text hiển thị trên giao diện
+    $('#hoten_data').val(selectedValue);    // Cập nhật vào input ẩn để gửi form
+    $('#modalHoTen').modal('hide');         // Đóng modal sau khi chọn
+});
+
+// --- 2. Khi chọn Radio SỐ ĐIỆN THOẠI ---
+$(document).on('change', 'input[name="radioSDT"]', function() {
+    let selectedValue = $(this).val();
+    $('#hienThiSDT').text(selectedValue);  
+    $('#sodienthoai_data').val(selectedValue); 
+    $('#modalSDT').modal('hide');
+});
+
+// --- 3. Khi chọn Radio ĐỊA CHỈ ---
+$(document).on('change', 'input[name="radioDefault"]', function() {
+    let selectedValue = $(this).val();
+    $('#btn-diachi div').text(selectedValue); 
+    $('#diachidata').val(selectedValue);                   
+    $('#accountUpdateModal').modal('hide');
+});
     $(document).ready(function () {
-        $('#btnDiaChi').click(function (e) {
-            e.preventDefault();
+    // Hàm dùng chung để thu thập dữ liệu hiện tại trên UI và gửi AJAX lưu vào DB.
+    function syncAndSaveData(overrideAddress = null, overrideName = null, overridePhone = null) {
+        // Lấy dữ liệu đang hiển thị trên màn hình
+        let currentHT = overrideName || $('#hienThiHoTen').text().trim();
+        let currentSDT = overridePhone || $('#hienThiSDT').text().trim();
+        let currentDC = overrideAddress || $('#btn-diachi div').text().trim();
 
-            let newAddress = $('#addDiaChi').val().trim();
+        $.ajax({
+            url: "{{ route('user.addAddress') }}",
+            method: 'POST',
+            data: {
+                hoten: currentHT,
+                sodienthoai: currentSDT,
+                diachi: currentDC,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function (response) {
+    if (response.status === 'success') {
+        // --- 1. THÊM RADIO HỌ TÊN MỚI ---
+        if (overrideName) {
+            let html = `
+                <div class="form-check py-2 border-bottom">
+                    <input class="form-check-input" type="radio" name="radioHoTen" value="${overrideName}" checked>
+                    <label class="form-check-label w-100">${overrideName}</label>
+                </div>`;
+            $('#listHoTenContainer').prepend(html); // Dùng prepend để đẩy lên đầu danh sách
+        }
 
-            if (newAddress === '') {
-                alert("Vui lòng nhập địa chỉ mới!");
-                return;
-            }
+        // --- 2. THÊM RADIO SỐ ĐIỆN THOẠI MỚI ---
+        if (overridePhone) {
+            let html = `
+                <div class="form-check py-2 border-bottom">
+                    <input class="form-check-input" type="radio" name="radioSDT" value="${overridePhone}" checked>
+                    <label class="form-check-label w-100">${overridePhone}</label>
+                </div>`;
+            $('#listSDTContainer').prepend(html);
+        }
 
-            $.ajax({
-                url: "{{ route('user.addAddress') }}",
-                method: 'POST',
-                data: {
-                    diachi: newAddress,
-                    _token: '{{ csrf_token() }}'
-                },
-                success: function (response) {
-                    if (response.status === 'success') {
-                        // Thêm option vào dropdown (nếu cần)
-                        let selectElement = $('#diaChiSelectTemplate select');
-                        selectElement.append(`<option value="${newAddress}" selected>${newAddress}</option>`);
+        // --- 3. THÊM RADIO ĐỊA CHỈ MỚI ---
+        if (overrideAddress) {
+            let html = `
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="radioDefault" value="${overrideAddress}" checked>
+                    <label class="form-check-label text-break w-100">${overrideAddress}</label>
+                </div>`;
+            $('#listDiaChiContainer').prepend(html);
+        }
 
-                        // Thêm vào danh sách hiển thị
-                        let index = $('#listDiaChiContainer .form-check').length; // để tạo id duy nhất
-                        let newRadioHTML = `
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="radioDefault" id="radioDefault_${index}" value="${newAddress}" checked>
-                                <label class="form-check-label text-break w-100" for="radioDefault_${index}">
-                                    ${newAddress}
-                                </label>
-                            </div>
-                        `;
-                        $('#listDiaChiContainer').append(newRadioHTML);
+        // --- 4. CẬP NHẬT HIỂN THỊ VÀ ĐÓNG MODAL ---
+        $('#hienThiHoTen').text(currentHT);
+        $('#hoten_data').val(currentHT);
+        $('#hienThiSDT').text(currentSDT);
+        $('#sodienthoai_data').val(currentSDT);
+        $('#btn-diachi div').text(currentDC);
+        $('#diachidata').val(currentDC);
 
-                        // Reset input
-                        $('#addDiaChi').val('');
-                        $('#btn-diachi div').text("Địa chỉ: " + newAddress);
-                        $('#diachidata').val(newAddress);
-
-                        // Đóng modal
-                        $('#accountUpdateModal').modal('hide');
-                        $('diachidata').val(newAddress)
-                        alert("Đã thêm địa chỉ thành công!");
-                    } else if (response.status === 'exists') {
-                        alert("Địa chỉ đã tồn tại!");
-                    }
-                },
-                error: function () {
-                    alert("Lỗi khi thêm địa chỉ!");
-                }
-            });
+        $('.modal').modal('hide'); 
+        alert("Đã lưu thông tin mới!");
+    }
+},
         });
+    }
+
+    // --- XỬ LÝ LƯU HỌ TÊN MỚI ---
+    $('#btnSaveHoTen').on('click', function(e) {
+        e.preventDefault();
+        let newVal = $('#inputNewHoTen').val().trim();
+        if(newVal === "") return alert("Vui lòng nhập họ tên!");
+        syncAndSaveData(null, newVal, null);
     });
+
+    // --- XỬ LÝ LƯU SỐ ĐIỆN THOẠI MỚI ---
+    $('#btnSaveSDT').on('click', function(e) {
+        e.preventDefault();
+        let newVal = $('#inputNewSDT').val().trim();
+        if(newVal === "") return alert("Vui lòng nhập số điện thoại!");
+        syncAndSaveData(null, null, newVal);
+    });
+
+    // --- XỬ LÝ LƯU ĐỊA CHỈ MỚI ---
+    $('#btnDiaChi').on('click', function (e) {
+        e.preventDefault();
+        let newVal = $('#addDiaChi').val().trim();
+        if (newVal === '') return alert("Vui lòng nhập địa chỉ!");
+        syncAndSaveData(newVal, null, null);
+    });
+});
     
 
     
@@ -217,25 +286,31 @@
           @endif
         </ul>
     </div>
-    <div class="d-flex justify-content-between gap-5 p-5 bg-gray-200 bg-light" style="">
+    <div class="d-flex justify-content-between gap-5 p-5 bg-gray-200 bg-light">
         <div class="d-flex flex-column gap-3 p-3" style="width: 50%;">
             <h1 class="text-dark fw-semibold">Thanh toán</h1>
             <!-- <form id="paymentForm" class="d-flex flex-column gap-3 p-3" method="get"> -->
                 <!-- <input type="hidden" name="listSP" id="listSPInput">     -->
                 <input type="hidden" name="tongtien" value="{{ $sum ?? 0 }}">
 
-<div class="d-flex flex-column">
-    <label class="text-dark fw-semibold" for="">Họ tên *</label>
-    {{-- Kiểm tra $user và getIdNguoiDung() trước khi gọi getHoTen() --}}
-    <input disabled class="p-2 border border-0 rounded hover:border-blue-500" type="text" 
-           value="{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getHoTen() : '' }}" required>
+<!-- Khu vực Họ tên -->
+<div class="d-flex flex-column mb-3">
+    <label class="text-dark fw-semibold">Họ tên *</label>
+    <button class="bg-white border border-0 p-2 rounded d-flex justify-content-between" type="button" 
+            data-bs-toggle="modal" data-bs-target="#modalHoTen">
+        <div id="hienThiHoTen">{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getHoTen() : 'Nhập họ tên' }}</div>
+        <i class="fa-solid fa-arrow-right pt-1"></i>
+    </button>
 </div>
 
-<div class="d-flex flex-column">
-    <label class="text-dark fw-semibold" for="">Số điện thoại *</label>
-    {{-- Tương tự cho số điện thoại --}}
-    <input disabled class="p-2 border border-0 rounded hover:border-blue-500" type="text" 
-           value="{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getSoDienThoai() : '' }}" required>
+<!-- Khu vực Số điện thoại -->
+<div class="d-flex flex-column mb-3">
+    <label class="text-dark fw-semibold">Số điện thoại *</label>
+    <button class="bg-white border border-0 p-2 rounded d-flex justify-content-between" type="button" 
+            data-bs-toggle="modal" data-bs-target="#modalSDT">
+        <div id="hienThiSDT">{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getSoDienThoai() : 'Nhập số điện thoại' }}</div>
+        <i class="fa-solid fa-arrow-right pt-1"></i>
+    </button>
 </div>
 
 <div class="d-flex flex-column">
@@ -286,6 +361,10 @@
                     value="{{ ($user && $user->getIdNguoiDung() && $user->getIdNguoiDung()->getTinh()) ? $user->getIdNguoiDung()->getTinh()->getId() : '' }}">
                 
                 <input type="hidden" name="pttt" id="idpttt" value="1">
+                <input type="hidden" name="hoten" id="hoten_data" 
+                    value="{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getHoTen() : '' }}">
+                <input type="hidden" name="sodienthoai" id="sodienthoai_data" 
+                    value="{{ ($user && $user->getIdNguoiDung()) ? $user->getIdNguoiDung()->getSoDienThoai() : '' }}">
 
                 {{-- Lớp bảo vệ cho Địa chỉ --}}
                 <input type="hidden" name="diachi" id="diachidata" 
@@ -369,7 +448,78 @@
             
         </div>
     </div>
+<!-- Modal chọn Họ tên (Có danh sách) -->
+<div class="modal fade" id="modalHoTen" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Chọn hoặc nhập họ tên mới</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex flex-column gap-4">
+            <div class="w-full">
+                <div class="d-flex justify-content-between gap-2">
+                    <input class="form-control flex-grow-1" type="text" id="inputNewHoTen" placeholder="Thêm họ tên mới...">
+                    <button class="btn btn-info text-white" id="btnSaveHoTen">Lưu</button>
+                </div>
+            </div>
+            <hr>
+           <div id="listHoTenContainer">
+    @foreach($listDiaChi as $dc)
+        @php $hoTen = trim($dc->getHoTen()); @endphp
+        @if(!empty($hoTen))
+        <div class="form-check py-2 border-bottom d-flex justify-content-between align-items-center">
+            <div class="flex-grow-1">
+                <input class="form-check-input" type="radio" name="radioHoTen" value="{{ $hoTen }}">
+                <label class="form-check-label w-100">{{ $hoTen }}</label>
+            </div>
+        </div>
+        @endif
+    @endforeach
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
+<!-- Modal chọn Số điện thoại (Có danh sách) -->
+<div class="modal fade" id="modalSDT" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Chọn hoặc nhập số điện thoại mới</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex flex-column gap-4">
+            <div class="w-full">
+                <div class="d-flex justify-content-between gap-2">
+                    <input class="form-control flex-grow-1" type="text" id="inputNewSDT" placeholder="Thêm số điện thoại mới...">
+                    <button class="btn btn-info text-white" id="btnSaveSDT">Lưu</button>
+                </div>
+            </div>
+            <hr>
+            <div id="listSDTContainer">
+    @foreach($listDiaChi as $dc)
+        @php $sdt = trim($dc->getSoDienThoai()); @endphp
+        {{-- Chỉ hiển thị nếu số điện thoại không rỗng --}}
+        @if(!empty($sdt))
+        <div class="form-check py-2 border-bottom d-flex justify-content-between align-items-center">
+            <div class="flex-grow-1">
+                <input class="form-check-input" type="radio" name="radioSDT" value="{{ $sdt }}">
+                <label class="form-check-label w-100">{{ $sdt }}</label>
+            </div>
+        </div>
+        @endif
+    @endforeach
+</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="modal fade" id="accountUpdateModal" tabindex="-1" aria-labelledby="userModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-lg"> <!-- modal-lg để modal to hơn -->
     <div class="modal-content">
@@ -380,26 +530,32 @@
       <div class="modal-body">
         <div class="flex flex-column gap-5">
             <div class=" w-full">
-                <form class="d-flex justify-content-between" action="">
-                    <div class="d-flex flex-column gap-1">
-                        <label class="text-secondary fs-6" for="">Thêm địa chỉ mới</label>
-                        <input class="flex-1 p-1 rounded border border-0" style="width: 600px;" type="text" name="" id="addDiaChi">
-                        <!-- <hr> -->
-                    </div>
-                    <button class="btn btn-info" id="btnDiaChi" style="height: 50px;">Lưu</button>
+                <form class="d-flex justify-content-between align-items-center gap-2" action="">
+    <div class="flex-grow-1">
+        <input class="form-control flex-grow-1" 
+               type="text" 
+               id="addDiaChi" 
+               placeholder="Thêm địa chỉ mới..."
+               style="border: 2px solid #bcc5cc; border-radius: 4px; padding: 6px 12px; height: 45px;">
+    </div>
+                    <button class="btn btn-info text-white" id="btnDiaChi" style="height: 50px;">Lưu</button>
                 </form>
             </div>
             <hr>
             <div id="listDiaChiContainer">
-                @foreach($listDiaChi as $dc) 
-                <div class="form-check">
-                    <input class="form-check-input" type="radio" name="radioDefault" id="radioDefault_{{$loop->index}}" value="{{$dc->getDiaChi()}}">
-                    <label class="form-check-label text-break w-100" for="radioDefault_{{$loop->index}}">
-                        {{$dc->getDiaChi()}}
-                    </label>
-                </div>
-                @endforeach
+    @foreach($listDiaChi as $dc)
+        @php $diachi = trim($dc->getDiaChi()); @endphp
+        {{-- Chỉ hiển thị nếu địa chỉ không rỗng --}}
+        @if(!empty($diachi))
+        <div class="form-check py-2 border-bottom d-flex justify-content-between align-items-center">
+            <div class="flex-grow-1">
+                <input class="form-check-input" type="radio" name="radioDefault" value="{{ $diachi }}">
+                <label class="form-check-label w-100">{{ $diachi }}</label>
             </div>
+        </div>
+        @endif
+    @endforeach
+</div>
             <!-- <button></button> -->
         </div>
       </div>

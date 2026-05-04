@@ -5,7 +5,6 @@ use Exception;
 class database_connection {
     private $connection = null;
     private static $instance;
-<<<<<<< HEAD
     private static $host = null;
     private static $port = null;
     private static $dbname = null;
@@ -19,15 +18,6 @@ class database_connection {
         self::$user = env('DB_USERNAME', 'root');
         self::$pass = env('DB_PASSWORD', '276951438');
     }
-=======
-    private static $host = "localhost";
-    private static $port = "3306";
-    private static $dbname = "laravel";
-    private static $user = "root";
-    private static $pass = "";
-
-    private function __construct(){}
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 
     public static function getInstance() {
         if(self::$instance == null) {

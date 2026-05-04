@@ -196,7 +196,14 @@ if (searchForm) {
                 <?php
                 $queryString = isset($_GET['keyword']) ? '&keyword=' . urlencode($_GET['keyword']) : '';
                 $query = $_GET;
+                $items_per_page = 8; 
+                $allHoaDon = app(App\Bus\HoaDon_BUS::class)->getAllModels(); 
+                $total_items = is_array($allHoaDon) ? count($allHoaDon) : 0;
+                $current_page = request()->input('page', 1); 
 
+                $total_page = ceil((int)$total_items / $items_per_page);
+
+                $query = request()->query();
                 // PREV
                 if ($current_page > 1) {
                     echo '<li class="page-item">

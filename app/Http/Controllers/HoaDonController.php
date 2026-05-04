@@ -24,7 +24,7 @@ use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Support\Facades\URL;
 class HoaDonController extends Controller {
     private $hoaDonBUS;
     private $taiKhoanBUS;
@@ -33,12 +33,12 @@ class HoaDonController extends Controller {
     private $tinhBUS;
     private $nguoiDungBUS;
 
-    public function __construct(HoaDon_BUS $hoaDonBUS, TaiKhoan_BUS $taiKhoanBUS, PTTT_BUS $ptttBUS, DVVC_BUS $dvvcBUS, Tinh_BUS $tinhBUS, NguoiDung_BUS $nguoiDungBUS)
+    public function __construct(HoaDon_BUS $hoaDonBUS, TaiKhoan_BUS $taiKhoanBUS, PTTT_BUS $ptttBUS, Tinh_BUS $tinhBUS, NguoiDung_BUS $nguoiDungBUS)
     {
         $this->hoaDonBUS = $hoaDonBUS;
         $this->taiKhoanBUS = $taiKhoanBUS;
         $this->ptttBUS = $ptttBUS;
-        $this->dvvcBUS = $dvvcBUS;
+        
         $this->tinhBUS = $tinhBUS;
         $this->nguoiDungBUS = $nguoiDungBUS;
     }
@@ -103,13 +103,13 @@ class HoaDonController extends Controller {
             'checkout_source' => 'cart'
         ]);
         $listPTTT = app(PTTT_BUS::class)->getAllModels();
-        $listDVVC = app(DVVC_BUS::class)->getAllModels();
+        
         $listTinh = app(Tinh_BUS::class)->getAllModels();
         $email = app(Auth_BUS::class)->getEmailFromToken();
         $user = app(TaiKhoan_BUS::class)->getModelById($email);
         $isLogin = app(Auth_BUS::class)->isAuthenticated();
         session(['listPTTT' => $listPTTT,
-                'listDVVC' => $listDVVC,
+                
                 'listTinh' => $listTinh,
                 'user' => $user,
                 'isLogin' => $isLogin]);
@@ -137,13 +137,13 @@ class HoaDonController extends Controller {
             'checkout_source' => 'buy_now'            
         ]);
         $listPTTT = app(PTTT_BUS::class)->getAllModels();
-        $listDVVC = app(DVVC_BUS::class)->getAllModels();
+
         $listTinh = app(Tinh_BUS::class)->getAllModels();
         $email = app(Auth_BUS::class)->getEmailFromToken();
         $user = app(TaiKhoan_BUS::class)->getModelById($email);
         $isLogin = app(Auth_BUS::class)->isAuthenticated();
         session(['listPTTT' => $listPTTT,
-                'listDVVC' => $listDVVC,
+               
                 'listTinh' => $listTinh,
                 'user' => $user,
                 'isLogin' => $isLogin]);
@@ -157,14 +157,14 @@ class HoaDonController extends Controller {
         $dvvc = $request->input('dvvc');
         $pttt = $request->input('pttt');
         $diachi=  $request->input('diachi');
-        $cpvc = app(CPVC_DAO::class)->getByTinhAndDVVC($tinh, $dvvc)->getChiPhiVC();
-        $tongtien += $cpvc;
+       
+       
         // dd($tinh);
         return response()->json([
             'tinh' => $tinh,
             'dvvc' => $dvvc,
             'pttt' => $pttt,
-            'cpvc' => $cpvc,
+            
             'diachi' => $diachi,
             'tongtien' => $tongtien
         ]);
@@ -200,7 +200,7 @@ class HoaDonController extends Controller {
                 // Ta phải gọi hàm chốt đơn ngay tại đây để trừ kho và dọn giỏ hàng!
                 app(HoaDon_BUS::class)->chotDonHangSauThanhToan($request, $hd->getId(), "DADAT");
                 
-                $url = \URL::signedRoute('order.success', ['orderId' => $hd->getId()]);
+                $url = URL::signedRoute('order.success', ['orderId' => $hd->getId()]);
                 return redirect($url)->with('message', 'Đặt hàng thành công. Vui lòng thanh toán khi nhận hàng!');
 
 

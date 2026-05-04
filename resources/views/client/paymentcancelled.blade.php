@@ -69,15 +69,26 @@
     </ul>
 </div>
 <div class="bg-light rounded shadow p-4 d-flex flex-column gap-3 align-content-center" style="width: 80%;margin: auto; margin-top: 70px; margin-bottom: 70px;">
-    <h1 class="" style="text-align: center;">Bạn đã huỷ thanh toán đơn hàng</h1>
-    
-    <p>Họ tên người mua hàng: {{$user->getIdNguoiDung()->getHoTen()}}</p>
-    <p>Ngày tạo: {{$hoaDon->getNgayTao()}}</p>
-    <p>Địa chỉ: {{$hoaDon->getDiaChi()}} - Tỉnh: {{$hoaDon->getTinh()->getTenTinh()}}</p>
-    <p>Số điện thoại: {{$user->getIdNguoiDung()->getSoDienThoai()}}</p>
-    <p>Thanh toán: {{$hoaDon->getIdPTTT()->getTenPTTT()}}</p>
-    <p>Tổng tiền: {{ number_format($hoaDon->getTongTien(), 0, ',', '.') }}₫</p>
-    @if($hoaDon->getIdPTTT()->getId()!=1 && $hoaDon->getTrangThai() == HoaDonEnum::DADAT)
+    <h1 class="" style="text-align: center; font-size: 30px;"><i class="fas fa-clock" style="color: #47cbc6;"></i> ĐANG CHỜ THANH TOÁN</h1>
+    <h1 class="" style="text-align: center; font-size: 20px; font-style: italic;">(Đơn hàng của bạn sẽ được giữ trong vòng 15 phút. Vui lòng thanh toán trước khi hết hạn.)</h1>
+    <h1 class="" style="text-align: center; font-size: 20px; font-style: italic;"> (Thanh toán tại Tra cứu đơn hàng.)</h1>
+
+<p>Họ tên người mua hàng: {{ $hoaDon?->getHoTen() ?? 'Khách hàng' }}</p>
+
+<p>Ngày tạo: {{ $hoaDon?->getNgayTao() instanceof \DateTime ? $hoaDon->getNgayTao()->format('d/m/Y H:i') : $hoaDon?->getNgayTao() }}</p>
+
+<p>Địa chỉ: {{ $hoaDon?->getDiaChi() }}</p>
+
+<p>Tỉnh: {{ $hoaDon?->getTinh()?->getTenTinh() ?? 'N/A' }}</p>
+
+<p>Số điện thoại: {{ $hoaDon?->getSoDienThoai() ?? 'N/A' }}</p>
+
+<p>Thanh toán: {{ $hoaDon?->getIdPTTT()?->getTenPTTT() ?? 'Chưa xác định' }}</p>
+
+<p>Tổng tiền: {{ number_format($hoaDon?->getTongTien() ?? 0, 0, ',', '.') }}₫</p>
+
+{{-- Sửa lỗi: Thêm dấu ? trước getId() và getTrangThai() --}}
+@if($hoaDon?->getIdPTTT()?->getId() != 1 && $hoaDon?->getTrangThai() === \App\Enum\HoaDonEnum::DADAT)
     <!-- <a href="/lich-su-don-hang/dadat">
         <button class="btn btn-info">Thanh toán ngay</button>
     </a> -->

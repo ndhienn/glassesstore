@@ -1,170 +1,119 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
-use App\Bus\TaiKhoan_BUS;
 use App\Enum\HoaDonEnum;
 
 class HoaDon extends Model
 {
-<<<<<<< HEAD
-    private $id, $tongTien, $ngayTao, $diaChi, $orderCode, $linktt;
-=======
-    private $id, $tongTien, $ngayTao, $diaChi, $orderCode;
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
-    private Tinh $tinh;
-    private TaiKhoan $email;
-    private NguoiDung $idNhanVien;
-    private PTTT $idPTTT;
-    private HoaDonEnum $trangThai;
+    protected $table = 'hoadon';
+    protected $primaryKey = 'ID'; 
 
-<<<<<<< HEAD
-    public function __construct($id = null,TaiKhoan $email, NguoiDung $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, Tinh $tinh, HoaDonEnum $trangThai, $orderCode = null, $linktt = null)
-=======
-    public function __construct($id = null,TaiKhoan $email, NguoiDung $idNhanVien, $tongTien, $idPTTT, $ngayTao, $diaChi, Tinh $tinh, HoaDonEnum $trangThai, $orderCode = null)
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
-    {
-        $this->id = $id;
-        $this->email = $email;
-        $this->idNhanVien = $idNhanVien;
-        $this->tongTien = $tongTien;
-        $this->idPTTT = $idPTTT;
-        $this->ngayTao = $ngayTao;
-        $this->diaChi = $diaChi;
-        $this->tinh = $tinh;
-        $this->trangThai = $trangThai;
-        $this->orderCode = $orderCode;
-<<<<<<< HEAD
-        $this->linktt = $linktt;
+    public $incrementing = true;
+    public $timestamps = false;
+
+    protected $fillable = [
+        'email', 'idNhanVien', 'tongTien', 'idPTTT', 'ngayTao',
+        'diaChi', 'hoTen', 'soDienThoai', 'tinh', 'trangThai', 'orderCode', 'linktt'
+    ];
+
+    
+    public function __construct(
+        $idOrAttributes = null,
+        $email = null,
+        $idNhanVien = null,
+        $tongTien = null,
+        $idPTTT = null,
+        $ngayTao = null,
+        $diaChi = null,
+        $hoTen = null,
+        $soDienThoai = null,
+        $tinh = null,
+        $trangThai = null,
+        $orderCode = null,
+        $linktt = null
+    ) {
+        if (is_array($idOrAttributes)) {
+            // Trường hợp Laravel gọi hoặc truyền mảng từ DAO
+            parent::__construct($idOrAttributes);
+        } else {
+            // Trường hợp DAO cũ truyền tham số rời rạc
+            parent::__construct();
+            $this->setId($idOrAttributes);
+            $this->setEmail($email);
+            $this->setIdNhanVien($idNhanVien);
+            $this->setTongTien($tongTien);
+            $this->setIdPTTT($idPTTT);
+            $this->setNgayTao($ngayTao);
+            $this->setDiaChi($diaChi);
+            $this->setHoTen($hoTen);
+            $this->setSoDienThoai($soDienThoai);
+            $this->setTinh($tinh);
+            $this->setTrangThai($trangThai);
+            $this->setOrderCode($orderCode);
+            $this->setLinktt($linktt);
+        }
     }
 
-    public function getLinktt()
-    {
-        return $this->linktt;
-    }
-    public function setLinktt($linktt)
-    {
-        $this->linktt = $linktt;
-    }
-
-     // 1 Hóa đơn -> N Nỗ lực thanh toán
-=======
-    }
-
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
+   
     public function paymentAttempts()
     {
         return $this->hasMany(PaymentAttempt::class, 'order_id', 'id');
     }
 
-    // 1 Hóa đơn -> N Giao dịch (chốt sổ)
     public function paymentTransactions()
     {
         return $this->hasMany(PaymentTransaction::class, 'order_id', 'id');
     }
 
-    // Getter và Setter cho ID
-    public function getId()
+   
+
+    public function getId() { return $this->attributes['ID'] ?? null; }
+    public function setId($id) { $this->attributes['ID'] = $id; }
+
+    public function getEmail() { return $this->attributes['email'] ?? null; }
+    public function setEmail($email) { $this->attributes['email'] = $email; }
+
+    public function getIdNhanVien() { return $this->attributes['idNhanVien'] ?? null; }
+    public function setIdNhanVien($idNhanVien) { $this->attributes['idNhanVien'] = $idNhanVien; }
+
+    public function getTongTien() { return $this->attributes['tongTien'] ?? 0; }
+    public function setTongTien($tongTien) { $this->attributes['tongTien'] = $tongTien; }
+
+    public function getIdPTTT() { return $this->attributes['idPTTT'] ?? null; }
+    public function setIdPTTT($idPTTT) { $this->attributes['idPTTT'] = $idPTTT; }
+
+    public function getNgayTao() { return $this->attributes['ngayTao'] ?? null; }
+    public function setNgayTao($ngayTao) { $this->attributes['ngayTao'] = $ngayTao; }
+
+    public function getDiaChi() { return $this->attributes['diaChi'] ?? ''; }
+    public function setDiaChi($diaChi) { $this->attributes['diaChi'] = $diaChi; }
+
+    public function getHoTen() { return $this->attributes['hoTen'] ?? ''; }
+    public function setHoTen($hoTen) { $this->attributes['hoTen'] = $hoTen; }
+
+    public function getSoDienThoai() { return $this->attributes['soDienThoai'] ?? ''; }
+    public function setSoDienThoai($soDienThoai) { $this->attributes['soDienThoai'] = $soDienThoai; }
+
+    public function getTinh() { return $this->attributes['tinh'] ?? null; }
+    public function setTinh($tinh) { $this->attributes['tinh'] = $tinh; }
+
+    public function getTrangThai()
     {
-        return $this->id;
+        $status = $this->attributes['trangThai'] ?? null;
+        if ($status instanceof HoaDonEnum) return $status;
+        return HoaDonEnum::tryFrom($status);
     }
 
-    public function setId($id)
+    public function setTrangThai($trangThai)
     {
-        $this->id = $id;
+        $this->attributes['trangThai'] = $trangThai instanceof HoaDonEnum ? $trangThai->value : $trangThai;
     }
 
-    // Getter và Setter cho idKhachHang
-    public function getEmail()
-    {
-        return $this->email;
-    }
+    public function getLinktt() { return $this->attributes['linktt'] ?? null; }
+    public function setLinktt($linktt) { $this->attributes['linktt'] = $linktt; }
 
-    public function setEmail($email)
-    {
-        $this->email = $email;
-    }
-
-    // Getter và Setter cho idNhanVien
-    public function getIdNhanVien()
-    {
-        return $this->idNhanVien;
-    }
-
-    public function setIdNhanVien($idNhanVien)
-    {
-        $this->idNhanVien = $idNhanVien;
-    }
-
-    // Getter và Setter cho tongTien
-    public function getTongTien()
-    {
-        return $this->tongTien;
-    }
-
-    public function setTongTien($tongTien)
-    {
-        $this->tongTien = $tongTien;
-    }
-
-    // Getter và Setter cho idPTTT
-    public function getIdPTTT()
-    {
-        return $this->idPTTT;
-    }
-
-    public function setIdPTTT($idPTTT)
-    {
-        $this->idPTTT = $idPTTT;
-    }
-
-    // Getter và Setter cho ngayTao
-    public function getNgayTao()
-    {
-        return $this->ngayTao;
-    }
-
-    public function setNgayTao($ngayTao)
-    {
-        $this->ngayTao = $ngayTao;
-    }
-
-    public function getDiaChi() {
-        return $this->diaChi;
-    }
-
-    public function setDiaChi($diaChi) {
-        $this->diaChi = $diaChi;
-    }
-
-    public function getTinh() : Tinh {
-        return $this->tinh;
-    }
-
-    public function setTinh(Tinh $tinh): void {
-        $this->tinh = $tinh;
-    }
- 
-     // Getter và Setter cho trangThai
-     public function getTrangThai()
-     {
-         return $this->trangThai;
-     }
- 
-     public function setTrangThai(HoaDonEnum $trangThai)
-     {
-         $this->trangThai = $trangThai;
-     }
-
-     // Getter và Setter cho orderCode
-    public function getOrderCode()
-    {
-        return $this->orderCode;
-    }
-
-    public function setOrderCode($orderCode)
-    {
-        $this->orderCode = $orderCode;
-    }
-
+    public function getOrderCode() { return $this->attributes['orderCode'] ?? null; }
+    public function setOrderCode($orderCode) { $this->attributes['orderCode'] = $orderCode; }
 }

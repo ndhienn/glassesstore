@@ -3,12 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\BUS\Payment_BUS;
-<<<<<<< HEAD
-use App\BUS\HoaDon_BUS;
-=======
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
-
+use App\Bus\Payment_BUS;
+use App\Bus\HoaDon_BUS;
+use Illuminate\Support\Facades\URL;
 class PaymentController extends Controller
 {
     protected $paymentBUS;
@@ -33,7 +30,6 @@ class PaymentController extends Controller
             $vnpayUrl = $this->paymentBUS->processVnpayPayment(
                 $id, 
                 $request->ip(), 
-<<<<<<< HEAD
                 config('vnpay.return_url'),
             );
 
@@ -41,20 +37,6 @@ class PaymentController extends Controller
             return redirect()->away($vnpayUrl);
 
         } catch (\Exception $e) {
-=======
-                env('vnp_Returnurl')
-            );
-
-            // Nhận link xong thì nhảy trang
-            return redirect($vnpayUrl);
-
-        } catch (\Exception $e) {
-            dd([
-                'Lỗi gì' => $e->getMessage(),
-                'Ở file nào' => $e->getFile(),
-                'Tại dòng số mấy' => $e->getLine()
-            ]);
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
             // Nếu BUS báo lỗi (ví dụ không thấy hóa đơn), bắt lỗi tại đây
             return redirect()->back()->with('error', $e->getMessage());
             dd("Lỗi hệ thống: " . $e->getMessage(), "Dòng lỗi: " . $e->getLine());
@@ -62,62 +44,66 @@ class PaymentController extends Controller
     }
 
     public function vnpayReturn(Request $request)
-<<<<<<< HEAD
-    {
-        try {
-            $vnp_ResponseCode = $request->input('vnp_ResponseCode');
-            $txnRef = $request->input('vnp_TxnRef');
+{
+    try {
+        $vnp_ResponseCode = $request->input('vnp_ResponseCode');
+        $txnRef = $request->input('vnp_TxnRef');
 
-            // Lưu log thô ngay lập tức để đối soát sau này
-            // app(PaymentGatewayLog_BUS::class)->logData('VNPAY', $txnRef, [], $request->all(), 'vnpay-return');
-
-            // Kiểm tra nếu không có mã giao dịch thì báo thất bại luôn
-            if (!$txnRef) {
-                return view('client.paymentsuccess', ['success' => false]);
-            }
-
-            // Trích xuất ID từ chuỗi txnRef (ví dụ: DH115_... lấy ra 115)
-            $orderId = (int) filter_var(explode('_', $txnRef)[0], FILTER_SANITIZE_NUMBER_INT);
-            // Kiểm tra chữ ký bảo mật từ VNPAY
-            $result = $this->paymentBUS->processVnpayReturn($request->all());
-
-            // Xử lý khi thanh toán thành công (Mã 00)
-            if ($vnp_ResponseCode == '00' && isset($result['status']) && $result['status'] === 'success') {
-
-                // Lưu lịch sử trạng thái
-                // app(PaymentStatusHistory_BUS::class)->recordHistory($orderId, 'PENDING', 'PAID', 'Thanh toán qua VNPay thành công');
-
-                // Lưu giao dịch chính thức
-                // app(PaymentTransaction_BUS::class)->saveSuccessTransaction($orderId, $request->all());
-
-                // Chốt đơn hàng sau khi thanh toán thành công
-                app(\App\Bus\HoaDon_BUS::class)->chotDonHangSauThanhToan($request, $orderId, "PAID");
-
-
-                // Trả về view thành công trực tiếp để URL không bị redirect dài dòng
-                $url = \URL::signedRoute('order.success', ['orderId' => $orderId]);
-                return redirect($url)->with('message', 'Thanh toán VNPay thành công!');
-            }
-
-            // Trường hợp người dùng hủy (Mã 24) hoặc lỗi khác
-            if ($vnp_ResponseCode == '24') {
-                //cập nhật đơn hàng thành đã đặt nhưng chưa thanh toán (Cancelled)
-                app(\App\Bus\HoaDon_BUS::class)->huyThanhToanDonHang($orderId);
-                $url = \URL::signedRoute('payment.cancelled', ['orderId' => $orderId]);
-                return redirect($url)->with('message', 'Bạn đã hủy thanh toán đơn hàng!');
-            }
-
-        } catch (\Exception $e) {
-            \Log::error("Lỗi VNPay Return: " . $e->getMessage());
-            // Trả về trang thất bại nếu có lỗi code, tránh bị trắng trang
-            return view('client.paymentsuccess', ['success' => false]);
+        if (!$txnRef) {
+            return view('client.paymentcancelled', ['success' => false, 'message' => 'Mã giao dịch trống']);
         }
-    }
 
+        // 1. Lấy ID hóa đơn từ mã txnRef (ví dụ DH115_12345 -> 115)
+        $orderId = (int) filter_var(explode('_', $txnRef)[0], FILTER_SANITIZE_NUMBER_INT);
+
+        // 2. Lấy Hóa đơn từ DB[cite: 1]
+        $hoaDonBus = app(\App\Bus\HoaDon_BUS::class);
+        $hoaDon = $hoaDonBus->getModelById($orderId);
+
+        if (!$hoaDon) {
+            return view('client.paymentcancelled', ['success' => false, 'message' => 'Hóa đơn không tồn tại']);
+        }
+
+        // 3. ÉP BUỘC lấy User từ Hóa đơn để tránh mất Session
+        // Trong model HoaDon của bạn, hàm getEmail() trả về object TaiKhoan[cite: 2]
+        $user = $hoaDon->getEmail(); 
+
+        // 4. Kiểm tra chữ ký và trạng thái VNPay
+        $result = $this->paymentBUS->processVnpayReturn($request->all());
+
+        if ($vnp_ResponseCode == '00' && isset($result['status']) && $result['status'] === 'success') {
+            // Chốt đơn[cite: 1]
+            $hoaDonBus->chotDonHangSauThanhToan($request, $orderId, "PAID");
+
+            return view('client.SuccessPayment', [
+                'success' => true,
+                'status' => 'success',
+                'hoaDon' => $hoaDon,
+                'user' => $user, // Chắc chắn đã được nạp từ $hoaDon->getEmail()
+                'message' => 'Thanh toán thành công!'
+            ]);
+        }
+
+        // Trường hợp lỗi hoặc hủy
+        return view('client.paymentcancelled', [
+            'success' => false,
+            'status' => 'fail',
+            'hoaDon' => $hoaDon,
+            'user' => $user,
+            'message' => 'Giao dịch không thành công hoặc bị hủy.'
+        ]);
+
+    } catch (\Exception $e) {
+    // Chuyển hướng về trang giỏ hàng (hoặc trang chủ nếu bạn muốn)
+    return redirect()->route('cart.index')->with('error', 'Hệ thống thanh toán đang gặp sự cố, vui lòng thử lại sau!');
+    }
+}
     public function processCOD(Request $request)
     {
+        $id = $request->input('order_id'); 
+        $order = app(HoaDon_BUS::class)->getModelById($id);
         //Ngay lập tức TẠO LINK CHỮ KÝ DÙNG CHUNG VÀ CHUYỂN HƯỚNG
-        $url = \URL::signedRoute('order.success', ['orderId' => $order->id]);
+        $url = URL::signedRoute('order.success', ['orderId' => $order->id]);
         return redirect($url)->with('message', 'Đặt hàng thành công. Vui lòng thanh toán khi nhận hàng!');
     }
 
@@ -130,7 +116,7 @@ class PaymentController extends Controller
         }
 
         // Lấy thông tin đơn hàng ra để in lên View
-        $order = app(\App\BUS\HoaDon_BUS::class)->getModelById($orderId);
+        $order = app(\App\Bus\HoaDon_BUS::class)->getModelById($orderId);
         
         // Trả về chung 1 giao diện HTML
         return view('client.SuccessPayment', ['hoaDon' => $order]);
@@ -143,7 +129,7 @@ class PaymentController extends Controller
         }
 
         // Lấy thông tin đơn hàng ra để in lên View
-        $order = app(\App\BUS\HoaDon_BUS::class)->getModelById($orderId);
+        $order = app(\App\Bus\HoaDon_BUS::class)->getModelById($orderId);
         
         // Trả về chung 1 giao diện HTML
         return view('client.paymentcancelled', ['hoaDon' => $order]);
@@ -161,44 +147,4 @@ class PaymentController extends Controller
         // 4. Đẩy khách sang VNPay
         return redirect()->away($vnp_Url);
     }
-=======
-{
-    try {
-        $vnp_ResponseCode = $request->input('vnp_ResponseCode');
-        $txnRef = $request->input('vnp_TxnRef');
-
-        // 1. Kiểm tra nếu không có mã giao dịch thì báo thất bại luôn
-        if (!$txnRef) {
-            return view('client.paymentsuccess', ['success' => false]);
-        }
-
-        // Trích xuất ID từ chuỗi txnRef (ví dụ: DH115_... lấy ra 115)
-        $orderId = (int) filter_var($txnRef, FILTER_SANITIZE_NUMBER_INT);
-
-        // 2. Kiểm tra chữ ký bảo mật từ VNPAY
-        $result = $this->paymentBUS->processVnpayReturn($request->all());
-
-        // 3. Xử lý khi thanh toán thành công (Mã 00)
-        if ($vnp_ResponseCode == '00' && isset($result['status']) && $result['status'] === 'success') {
-            
-            // Gọi BUS để chốt đơn: Trừ kho, xóa giỏ hàng, đổi trạng thái thành PAID
-            // Lưu ý: Đảm bảo file HoaDon_BUS đã sửa setTrangThai('PAID')
-            app(\App\Bus\HoaDon_BUS::class)->chotDonHangSauThanhToan($orderId);
-
-            // Trả về view thành công trực tiếp để URL không bị redirect dài dòng
-            return view('client.paymentsuccess', [
-                'success' => true,
-                'orderId' => $orderId
-            ]);
-        }
-
-        // 4. Trường hợp người dùng hủy (Mã 24) hoặc lỗi khác
-        return view('client.paymentsuccess', ['success' => false]);
-
-    } catch (\Exception $e) {
-        // Trả về trang thất bại nếu có lỗi code, tránh bị trắng trang
-        return view('client.paymentsuccess', ['success' => false]);
-    }
-}
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163
 }

@@ -193,7 +193,7 @@
         content: "";
         width: 0%;
         height: 4px;
-        background-color: #fb923c;
+        background-color: #55d5d2;
         position: absolute;
         top: -2px;
         transition: width 0.5s ease;
@@ -202,10 +202,10 @@
         width: 100%;
     }
     &:hover a {
-        color: #fb923c;
+        color: #55d5d2;
     }
     &:hover i {
-        color: #fb923c;
+        color: #55d5d2;
         transform: translateX(70px);
     }
 }

@@ -8,7 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class PaymentStatusHistory extends Model
 {
     use HasFactory;
-<<<<<<< HEAD
 
     protected $table = 'payment_status_histories';
 
@@ -27,6 +26,3 @@ class PaymentStatusHistory extends Model
     // Nếu bảng không có updated_at thì tắt nó đi
     public $timestamps = true; 
 }
-=======
-}
->>>>>>> d14ac0d76bfc4f8eebf769ca83f4a5272dfdd163

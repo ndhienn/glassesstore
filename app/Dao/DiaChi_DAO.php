@@ -7,8 +7,15 @@ use App\Services\database_connection;
 class DiaChi_DAO {
     public function createDiaChiModel ($rs) {
         $nd = app(NguoiDung_BUS::class)->getModelById($rs['IDND']);
-        return new DiaChi($nd, $rs['DIACHI']);
+        // Cập nhật: Truyền thêm HOTEN và SDT từ DB vào Model
+        return new DiaChi(
+            $nd, 
+            $rs['DIACHI'], 
+            $rs['HOTEN'] ?? null, 
+            $rs['SODIENTHOAI'] ?? null
+        );
     }
+
     public function getAll() {
         $list = [];
         $rs = database_connection::executeQuery("SELECT * FROM DIACHI");
@@ -28,9 +35,16 @@ class DiaChi_DAO {
         }
         return $list;
     }
+
     public function insert($model) {
-        $query = "INSERT INTO `diachi`(`IDND`, `DIACHI`) VALUES (?,?)";
-        $args = [$model->getIdND()->getId(), $model->getDiaChi()];
+        
+        $query = "INSERT INTO `diachi`(`IDND`, `DIACHI`, `HOTEN`, `SODIENTHOAI`) VALUES (?,?,?,?)";
+        $args = [
+            $model->getIdND()->getId(),
+            $model->getDiaChi(),
+            $model->getHoTen(),
+            $model->getSoDienThoai()
+        ];
         return database_connection::executeQuery($query, ...$args);
     }
 }

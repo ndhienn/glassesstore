@@ -10,7 +10,7 @@
  * Trả kết quả ghi nhận lại cho VNPAY
  */
 
-require_once("./config.php");
+require_once("./vnpay_php/config.php");
 $inputData = array();
 $returnData = array();
 foreach ($_GET as $key => $value) {
@@ -52,7 +52,7 @@ try {
         $vnp_TxnRef = $_GET['vnp_TxnRef'];
         $vnp_TransactionNo = $_GET['vnp_TransactionNo'];
 
-        require_once("db.php");
+        require_once("./vnpay_php/db.php");
 
         //Kiểm tra đơn hàng trong DB
         $stmt = $conn->prepare("SELECT * FROM orders WHERE order_id = ?");

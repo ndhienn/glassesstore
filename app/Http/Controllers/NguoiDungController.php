@@ -263,24 +263,38 @@ public function update(Request $request)
     }
    
     public function addAddress(Request $request)
-    {
-        $diachi = $request->input('diachi');
-        $user = session('user'); 
-
-        if (!$user) {
-            return response()->json(['status' => 'error', 'message' => 'Chưa đăng nhập']);
-        }
-
-        $idNguoiDung = $user->getIdNguoiDung()->getId();
-
-        $bus = app(\App\Bus\DiaChi_BUS::class);
-
-        $newDC = new \App\Models\DiaChi($user->getIdNguoiDung(), $diachi);
-        $bus->addModel($newDC);
-
-        return response()->json(['status' => 'success']);
+{
+    $user = session('user');
+    if (!$user) {
+        return response()->json(['status' => 'error', 'message' => 'Hết phiên đăng nhập']);
     }
 
+    $bus = app(\App\Bus\DiaChi_BUS::class);
+    
+    // 1. Kiểm tra số lượng địa chỉ hiện tại của người dùng
+    // Bạn cần viết thêm hàm getAllByIdND trong BUS/DAO để lấy danh sách
+    $currentAddresses = $bus->getByIdND($user->getIdNguoiDung());
+
+    if (count($currentAddresses) >= 5) {
+        return response()->json([
+            'status' => 'error', 
+            'message' => 'Bạn chỉ được lưu tối đa 5 địa chỉ. Vui lòng xóa bớt địa chỉ cũ!'
+        ]);
+    }
+
+    // 2. Nếu chưa đủ 5, thực hiện logic thêm mới như cũ
+    $diachi = $request->input('diachi');
+    $hoten = $request->input('hoten');
+    $sdt = $request->input('sodienthoai');
+
+    try {
+        $model = new \App\Models\DiaChi($user->getIdNguoiDung(), $diachi, $hoten, $sdt);
+        $bus->addModel($model);
+        return response()->json(['status' => 'success']);
+    } catch (\Exception $e) {
+        return response()->json(['status' => 'error', 'message' => $e->getMessage()]);
+    }
+}
 }
 
 ?>

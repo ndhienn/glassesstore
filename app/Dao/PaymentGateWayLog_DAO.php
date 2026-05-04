@@ -1,9 +1,9 @@
 <?php
-namespace App\DAO;
+namespace App\Dao;
 
 use App\Models\PaymentGatewayLog;
 
-class PaymentGatewayLog_DAO {
+class PaymentGateWayLog_DAO {
     public function addModel($data) {
         return PaymentGatewayLog::create($data);
     }

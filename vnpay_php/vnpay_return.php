@@ -16,7 +16,7 @@
     </head>
     <body>
         <?php
-        require_once("./config.php");
+        require_once("./vnpay_php/config.php");
         $vnp_SecureHash = $_GET['vnp_SecureHash'];
         $inputData = array();
         foreach ($_GET as $key => $value) {
@@ -57,7 +57,7 @@ try {
         $vnp_TxnRef = $_GET['vnp_TxnRef'];
         $vnp_TransactionNo = $_GET['vnp_TransactionNo'];
         $vnp_OrderInfo = $_GET['vnp_OrderInfo'];
-        require_once("db.php");
+        require_once("./vnpay_php/db.php");
 
         //Kiểm tra đơn hàng trong DB
         $stmt = $conn->prepare("SELECT * FROM orders WHERE order_id = ?");

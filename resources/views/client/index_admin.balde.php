@@ -13,9 +13,27 @@ use App\Bus\TaiKhoan_BUS;
 use App\Bus\SanPham_BUS;
     $sanPham = app(SanPham_BUS::class);
     ?>
+<style>
+ .nav-hidden {
+    transform: translateY(-100%) !important;
+}
+</style>
 <script>
   document.addEventListener('DOMContentLoaded', function () {
+  let lastScrollTop = 0;
+    const navbar = document.getElementById("navbar-ctn");
 
+    window.addEventListener("scroll", function() {
+      let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      
+      if (scrollTop > lastScrollTop && scrollTop > 100) {
+        navbar.classList.add("nav-hidden");
+      } else {
+        navbar.classList.remove("nav-hidden");
+      }
+      
+      lastScrollTop = scrollTop <= 0 ? 0 : scrollTop; 
+    }, false);
    let isLoading = false;
     let debounceTimeout = null;
 // 1. XỬ LÝ DROPDOWN USER 
@@ -579,19 +597,21 @@ use App\Bus\SanPham_BUS;
           </ul>
         </div>
         <div class="purchase-policy">
-          <label for="">Chính sách mua hàng</label>
+         <label for="">Chính sách mua hàng</label>
           <ul>
-            <li><a href="#">Hình thức thanh toán</a></li>
-            <li><a href="#">Chính sách giao hàng</a></li>
-            <li><a href="#">Chính sách bảo hành</a></li>
+            <li><a>Hình thức thanh toán</a></li>
+            <li><a>Chính sách giao hàng</a></li>
+
           </ul>
         </div>
       </div>
       <div class="footer-right">
         <div class="contact-info">
           <label for="" style="font-size: 22px;color:#e6f4f3;">Thông tin liên hệ</label>
-          <p>19000359</p>
-          <p>marketing@kinhmatanna.com</p>
+          <ul>
+            <li>19000359</li>
+            <li>marketing@kinhmatanna.com</li>
+          </ul>
         </div>
         <div class="business-info">
           <p>MST: 0108195925</p>

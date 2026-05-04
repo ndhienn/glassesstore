@@ -236,20 +236,21 @@
             <li><a href="#">Kính râm trẻ em</a></li>
           </ul>
         </div>
-        <div class="purchase-policy">
-          <label for="">Chính sách mua hàng</label>
+        <label for="">Chính sách mua hàng</label>
           <ul>
-            <li><a href="#">Hình thức thanh toán</a></li>
-            <li><a href="#">Chính sách giao hàng</a></li>
-            <li><a href="#">Chính sách bảo hành</a></li>
+            <li><a>Hình thức thanh toán</a></li>
+            <li><a>Chính sách giao hàng</a></li>
+
           </ul>
         </div>
       </div>
       <div class="footer-right">
         <div class="contact-info">
           <label for="" style="font-size: 22px;color:#e6f4f3;">Thông tin liên hệ</label>
-          <p>19000359</p>
-          <p>marketing@kinhmatanna.com</p>
+          <ul>
+            <li>19000359</li>
+            <li>marketing@kinhmatanna.com</li>
+          </ul>
         </div>
         <div class="business-info">
           <p>MST: 0108195925</p>

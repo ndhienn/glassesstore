@@ -98,7 +98,7 @@ if (searchForm) {
 <div class="p-3 bg-light flex">
     <form class="d-flex me-2 mb-3" method="get" role="search">
         <input class="form-control me-2 w-25" type="search" 
-       placeholder="Tìm kiếm theo (Tên, SĐT)..." 
+       placeholder="Tìm kiếm theo SĐT..." 
        aria-label="Search" id="keyword" name="keyword" 
        value="{{ request('keyword') }}">
 
@@ -196,7 +196,14 @@ if (searchForm) {
                 <?php
                 $queryString = isset($_GET['keyword']) ? '&keyword=' . urlencode($_GET['keyword']) : '';
                 $query = $_GET;
+                $items_per_page = 8; 
+                $allHoaDon = app(App\Bus\HoaDon_BUS::class)->getAllModels(); 
+                $total_items = is_array($allHoaDon) ? count($allHoaDon) : 0;
+                $current_page = request()->input('page', 1); 
 
+                $total_page = ceil((int)$total_items / $items_per_page);
+
+                $query = request()->query();
                 // PREV
                 if ($current_page > 1) {
                     echo '<li class="page-item">

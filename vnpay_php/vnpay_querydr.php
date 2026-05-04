@@ -40,7 +40,7 @@
         <?php
         date_default_timezone_set('Asia/Ho_Chi_Minh');
         error_reporting(E_ALL & E_NOTICE & E_DEPRECATED);
-        require_once("config.php");
+        require_once("./vnpay_php/config.php");
 
         function callAPI_auth($method, $url, $data)
         {

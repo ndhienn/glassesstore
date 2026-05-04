@@ -134,12 +134,15 @@ const formatVND = new Intl.NumberFormat('vi-VN', {
 
 tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
     // Lấy dữ liệu Seri và Đơn giá (hỗ trợ cả key HOA và thường)
+    const tenSP = item.TENSANPHAM || item.tenSP || item.tensanpham || 'N/A';
     const seri = item.SOSERI || item.seri || 'N/A';
     const donGia = item.GIALUCDAT || item.dongia || item.DONGIA || 0;
 
     return `
         <tr>
-            <td class="text-dark">${seri}</td> <td class="text-dark">${formatVND.format(donGia).replace('₫', 'đ')}</td>
+            <td class="text-dark">${tenSP}</td>
+            <td class="text-dark">${seri}</td> 
+            <td class="text-dark">${formatVND.format(donGia).replace('₫', 'đ')}</td>
         </tr>
     `;
 }).join('') : '<tr><td colspan="2" class="text-center">Không có chi tiết sản phẩm</td></tr>';
@@ -219,7 +222,7 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
             <thead class="">
                 <tr>
                     <th scope="col">Mã hóa đơn</th>
-                    <th scope="col">Tài khoản</th>
+                    <th scope="col">Email</th>
                     <th scope="col">Số điện thoại</th>
                     <!--<th scope="col">Nhân viên</th>-->
                     <th scope="col">Tổng tiền</th>
@@ -236,11 +239,11 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                 <tr>
                     <td>{{ $hoaDon->getId() }}</td>
                     <td>{{ $hoaDon->getEmail()->getEmail() }}</td>
-                    <td>{{ $hoaDon->getEmail()->getIdNguoiDung()->getSoDienThoai() }}</td>
-                    <!--<td>{{ $mapNguoiDung[$hoaDon->getIdNhanVien()->getId()] }}</td>-->
+                    <td>{{ $hoaDon->getSoDienThoai() }}</td>
+                    
                     <td>{{ $hoaDon->getTongTien() }}</td>
                     <td>{{ $mapPTTT[$hoaDon->getIdPTTT()->getId()] }}</td>
-                    <td>{{ $hoaDon->getNgayTao() }}</td>
+                    <td>{{ $hoaDon->getNgayTao()->format('d/m/Y H:i') }}</td>
                     <td>
                         @if($hoaDon->getTrangThai() == \App\Enum\HoaDonEnum::PAID)
                             <span class="badge bg-success">Đã thanh toán</span>
@@ -266,10 +269,10 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                         data-bs-target="#staticBackdropOrderModal"
                         data-id="{{ $hoaDon->getId() }}"
                         data-email="{{ $hoaDon->getEmail()->getEmail() }}"
-                        data-sdt="{{ $hoaDon->getEmail()->getIdNguoiDung()->getSoDienThoai() }}"
+                        data-sdt="{{ $hoaDon->getSoDienThoai() }}"
                         
-                        data-tenkhachhang="{{ $mapHoTenByEmail[$hoaDon->getEmail()->getEmail()] }}"
-                        data-ngaytao="{{ $hoaDon->getNgayTao() }}"
+                        data-tenkhachhang="{{ $hoaDon?->getHoTen() ?? 'Khách hàng' }}"
+                        data-ngaytao="{{ $hoaDon->getNgayTao()->format('d/m/Y H:i') }}"
                         data-pttt="{{ $mapPTTT[$hoaDon->getIdPTTT()->getId()] }}"
                         data-trangthai="{{ $hoaDon->getTrangThai() }}"
                         data-tongtien="{{ $hoaDon->getTongTien() }}"
@@ -295,7 +298,14 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                 <?php
                 $queryString = isset($_GET['keyword']) ? '&keyword=' . urlencode($_GET['keyword']) : '';
                 $query = $_GET;
+                $items_per_page = 8; 
+                $allHoaDon = app(App\Bus\HoaDon_BUS::class)->getAllModels(); 
+                $total_items = is_array($allHoaDon) ? count($allHoaDon) : 0;
+                $current_page = request()->input('page', 1); 
 
+                $total_page = ceil((int)$total_items / $items_per_page);
+
+                $query = request()->query();
                 // PREV
                 if ($current_page > 1) {
                     echo '<li class="page-item">
@@ -351,6 +361,7 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                                     <table class="table">
                                         <thead>
                                             <tr>
+                                                <th scope="col" class="text-dark">Tên sản phẩm</th>
                                                 <th scope="col" class="text-dark">Số seri sản phẩm</th>
                                                 <th scope="col" class="text-dark">Giá tiền</th>
                                                 
@@ -373,7 +384,7 @@ tbody.innerHTML = (data.cthd && data.cthd.length > 0) ? data.cthd.map(item => {
                                                 <span class="ma-don-hang opacity-50 fw-medium"></span>
                                             </div>
                                             <div class="mt-2 mb-2 d-flex justify-content-between align-items-center small">
-                                                <strong>Tài khoản</strong>
+                                                <strong>Email</strong>
                                                 <span class="tai-khoan opacity-50 fw-medium"></span>
                                             </div>
                                             <div class="mt-2 mb-2 d-flex justify-content-between align-items-center small">

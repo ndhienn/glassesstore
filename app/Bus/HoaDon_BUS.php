@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Validator;
 use App\Jobs\CheckVnpayPaymentStatus;
 use Illuminate\Support\Facades\Redis;
 use Carbon\Carbon;
+use App\Bus\PaymentAttempt_BUS;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 class HoaDon_BUS{
 
     private $hoaDonDAO;
@@ -270,23 +274,56 @@ class HoaDon_BUS{
                 }
             }
         }
-
+        Log::info("Đã hoàn kho cho đơn hàng ID: " . $idHoaDon);
         return true;
     }
     public function huyDonHangVaHoanKho($idHoaDon) 
-    {
-        $hd = $this->getModelById($idHoaDon);
-        if (!$hd) return false;
+{
+    try {
+        // Bắt đầu Transaction
+        DB::beginTransaction();
 
-        if ($hd->getIdPTTT()->getId() == 1) {
-            $this->hoanKho($idHoaDon);
+        $hd = $this->getModelById($idHoaDon);
+        if (!$hd) {
+            DB::rollBack();
+            return false;
         }
 
-        // 3. Cập nhật trạng thái hóa đơn thành Hủy (CANCELLED)
-        // Bạn hãy kiểm tra xem trong HoaDonEnum đã có cột CANCELLED hoặc tương đương chưa
+        // 1. Hoàn kho
+        // Lưu ý: Đảm bảo hàm hoanKho() của bạn đang không bị lỗi và ném ra Exception nếu thất bại
+        $this->hoanKho($idHoaDon);
+
+        // 2. Cập nhật trạng thái hóa đơn thành Hủy
         $hd->setTrangThai(\App\Enum\HoaDonEnum::CANCELLED); 
         $this->updateModel($hd);
 
+        // 3. Cập nhật bảng payment_attempts
+        // Giả sử bảng của bạn tên là 'payment_attempts' và có cột 'hoa_don_id', 'status'
+        if ($hd->getIdPTTT()->getId() == 3) { // Chỉ cập nhật nếu phương thức thanh toán là VNPay
+            DB::table('payment_attempts')
+                ->where('hoa_don_id', $idHoaDon)
+                ->where('status', '!=', 'SUCCESS') // Chỉ hủy các giao dịch đang PENDING hoặc FAILED, không đụng tới giao dịch đã SUCCESS (nếu có lỗi logic)
+                ->update([
+                    'status' => 'CANCELLED', // Hoặc trạng thái tương ứng trong hệ thống của bạn
+                    'updated_at' => now()
+                ]);
+
+            // Xác nhận lưu toàn bộ thay đổi vào Database
+            DB::commit();
+        }
         return true;
+
+    } catch (\Exception $e) {
+        // Nếu có bất kỳ lỗi nào xảy ra (ví dụ: lỗi SQL, lỗi logic PHP), hoàn tác toàn bộ
+        DB::rollBack();
+        
+        // Ghi log để dễ debug
+        Log::error('Lỗi khi hủy đơn hàng và hoàn kho: ' . $e->getMessage(), [
+            'idHoaDon' => $idHoaDon,
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return false;
     }
+}
 }

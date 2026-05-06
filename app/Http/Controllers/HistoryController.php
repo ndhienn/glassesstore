@@ -51,14 +51,14 @@ class HistoryController extends Controller
                         WHERE EMAIL = ?
                         ORDER BY NGAYTAO DESC;
                         ", [$email]);
-                Log::info('Raw hoaDons from direct query: ', ['rawHoaDons' => $rawHoaDons]);
+                // Log::info('Raw hoaDons from direct query: ', ['rawHoaDons' => $rawHoaDons]);
                 // dd($rawHoaDons);
                 if (empty($rawHoaDons)) {
                     Log::warning('No raw hoaDons found for email: ' . $email);
                     // Không gán thông báo lỗi cụ thể, để $error là null
                 } else {
                     foreach ($rawHoaDons as $rawHoaDon) {
-                        Log::info('Processing rawHoaDon: ', ['id' => $rawHoaDon->ID, 'email' => $rawHoaDon->EMAIL]);
+                        // Log::info('Processing rawHoaDon: ', ['id' => $rawHoaDon->ID, 'email' => $rawHoaDon->EMAIL]);
                         $chiTietHoaDonsRaw = $this->chiTietHoaDonBUS->getCTHTbyIDHD($rawHoaDon->ID);
                         $chiTietHoaDons = [];
 
@@ -187,7 +187,7 @@ class HistoryController extends Controller
 
                 // Truy vấn trực tiếp từ bảng hoadon
                 $rawHoaDons = DB::select("SELECT * FROM hoadon WHERE EMAIL = ? AND TRANGTHAI = 'DADAT' AND IDPTTT = 2", [$email]);
-                Log::info('Raw hoaDons from direct query: ', ['rawHoaDons' => $rawHoaDons]);
+                // Log::info('Raw hoaDons from direct query: ', ['rawHoaDons' => $rawHoaDons]);
 
                 if (empty($rawHoaDons)) {
                     Log::warning('No raw hoaDons found for email: ' . $email);

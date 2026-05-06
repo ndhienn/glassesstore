@@ -301,10 +301,10 @@ class HoaDon_BUS{
         // Giả sử bảng của bạn tên là 'payment_attempts' và có cột 'hoa_don_id', 'status'
         if ($hd->getIdPTTT()->getId() == 3) { // Chỉ cập nhật nếu phương thức thanh toán là VNPay
             DB::table('payment_attempts')
-                ->where('hoa_don_id', $idHoaDon)
-                ->where('status', '!=', 'SUCCESS') // Chỉ hủy các giao dịch đang PENDING hoặc FAILED, không đụng tới giao dịch đã SUCCESS (nếu có lỗi logic)
+                ->where('order_id', $idHoaDon)
+                ->where('status', '!=', 'success') // Chỉ hủy các giao dịch đang PENDING hoặc FAILED, không đụng tới giao dịch đã SUCCESS (nếu có lỗi logic)
                 ->update([
-                    'status' => 'CANCELLED', // Hoặc trạng thái tương ứng trong hệ thống của bạn
+                    'status' => 'cancelled', // Hoặc trạng thái tương ứng trong hệ thống của bạn
                     'updated_at' => now()
                 ]);
 

@@ -597,4 +597,15 @@ Route::post('/vnpay-refund/{id}', [PaymentController::class, 'vnpayRefund'])->na
 Route::get('/payment/retry/{order_id}', [PaymentController::class, 'retryPayment'])->name('payment.retry');
 //route huỷ đơn hàng và hoàn kho khi người dùng đã thanh toán
 Route::post('/huy-don-hang/{id}', [HoaDonController::class, 'handleHuyDon'])->name('hoa-don.huy');
+
+use Illuminate\Support\Facades\Artisan;
+
+Route::get('/run-migrate', function () {
+    try {
+        Artisan::call('migrate --force');
+        return "Database đã được cập nhật thành công!";
+    } catch (\Exception $e) {
+        return "Lỗi: " . $e->getMessage();
+    }
+});
 ?>

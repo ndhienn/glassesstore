@@ -47,6 +47,23 @@ class PaymentController extends Controller
         }
     }
 
+    public function vnpayIpn(Request $request)
+    {
+        try {
+            // Gọi BUS xử lý toàn bộ logic và lấy kết quả trả về
+            $result = $this->paymentBUS->processIpn($request);
+            
+            // Trả JSON về cho VNPay
+            return response()->json($result);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error("Lỗi Exception tại IPN: " . $e->getMessage());
+            
+            // Trả về mã lỗi 99 để VNPay biết là server đang gặp sự cố nội bộ
+            return response()->json(['RspCode' => '99', 'Message' => 'Unknown error']);
+        }
+    }
+
     public function vnpayReturn(Request $request)
 {
     try {

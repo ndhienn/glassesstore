@@ -5,6 +5,9 @@ use App\Dao\PaymentAttempt_DAO;
 use App\Bus\HoaDon_BUS; 
 use Carbon\Carbon;
 use App\Bus\PaymentTransaction_BUS;
+use App\Bus\PaymentGatewayLog_BUS;
+use App\Bus\PaymentStatusHistory_BUS;
+use Illuminate\Support\Facades\Log;
 
 class Payment_BUS
 {
@@ -177,5 +180,156 @@ class Payment_BUS
         $responseCode = $inputData['vnp_ResponseCode'] ?? null; 
 
         return $this->updatePaymentAttemptStatus($inputData, $txnRef, $responseCode);
+    }
+    public function xuLyDatabaseIPN($idHoaDon) 
+    {
+        $ghBus = app(GioHang_BUS::class);
+        $cthdBus = app(CTHD_BUS::class);
+        $ctspBus = app(CTSP_BUS::class);
+        $spBus   = app(SanPham_BUS::class);
+        $ctghBus = app(CTGH_BUS::class); // Vẫn cần để xóa giỏ hàng nếu muốn
+
+        $hd = $this->getModelById($idHoaDon);
+        $attemptId = $this->paymentAttemptDAO->getAttemptIdByOrderId($idHoaDon);
+
+        if (!$hd) return false;
+
+        // QUAN TRỌNG: Lấy email/thông tin khách hàng từ chính Database của Đơn Hàng
+        $email = $hd->getEmail()->getEmail(); // Lấy email từ đối tượng TaiKhoan liên kết với Hóa Đơn
+        // (Bạn không được dùng Auth_Bus ở đây)
+
+        $listCTHD = $cthdBus->getCTHTbyIDHD($idHoaDon);
+        if (empty($listCTHD)) return false;
+
+        foreach ($listCTHD as $cthd) {
+            if (!$cthd) continue;
+            $soSeri = $cthd->getSoSeri();
+            $ctsp = $ctspBus->getCTSPBySoSeri($soSeri);
+            
+            if ($ctsp) {
+                $sp = $ctsp->getIdSP(); 
+                if ($sp) {
+                    $ctspBus->updateStatus($soSeri, 0); // Đã bán
+                    $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
+                    $spBus->updateModel($sp);
+
+                    // Xóa giỏ hàng bằng cách query thẳng vào DB dựa trên email lấy từ Đơn Hàng
+                    if ($email) { 
+                        $gh = $ghBus->getByEmail($email);
+                        $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                    }
+                }
+            }
+        }
+
+        $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
+        $this->updateModel($hd);
+
+        $this->capNhatGiaoDichVaLichSu($txnRef, $vnpayTransactionNo, 'success', 'Thanh toán thành công (Mã 00)');
+        return true;
+    }
+    public function donDepSessionTrinhDuyet()
+    {
+        // Hàm này chạy khi khách được VNPay chuyển hướng về web của bạn
+        session()->forget('checkout_source');
+        session()->forget('listSP');
+    }
+
+    public function processIpn($request)
+    {
+        try {
+            // 1. TRÍCH XUẤT DỮ LIỆU CƠ BẢN
+            $vnp_TxnRef = $request->input('vnp_TxnRef');
+            // Tách ID hóa đơn từ chuỗi vnp_TxnRef (Ví dụ: DH420343_20260430... -> 420343)
+            $orderId = (int) filter_var(explode('_', $vnp_TxnRef)[0], FILTER_SANITIZE_NUMBER_INT);
+            
+            // Lấy Attempt ID để liên kết dữ liệu log
+            $attemptId = $this->paymentAttemptDAO->getAttemptIdByOrderId($orderId);
+
+            // 2. KIỂM TRA CHỮ KÝ (HASH VALIDATION)
+            $vnp_SecureHash = $request->vnp_SecureHash;
+            $inputData = [];
+            foreach ($request->all() as $key => $value) {
+                if (substr($key, 0, 4) == "vnp_") {
+                    $inputData[$key] = $value;
+                }
+            }
+            unset($inputData['vnp_SecureHash']);
+            ksort($inputData);
+            
+            $i = 0;
+            $hashData = "";
+            foreach ($inputData as $key => $value) {
+                if ($i == 1) {
+                    $hashData .= '&' . urlencode($key) . "=" . urlencode($value);
+                } else {
+                    $hashData .= urlencode($key) . "=" . urlencode($value);
+                    $i = 1;
+                }
+            }
+
+            $secureHash = hash_hmac('sha512', $hashData, config('vnpay.hash_secret'));
+            $isValidSignature = ($secureHash === $vnp_SecureHash);
+
+            // GHI LOG RECEIVE (IPN WEBHOOK)
+            app(\App\Bus\PaymentGatewayLog_BUS::class)->logIPNReceive(
+                $orderId, 
+                $attemptId, 
+                $request->all(), 
+                $request,
+                $isValidSignature ? 1 : 0
+            );
+
+            // Nếu chữ ký không hợp lệ -> Trả lỗi cho VNPAY ngay
+            if (!$isValidSignature) {
+                return ['RspCode' => '97', 'Message' => 'Invalid signature'];
+            }
+
+            // 4. KIỂM TRA NGHIỆP VỤ DATABASE
+            $order = $this->hoaDonBUS->getModelById($orderId);
+
+            // Kiểm tra đơn hàng tồn tại
+            if (!$order) {
+                return ['RspCode' => '01', 'Message' => 'Order not found'];
+            }
+
+            // Kiểm tra số tiền (VNPAY gửi đơn vị xu nên phải chia 100)
+            if (round($order->getTongTien()) != round($inputData['vnp_Amount'] / 100)) { 
+                return ['RspCode' => '04', 'Message' => 'Invalid amount'];
+            }
+
+            // Kiểm tra trạng thái (Sử dụng ->value thay vì ->value() để tránh lỗi 500)
+            if ($order->getTrangThai()->value !== 'PENDING') { 
+                return ['RspCode' => '02', 'Message' => 'Order already confirmed'];
+            }
+
+            // cập nhật trạng thái thanh toán trong bảng payment_attempts dựa trên vnp_TxnRef
+            $this->updatePaymentAttemptStatus($vnp_TxnRef, $inputData['vnp_ResponseCode'] ?? null);
+
+            // 5. XỬ LÝ CHỐT ĐƠN HOẶC HỦY ĐƠN
+            Log::info('Xử lý IPN mã: ' . $inputData['vnp_ResponseCode'] . ' - ' . $inputData['vnp_TransactionStatus']);
+            if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
+                //ghi vào payment transaction
+                app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($attemptId, $request->all(), $orderId);
+                // Chốt đơn, trừ kho và xóa giỏ hàng
+                $this->xuLyDatabaseIPN($orderId);
+            } else {
+                // Giao dịch lỗi từ phía ngân hàng/khách hàng hủy
+                $this->hoaDonBUS->huyThanhToanDonHang($orderId);
+            }
+
+            // Mọi thứ thành công
+            return ['RspCode' => '00', 'Message' => 'Confirm Success'];
+
+        } catch (\Throwable $e) {
+            // Ghi log lỗi hệ thống để kiểm tra sau
+            \Illuminate\Support\Facades\Log::error('Lỗi IPN nghiêm trọng: ' . $e->getMessage() . ' tại dòng ' . $e->getLine());
+            
+            // Trả về lỗi 99 để VNPAY biết và thực hiện gọi lại sau (Retry)
+            return [
+                'RspCode' => '99', 
+                'Message' => 'Internal Error: ' . $e->getMessage()
+            ];
+        }
     }
 }

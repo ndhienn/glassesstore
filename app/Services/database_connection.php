@@ -39,23 +39,35 @@ class database_connection {
     //     return null;
     // }
     public function getConnection(){
-            try {
-                // Kiểm tra nếu chưa có kết nối hoặc kết nối đã chết (ping thất bại)
-                if($this->connection == null || !$this->connection->ping()) {
-                    $this->connection = new mysqli(self::$host, self::$user, self::$pass, self::$dbname, self::$port);
-                    
-                    if ($this->connection->connect_error) {
-                        throw new Exception("Kết nối MySQL thất bại: " . $this->connection->connect_error);
-                    }
-                    // Thiết lập charset để tránh lỗi font tiếng Việt
-                    $this->connection->set_charset("utf8mb4");
+        try {
+            // Tốt nhất trong môi trường Web (PHP-FPM), không nên dùng ping()
+            // vì mỗi request PHP thường là 1 tiến trình độc lập.
+            if($this->connection == null) {
+                
+                $this->connection = mysqli_init();
+                
+                // THÊM 2 DÒNG NÀY: Ép timeout tối đa 5 giây để không bị treo web
+                $this->connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, 5);
+                $this->connection->options(MYSQLI_OPT_READ_TIMEOUT, 5);
+                
+                // Bật chế độ SSL (TiDB bắt buộc)
+                $this->connection->ssl_set(NULL, NULL, NULL, NULL, NULL);
+                
+                // Thực hiện kết nối
+                $this->connection->real_connect(self::$host, self::$user, self::$pass, self::$dbname, self::$port, NULL, MYSQLI_CLIENT_SSL);
+                
+                if ($this->connection->connect_error) {
+                    throw new Exception("Kết nối MySQL thất bại: " . $this->connection->connect_error);
                 }
-                return $this->connection;
-            } catch (Exception $e) {
-                error_log("Database Connection Error: " . $e->getMessage());
-                throw $e;
+                
+                $this->connection->set_charset("utf8mb4");
             }
+            return $this->connection;
+        } catch (Exception $e) {
+            error_log("Database Connection Error: " . $e->getMessage());
+            throw $e;
         }
+    }
     // public static function getPreparedStatement($sql,...$args) {
     //     try {
     //         $preparedStatement = self::getInstance()->getConnection()->prepare($sql);

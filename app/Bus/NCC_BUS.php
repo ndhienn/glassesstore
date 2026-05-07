@@ -10,10 +10,11 @@ class NCC_BUS implements BUSInterface {
 
     public function __construct(NCC_DAO $nccDAO) {
         $this->nccDAO = $nccDAO;
-        $this->refreshData();
+        
     }
 
     public function getAllModels() {
+        $this->refreshData();
         return $this->NCCList;
     }
 

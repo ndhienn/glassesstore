@@ -12,7 +12,7 @@ class PTTT_BUS implements BUSInterface {
     public function __construct(PTTT_DAO $ptttDAO) {
         
         $this->ptttDAO = $ptttDAO;
-        $this->refreshData();
+        
     }
 
     public function refreshData(): void {
@@ -20,6 +20,7 @@ class PTTT_BUS implements BUSInterface {
     }
 
     public function getAllModels() {
+        $this->refreshData();
         return $this->PTTTList;
     }
 

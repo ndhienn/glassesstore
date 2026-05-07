@@ -13,7 +13,7 @@ class Hang_BUS implements BUSInterface
     public function __construct(Hang_DAO $hang_dao)
     {
         $this->hangDAO = $hang_dao;
-        $this->refreshData();
+        
     }
 
     public function refreshData(): void
@@ -28,6 +28,7 @@ class Hang_BUS implements BUSInterface
             $columns = ['tenhang'];
             $results = $this->searchModel($keyword ?? '', $columns, $trangThai);
         } else {
+            $this->refreshData();
             $results = $this->hangList;
         }
 
@@ -109,6 +110,7 @@ class Hang_BUS implements BUSInterface
 
     public function getActiveHangs(): array
     {
+        $this->refreshData();
         $results = array_filter($this->hangList, function ($hang) {
             return $hang->getTrangThaiHD() == 1;
         });

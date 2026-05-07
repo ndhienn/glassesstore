@@ -10,10 +10,11 @@ class SanPham_BUS implements BUSInterface {
     public function __construct(SanPham_DAO $sanPhamDAO)
     {
         $this->sanPhamDAO = $sanPhamDAO;
-        $this->refreshData();
+        
     }
 
     public function getAllModels() {
+        $this->refreshData();
         return $this->listSanPham;
     }
 

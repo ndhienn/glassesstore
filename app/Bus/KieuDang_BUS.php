@@ -10,7 +10,7 @@ class KieuDang_BUS {
     private $kieuDangDAO;
     public function __construct(KieuDang_DAO $kieuDangDAO) {
         $this->kieuDangDAO = $kieuDangDAO;
-        $this->refreshData();
+        
     }
 
     public function refreshData(): void {
@@ -18,6 +18,7 @@ class KieuDang_BUS {
     }
 
     public function getAllModels(): array {
+        $this->refreshData();
         return $this->kieuDangList;
     }
 

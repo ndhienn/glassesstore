@@ -13,7 +13,7 @@ class NguoiDung_BUS{
     public function __construct(NguoiDung_DAO $nguoi_dung_dao)
     {
         $this->nguoiDungDAO = $nguoi_dung_dao;
-        $this->refreshData();
+        
     }
     public function refreshData(): void
     {
@@ -21,6 +21,7 @@ class NguoiDung_BUS{
     }
     public function getAllModels()
     {
+        $this->refreshData();
         return $this->nguoiDungList;
     }
     public function getModelById($id)

@@ -181,7 +181,7 @@ class Payment_BUS
 
         return $this->updatePaymentAttemptStatus($inputData, $txnRef, $responseCode);
     }
-    public function xuLyDatabaseIPN($idHoaDon, $source = null) 
+    public function xuLyDatabaseIPN($idHoaDon) 
     {
         $ghBus = app(GioHang_BUS::class);
         $cthdBus = app(CTHD_BUS::class);
@@ -214,14 +214,9 @@ class Payment_BUS
                     $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
                     $spBus->updateModel($sp);
 
-                    // Xóa giỏ hàng nếu nguồn là 'cart' (khách thanh toán từ giỏ hàng)
+                    // Xóa giỏ hàng
                     if ($gh) {
-                        if ($source === 'cart') {
-                            $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
-                        } 
-                        // else ($source = 'buy_now') {
-                            
-                        // }
+                        $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
                     }
                 }
             }
@@ -317,8 +312,7 @@ class Payment_BUS
                 //ghi vào payment transaction
                 app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($request->all(), $orderId);
                 // Chốt đơn, trừ kho và xóa giỏ hàng
-                $source = session('checkout_source');
-                $this->xuLyDatabaseIPN($orderId, $source);
+                $this->xuLyDatabaseIPN($orderId);
             } else {
                 // Giao dịch lỗi từ phía ngân hàng/khách hàng hủy
                 $this->hoaDonBUS->huyThanhToanDonHang($orderId);

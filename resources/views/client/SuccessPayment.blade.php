@@ -9,7 +9,7 @@
     use App\Bus\DVVC_BUS;
     use App\Bus\SanPham_BUS;
     use App\Enum\HoaDonEnum;
-    $user = session('user');
+    // $user = session('user');
     $isLogin = session('isLogin');
     // $dvvc = app(DVVC_BUS::class)->getModelById($hoaDon->getIdDVVC()->getIdDVVC());
 ?>

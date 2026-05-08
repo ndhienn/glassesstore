@@ -149,6 +149,10 @@ class PaymentController extends Controller
     // Hàm này dùng chung cho TẤT CẢ phương thức thanh toán
     public function showSuccessPage(Request $request, $orderId)
     {
+        $user = null;
+        if ($email) {
+            $user = app(TaiKhoan_BUS::class)->getModelByEmail($email->getEmail());
+        }
         // Kiểm tra xem URL có bị sửa mã đơn vị không (Tính năng bảo mật của Signed Route)
         if (!$request->hasValidSignature()) {
             abort(403, 'Đường dẫn không hợp lệ hoặc đã hết hạn.');
@@ -158,7 +162,7 @@ class PaymentController extends Controller
         $order = app(\App\Bus\HoaDon_BUS::class)->getModelById($orderId);
         
         // Trả về chung 1 giao diện HTML
-        return view('client.SuccessPayment', ['hoaDon' => $order]);
+        return view('client.SuccessPayment', ['hoaDon' => $order, 'user' => $user]);
     }
     public function showCancelledPage(Request $request, $orderId)
     {

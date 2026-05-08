@@ -304,7 +304,7 @@ class Payment_BUS
             }
 
             // cập nhật trạng thái thanh toán trong bảng payment_attempts dựa trên vnp_TxnRef
-            $this->updatePaymentAttemptStatus($vnp_TxnRef, $inputData['vnp_ResponseCode'] ?? null);
+            $this->updatePaymentAttemptStatus($request, $vnp_TxnRef, $inputData['vnp_ResponseCode'] ?? null);
 
             // 5. XỬ LÝ CHỐT ĐƠN HOẶC HỦY ĐƠN
             Log::info('Xử lý IPN mã: ' . $inputData['vnp_ResponseCode'] . ' - ' . $inputData['vnp_TransactionStatus']);

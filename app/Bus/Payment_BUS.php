@@ -215,10 +215,10 @@ class Payment_BUS
                     $spBus->updateModel($sp);
 
                     // Xóa giỏ hàng bằng cách query thẳng vào DB dựa trên email lấy từ Đơn Hàng
-                    if ($source === 'cart') { 
-                        $gh = $ghBus->getByEmail($email);
-                        $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
-                    }
+                    // if ($gh) { 
+                    //     $gh = $ghBus->getByEmail($email);
+                    //     $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                    // }
                 }
             }
         }
@@ -311,7 +311,7 @@ class Payment_BUS
             Log::info('Xử lý IPN mã: ' . $inputData['vnp_ResponseCode'] . ' - ' . $inputData['vnp_TransactionStatus']);
             if ($inputData['vnp_ResponseCode'] == '00' || $inputData['vnp_TransactionStatus'] == '00') {
                 //ghi vào payment transaction
-                app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($attemptId, $request->all(), $orderId);
+                app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($request->all(), $orderId);
                 // Chốt đơn, trừ kho và xóa giỏ hàng
                 $this->xuLyDatabaseIPN($orderId);
             } else {

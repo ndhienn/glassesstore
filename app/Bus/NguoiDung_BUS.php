@@ -21,12 +21,22 @@ class NguoiDung_BUS{
     }
     public function getAllModels()
     {
-        $this->refreshData();
+        if (empty($this->nguoiDungList)) {
+            $this->refreshData();
+        }
         return $this->nguoiDungList;
     }
     public function getModelById($id)
     {
-        return $this->nguoiDungDAO->getById($id);
+        if (empty($this->nguoiDungList)) {
+            $this->refreshData();
+        }
+        foreach ($this->nguoiDungList as $nguoiDung) {
+            if ($nguoiDung->getId() == $id) {
+                return $nguoiDung;
+            }
+        }
+        return null;
     }
     public function addModel($model)
     {

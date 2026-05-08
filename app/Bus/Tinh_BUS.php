@@ -20,12 +20,23 @@ class Tinh_BUS implements BUSInterface{
     }
     public function getAllModels() : array
     {
-        $this->refreshData();
+        if (empty($this->tinhList)) {
+            $this->refreshData();
+        }
         return $this->tinhList;
     }
     public function getModelById($id)
     {
-        return $this->tinhDao->getById($id);    }
+        if (empty($this->tinhList)) {
+            $this->refreshData();
+        }
+        foreach ($this->tinhList as $tinh) {
+            if ($tinh->getId() == $id) {
+                return $tinh;
+            }
+        }
+        return null;
+    }
     public function addModel($model)
     {
         if($model == null) {

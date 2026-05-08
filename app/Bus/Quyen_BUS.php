@@ -21,12 +21,23 @@ class Quyen_BUS implements BUSInterface{
     }
     public function getAllModels() : array
     {
-        $this->refreshData();
+        if (empty($this->quyenList)) {
+            $this->refreshData();
+        }
         return $this->quyenList;
     }
     public function getModelById($id)
     {
-        return $this->quyenDAO->getById($id);    }
+        if (empty($this->quyenList)) {
+            $this->refreshData();
+        }
+        foreach ($this->quyenList as $quyen) {
+            if ($quyen->getId() == $id) {
+                return $quyen;
+            }
+        }
+        return null;
+    }
     public function addModel($model)
     {
         return $this->quyenDAO->insert($model);

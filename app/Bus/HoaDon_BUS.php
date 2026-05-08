@@ -237,12 +237,7 @@ class HoaDon_BUS{
                     $spBus->updateModel($sp);
 
                     if ($gh) {
-                        if ($source === 'cart') {
-                            $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
-                        } 
-                        // else ($source = 'buy_now') {
-                            
-                        // }
+                        $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
                     }
                 }
             }

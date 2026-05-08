@@ -183,7 +183,6 @@ class Payment_BUS
     }
     public function xuLyDatabaseIPN($idHoaDon) 
     {
-        $source = session('checkout_source');
         $ghBus = app(GioHang_BUS::class);
         $cthdBus = app(CTHD_BUS::class);
         $ctspBus = app(CTSP_BUS::class);
@@ -224,7 +223,7 @@ class Payment_BUS
         }
 
         $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
-        $this->updateModel($hd);
+        $this->hoaDonBUS->updateModel($hd);
 
         // $this->capNhatGiaoDichVaLichSu($txnRef, $vnpayTransactionNo, 'success', 'Thanh toán thành công (Mã 00)');
         return true;

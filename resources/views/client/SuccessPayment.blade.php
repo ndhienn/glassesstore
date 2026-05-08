@@ -72,7 +72,7 @@
     <h1 class="" style="text-align: center; font-size: 30px;"><i class="fa-regular fa-circle-check text-success" style="font-size: 30px;"></i> ĐẶT HÀNG THÀNH CÔNG</h1>
     
 
-<p>Họ tên người mua hàng: {{ $hoaDon?->getHoTen() ?? 'Khách hàng' }}</p>
+<p>Họ tên người mua hàng: {{ $user ? $user->getIdNguoiDung()->getHoTen() : 'Khách hàng' }}</p>
 
 <p>Ngày tạo: {{ $hoaDon?->getNgayTao() instanceof \DateTime ? $hoaDon->getNgayTao()->format('d/m/Y H:i') : $hoaDon?->getNgayTao() }}</p>
 

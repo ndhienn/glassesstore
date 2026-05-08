@@ -149,6 +149,8 @@ class PaymentController extends Controller
     // Hàm này dùng chung cho TẤT CẢ phương thức thanh toán
     public function showSuccessPage(Request $request, $orderId)
     {
+        $order = app(HoaDon_BUS::class)->getModelById($orderId);
+        $email = $order->getEmail();
         $user = null;
         if ($email) {
             $user = app(TaiKhoan_BUS::class)->getModelByEmail($email->getEmail());
@@ -166,6 +168,8 @@ class PaymentController extends Controller
     }
     public function showCancelledPage(Request $request, $orderId)
     {
+        $order = app(HoaDon_BUS::class)->getModelById($orderId);
+        $email = $order->getEmail();
         $user = null;
         if ($email) {
             $user = app(TaiKhoan_BUS::class)->getModelByEmail($email->getEmail());

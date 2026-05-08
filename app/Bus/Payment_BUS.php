@@ -183,13 +183,14 @@ class Payment_BUS
     }
     public function xuLyDatabaseIPN($idHoaDon) 
     {
+        $source = session('checkout_source');
         $ghBus = app(GioHang_BUS::class);
         $cthdBus = app(CTHD_BUS::class);
         $ctspBus = app(CTSP_BUS::class);
         $spBus   = app(SanPham_BUS::class);
         $ctghBus = app(CTGH_BUS::class); // Vẫn cần để xóa giỏ hàng nếu muốn
 
-        $hd = $this->getModelById($idHoaDon);
+        $hd = $this->hoaDonBUS->getModelById($idHoaDon);
         $attemptId = $this->paymentAttemptDAO->getAttemptIdByOrderId($idHoaDon);
 
         if (!$hd) return false;
@@ -214,7 +215,7 @@ class Payment_BUS
                     $spBus->updateModel($sp);
 
                     // Xóa giỏ hàng bằng cách query thẳng vào DB dựa trên email lấy từ Đơn Hàng
-                    if ($email) { 
+                    if ($source === 'cart') { 
                         $gh = $ghBus->getByEmail($email);
                         $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
                     }
@@ -225,7 +226,7 @@ class Payment_BUS
         $hd->setTrangThai(\App\Enum\HoaDonEnum::PAID);
         $this->updateModel($hd);
 
-        $this->capNhatGiaoDichVaLichSu($txnRef, $vnpayTransactionNo, 'success', 'Thanh toán thành công (Mã 00)');
+        // $this->capNhatGiaoDichVaLichSu($txnRef, $vnpayTransactionNo, 'success', 'Thanh toán thành công (Mã 00)');
         return true;
     }
     public function donDepSessionTrinhDuyet()

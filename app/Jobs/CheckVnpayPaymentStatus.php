@@ -59,7 +59,7 @@ class CheckVnpayPaymentStatus implements ShouldQueue
                     $order->setTrangThai(\App\Enum\HoaDonEnum::EXPIRED);
                     app(\App\Bus\HoaDon_BUS::class)->updateModel($order);
                     app(\App\Bus\Payment_BUS::class)->updatePaymentAttemptStatus($vnpayData['vnp_TxnRef'], $status);
-                    app(\App\Bus\HoaDon_BUS::class)->hoanKho($order->getId());
+                    // app(\App\Bus\HoaDon_BUS::class)->hoanKho($order->getId());
                     Log::info("Đã hoàn kho cho đơn hàng ID: " . $order->getId());
                 }
             } else {

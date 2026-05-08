@@ -94,7 +94,7 @@ class Payment_BUS
         $vnp_Url = $vnp_Url . "?" . $query . 'vnp_SecureHash=' . $vnpSecureHash;
 
         // Lưu link thanh toán vào hóa đơn
-        app(\App\BUS\HoaDon_BUS::class)->setLinkThanhToan($hd->getID(), $vnp_Url, $txnRef);
+        app(\App\Bus\HoaDon_BUS::class)->setLinkThanhToan($hd->getID(), $vnp_Url, $txnRef);
 
         return $vnp_Url; 
     }

@@ -181,7 +181,7 @@ class Payment_BUS
 
         return $this->updatePaymentAttemptStatus($inputData, $txnRef, $responseCode);
     }
-    public function xuLyDatabaseIPN($idHoaDon) 
+    public function xuLyDatabaseIPN($idHoaDon, $source = null) 
     {
         $ghBus = app(GioHang_BUS::class);
         $cthdBus = app(CTHD_BUS::class);
@@ -200,6 +200,7 @@ class Payment_BUS
 
         $listCTHD = $cthdBus->getCTHTbyIDHD($idHoaDon);
         if (empty($listCTHD)) return false;
+        $gh = $ghBus->getByEmail($email);
 
         foreach ($listCTHD as $cthd) {
             if (!$cthd) continue;
@@ -213,11 +214,15 @@ class Payment_BUS
                     $sp->setSoLuong(max(0, $sp->getSoLuong() - 1));
                     $spBus->updateModel($sp);
 
-                    // Xóa giỏ hàng bằng cách query thẳng vào DB dựa trên email lấy từ Đơn Hàng
-                    // if ($gh) { 
-                    //     $gh = $ghBus->getByEmail($email);
-                    //     $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
-                    // }
+                    // Xóa giỏ hàng nếu nguồn là 'cart' (khách thanh toán từ giỏ hàng)
+                    if ($gh) {
+                        if ($source === 'cart') {
+                            $ctghBus->deleteCTGH($gh->getIdGH(), $sp->getId());
+                        } 
+                        // else ($source = 'buy_now') {
+                            
+                        // }
+                    }
                 }
             }
         }
@@ -312,7 +317,8 @@ class Payment_BUS
                 //ghi vào payment transaction
                 app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($request->all(), $orderId);
                 // Chốt đơn, trừ kho và xóa giỏ hàng
-                $this->xuLyDatabaseIPN($orderId);
+                $source = session('checkout_source');
+                $this->xuLyDatabaseIPN($orderId, $source);
             } else {
                 // Giao dịch lỗi từ phía ngân hàng/khách hàng hủy
                 $this->hoaDonBUS->huyThanhToanDonHang($orderId);

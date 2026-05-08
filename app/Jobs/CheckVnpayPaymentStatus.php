@@ -29,7 +29,7 @@ class CheckVnpayPaymentStatus implements ShouldQueue
     {
         // 1. Kiểm tra trạng thái trong DB cục bộ trước
         // Nếu đã thanh toán (Paid) hoặc đã hủy (Canceled) thì không làm gì cả
-        $order = app(\App\BUS\HoaDon_BUS::class)->getModelById($this->orderId);
+        $order = app(\App\Bus\HoaDon_BUS::class)->getModelById($this->orderId);
         Log::info("Kiểm tra đơn hàng ID: " . $this->orderId);
         Log::info("Dữ liệu đơn hàng:". $order->getOrderCode());
         if (!$order) {

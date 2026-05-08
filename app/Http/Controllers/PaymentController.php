@@ -110,6 +110,7 @@ class PaymentController extends Controller
             }
 
         } catch (\Exception $e) {
+            dd("Lỗi chính xác là: " . $e->getMessage(), "Tại dòng: " . $e->getLine(), "File: " . $e->getFile());
             Log::error("Lỗi VNPay Return: " . $e->getMessage());
             return view('client.paymentsuccess', ['success' => false]);
         }

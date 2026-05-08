@@ -113,8 +113,9 @@ class Payment_BUS
                     $this->hoaDonBUS->updateModel($hd);
                 }
             }
-            app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($request, $attempt->order_id);
-
+            if ($request != null) {
+                app(\App\Bus\PaymentTransaction_BUS::class)->saveVnpaySuccess($request, $attempt->order_id);
+            }
             return [
                 'status' => 'success',
                 'message' => 'Giao dịch thành công!'
